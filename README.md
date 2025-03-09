@@ -1,9 +1,9 @@
 # BewlyBewly
-# 克隆自BewlyBewly 0.41.1 
+# 克隆自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 0.41.1 
 
 ## 添加了屏蔽原有插件中热门或排行榜单中，特定的up或标题视频的功能
 
-### 支持屏蔽名称和uid
+### 支持屏蔽名称和uid，有效但是很粗糙
 ![image](https://github.com/user-attachments/assets/b37c794e-9962-434e-b3f0-cf17a27f975f)
 
 
