@@ -1,0 +1,59 @@
+.page-fade-enter-active,
+.page-fade-leave-active {
+  --uno: "transition-opacity duration-300 transform-gpu";
+}
+.page-fade-enter-from,
+.page-fade-leave-to {
+  --uno: "opacity-0";
+}
+.page-fade-leave-to {
+  --uno: "!hidden";
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  --uno: "transition-opacity duration-300";
+}
+.fade-enter-from,
+.fade-leave-to {
+  --uno: "opacity-0";
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  --uno: "opacity-100 transition-all duration-500";
+}
+.slide-fade-enter,
+.slide-fade-leave-to {
+  --uno: "opacity-0";
+}
+
+.list-enter-active,
+.list-leave-active {
+  --uno: "transition-all duration-500";
+}
+.list-enter-from,
+.list-leave-to {
+  --uno: "opacity-0 translate-y-6 transform-gpu";
+}
+.list-leave-to {
+  --uno: "hidden";
+}
+
+.modal-enter-active,
+.modal-leave-active {
+  --uno: "transition-all duration-500 transform-gpu";
+}
+.modal-enter-from,
+.modal-leave-to {
+  --uno: "opacity-0 scale-105";
+}
+
+.dropdown-enter-active,
+.dropdown-leave-active {
+  --uno: "transition-all duration-300 transform-gpu";
+}
+.dropdown-enter-from,
+.dropdown-leave-to {
+  --uno: "opacity-0 transform-gpu scale-95 -translate-y-4 filter blur-sm";
+}

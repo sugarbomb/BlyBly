@@ -1,0 +1,55 @@
+{
+  "settings": {
+    "title": "设置",
+    "menu_general": "通用",
+    "menu_desktop_and_dock": "桌面与Dock",
+    "menu_appearance": "外观",
+    "menu_bewly_pages": "BewlyBewly页面",
+    "menu_compatibility": "兼容性",
+    "menu_content_filter": "内容过滤",
+    "menu_about": "关于",
+    "menu_ranking_filter": "排行榜过滤",
+    
+    "contentFilter": {
+      "title": "内容过滤",
+      "trending": "热门内容过滤",
+      "trendingDesc": "设置热门板块的内容过滤规则",
+      "blockRules": {
+        "title": "屏蔽规则",
+        "addRule": "添加规则",
+        "user": "UP主",
+        "titleKeyword": "标题关键词",
+        "remark": "备注",
+        "noRules": "暂无屏蔽规则",
+        "delete": "删除",
+        "enable": "启用",
+        "disable": "禁用"
+      }
+    },
+    
+    "rankingFilter": {
+      "title": "排行榜内容过滤",
+      "enable": "启用排行榜过滤",
+      "enableDesc": "开启后将根据规则过滤排行榜内容",
+      "filterMode": "过滤模式",
+      "filterModeDesc": "选择黑名单模式（屏蔽匹配内容）或白名单模式（只显示匹配内容）",
+      "modes": {
+        "blacklist": "黑名单模式",
+        "whitelist": "白名单模式"
+      },
+      "addRule": "添加过滤规则",
+      "addRuleDesc": "添加基于标题、用户名或UID的过滤规则",
+      "ruleList": "规则列表",
+      "ruleListDesc": "管理已添加的过滤规则",
+      "noRules": "暂无过滤规则，请添加",
+      "selectType": "选择类型",
+      "inputValue": "输入过滤内容",
+      "add": "添加",
+      "ruleTypes": {
+        "title": "标题",
+        "username": "用户名",
+        "uid": "用户ID"
+      }
+    }
+  }
+} 

@@ -1,0 +1,495 @@
+common:
+  view_all: 查看更多
+  play_all: 播放全部
+  loading: 加载中...
+  undo: 还原
+  view: '{count}次'
+  viewWithoutNum: 次
+  danmaku: '{count} 弹幕'
+  danmakuWithoutNum: 弹幕
+  anime_follow_count: '{count}人关注'
+  year: 年前
+  month: 个月前
+  week: 个星期前
+  day: 天前
+  hour: 小时前
+  minute: 分钟前
+  second: 秒前
+  please_log_in_first: 请先登录
+  login: 登录
+  save_to_watch_later: 稍后再看
+  added: 已添加
+  performance_impact_warn: 这个功能可能会影响性能！
+  no_more_content: 没有更多内容了
+
+  operation:
+    add: 新增
+    edit: 编辑
+    delete: 删除
+    confirm: 确定
+    cancel: 取消
+    enable: 启用
+    disable: 禁用
+    refresh: 刷新
+    reset: 重置
+    import: 导入
+    export: 导出
+
+  table:
+    index: 索引
+    title: 标题
+    name: 名称
+    remark: 备注
+    operations: 操作
+
+  position:
+    left: 左侧
+    right: 右侧
+    top: 顶部
+    bottom: 底部
+
+iframe_drawer:
+  open_in_new_tab: 在新标签页打开
+  close: 关闭
+  press_esc_again_to_close: 再次按下 Esc 关闭
+
+settings:
+  title: 设置
+
+  # Settings menu
+  menu_general: 常规
+  menu_desktop_and_dock: 桌面和 Dock 栏
+  menu_appearance: 外观
+  menu_bewly_pages: BewlyBewly 页面
+  menu_search_page: 搜索页
+  menu_home: 首页
+  menu_compatibility: 兼容性
+  menu_about: 关于
+
+  # Settings group
+  group_common: 通用
+  group_languages_and_fonts: 语言和字体
+  group_link_opening_behavior: 链接打开行为
+  group_video_card: 视频卡片
+  group_performance: 毛玻璃和性能
+  group_topbar: 顶栏
+  group_dock: Dock 栏
+  group_sidebar: 侧边栏
+  group_sidebar_desc: 位于主页以外的页面右侧或左侧，通常有亮/暗模式切换按钮和设置按钮。
+  group_color: 颜色
+  group_wallpaper: 背景图片
+  group_logo: LOGO
+  group_search_bar: 搜索栏
+  group_recommendation_mode: “个性推荐” 推荐模式
+  group_recommendation_filters: “个性推荐” 过滤
+  group_recommendation_filters_desc: |
+    请勿将限制值设置得太大，不然可能会增加加载时间！
+  group_following: 正在关注
+  group_search_page_mode: 搜索页模式
+  group_home_tabs: 首页标签栏
+
+  # Settings buttons
+  btn:
+    authorize: 授权
+    revoke: 取消授权
+    open_settings: 打开设置...
+
+  # General
+  touch_screen_optimization: 触屏体验改进
+  touch_screen_optimization_desc: >
+    启用后，如顶栏，你可能需要点击项目以查看更多信息，而不是鼠标直接悬停查看。（旧版顶栏不支持此功能）
+  chk_box:
+    show: 显示
+    hidden: 隐藏
+  enable_grid_layout_switcher: 启用页面网格布局切换器
+  enable_horizontal_scrolling: 启用横向滚动
+  enable_horizontal_scrolling_desc: 启用后，鼠标滚动时将直接滚动横向滚动列表。
+
+  select_language: 界面语言
+  select_language_opt:
+    english: 英文
+    mandarin_cn: 官话 - 简体中文
+    mandarin_tw: 官話 - 繁體中文
+    jyut: 廣東話
+  customize_font: 自定义字体
+  customize_font_opt:
+    default: Bilibili 默认
+    recommend: 推荐
+    custom: 自定义
+  customize_font_desc: |-
+    对于喜欢旧字形的用户，我们推荐 <a class="link" href="https://github.com/GuiWonder/Shanggu" target="_blank">Shanggu Fonts (尚古字型)</a> 和 <a class="link" href="https://github.com/ayaka14732/FanWunHak" target="_blank">Fan Wun Hak (繁媛黑體)</a>。
+    这些字形还具有将简体中文转换为繁體/正体中文的能力。
+  override_danmaku_font: 覆盖弹幕字体
+  override_danmaku_font_desc: >
+    设置弹幕字体为您的自定义字体以覆盖默认设置。之后视频播放器将无法更改它。
+  remove_the_indent_from_chinese_punctuation: 移除中文标点符号的缩进
+  remove_the_indent_from_chinese_punctuation_desc: >
+    Bilibili 默认会专门处理中文标点符号以实现左对齐。
+    如果你正在使用自定义字体，建议移除缩进。
+
+  disable_frosted_glass: 禁用毛玻璃效果
+  reduce_frosted_glass_blur: 降低毛玻璃模糊强度
+  disable_shadow: 禁用阴影
+
+  link_opening_behavior_opt:
+    current_tab: 当前标签页
+    current_tab_if_not_homepage: 不在首页则当前标签页打开，否则在新标签页
+    new_tab: 新标签页
+    drawer: 抽屉打开
+  top_bar_link_opening_behavior: 顶栏链接打开行为
+  video_card_link_opening_behavior: 视频卡片和番剧卡片链接打开行为
+  search_bar_link_opening_behavior: 搜索栏链接打开行为
+  close_drawer_without_pressing_esc_again: 关闭抽屉时不用再次按 <kbd>Esc</kbd> 关闭
+
+  block_ads: 屏蔽广告
+  block_top_search_page_ads: 屏蔽 Bilibili 搜索页上方的广告
+  block_top_search_page_ads_desc: >
+    有时候，搜索结果上方的广告实际上是年末总结或年度报告。
+    如果你不想这些内容被误删除，请禁用此选项。
+
+  enable_video_preview: 启用视频预览功能（如果可以的话）
+  enable_video_ctrl_bar_on_video_card: 在视频卡片上显示视频控制栏
+  hover_video_card_delayed: 将鼠标悬停在视频卡片上时延迟视频预览
+
+  # Desktop & Dock
+  use_old_top_bar: 使用旧版顶栏
+  auto_hide_top_bar: 自动隐藏顶栏
+  show_top_bar_theme_color_gradient: 在顶栏显示主题色渐变（仅在暗色模式下有效）
+  show_bewly_or_bili_top_bar_switcher: 显示 BewlyBewly/Bilibili 顶栏切换器
+  show_bewly_or_bili_page_switcher: 显示 BewlyBewly/Bilibili 页面切换器
+  top_bar_icon_badges: 图标角标
+  top_bar_icon_badges_opt:
+    number: 数字
+    dot: 圆点
+    none: 不显示
+  open_notifications_page_as_drawer: 将通知页面作为抽屉打开
+
+  always_use_dock: 总是使用 Dock 栏
+  always_use_dock_desc: 启用后，Dock 栏将始终显示，侧边栏将隐藏。我们推荐你同时启用自动隐藏 Dock 栏。
+  auto_hide_dock: 自动隐藏 Dock 栏
+  half_hide_dock: 半隐藏 Dock 栏
+  dock_position: Dock 栏位置
+  dock_position_desc: 在屏幕中摆放位置。
+  dock_content_adjustment: Dock 内容调整
+  dock_content_adjustment_desc: 第一个激活的 Dock 项的页面将会是启动页面。
+  dock_item_open_in_new_tab: 在新标签页打开
+  dock_item_use_original_bili_web_page: 使用原版 Bilibili 网页
+  disable_dock_glowing_effect: 关闭 Dock 栏发光效果
+  disable_light_dark_mode_switcher: 禁用亮/暗色模式切换按钮
+  back_to_top_and_refresh_buttons_are_separated: 分离回到顶部和刷新按钮
+  sidebar_position: 侧边栏位置
+  auto_hide_sidebar: 自动隐藏侧边栏
+
+  # Appearance
+  theme: 主题
+  theme_opt:
+    light: 亮色
+    dark: 暗色
+    auto: 自动
+  theme_color: 主题色
+  gradient_theme_color_background: 在暗色模式下使用渐变主题颜色作为背景
+  wallpaper_mode: 背景图片模式
+  wallpaper_mode_desc: '使用网址: 直接用网上图片的网址来设置背景图片。'
+  wallpaper_mode_opt:
+    build_in: 内置
+    by_url: 使用网址
+  choose_ur_wallpaper: 选择你的背景
+  image_url: 图片网址
+  image_url_hint: |-
+    网址示例: https://cdn.jsdelivr.net/gh/BewlyBewly/Imgs/wallpapers/rocky-mountain-cloudscape.jpg
+    https://cdn.jsdelivr.net/gh/BewlyBewly/Imgs/wallpapers/green-white-mountains.jpg
+  enable_wallpaper_masking: 启用背景遮罩效果
+  wallpaper_mask_opacity: 背景遮罩透明度调整
+  wallpaper_blur_intensity: 背景模糊强度调整
+  customize_css: 自定义 CSS
+  customize_css_desc: |-
+    如果你不熟悉 CSS，请不要修改 CSS。否则可能会导致意外的显示问题。
+    如果在你修改 CSS 后遇到任何问题，请重新安装 BewlyBewly。
+
+  # Search page
+  logo_color: Logo 颜色
+  logo_color_opt:
+    white: 白
+    theme_color: 主题色
+  logo_visibility: Logo 可见性
+  enable_logo_glowing_effect: 启用 Logo 发光效果
+  bg_darkens_when_the_search_bar_is_focused: 当搜索栏聚焦时背景暗化
+  bg_blurs_when_the_search_bar_is_focused: 当搜索栏聚焦时背景模糊
+  choose_search_bar_focused_character: 选择搜索栏聚焦时出现的人物
+  individually_set_search_page_wallpaper: 单独设置搜索页背景
+
+  # Home
+  recommendation_mode: 推荐模式
+  recommendation_mode_desc: |
+    如果您想使用 app 端的推荐算法，请先授权 BewlyBewly 使用 access key。
+  authorize_app: 授权 BewlyBewly 使用 access key
+  authorize_app_desc: |
+    授权使用后能在首页推送 bilibili App 端算法的推荐视频，授权 key 有效期约为一个月，过后记得重新授权获取 access key。
+  authorize_app_more_info_access_key: 关于 access key
+  scan_qrcode_desc: 使用 Bilibili 移动应用程序扫描此二维码，以授权获取 access key。
+
+  disable_filters_for_followed_users: 关注的用户不受过滤条件限制
+  disable_filters_for_followed_users_desc: >
+    如果启用此选项，您关注的用户不受过滤条件限制。
+  filter_out_vertical_videos: 过滤竖屏视频（仅在 app 推荐模式下有效）
+  filter_by_view_count: 按播放数筛选
+  filter_by_view_count_desc: 筛选掉播放数小于您设置的视频。
+  filter_by_view_count_unit: 次
+  filter_by_duration: 按时长筛选
+  filter_by_duration_desc: 筛选掉时长小于您设置的视频。
+  filter_by_duration_unit: 秒
+  filter_item_already_exist: 这个筛选项目已经存在！
+  filter_by_title: 按标题筛选
+  filter_by_title_desc: >
+    按标题筛选掉包含您设置关键字的视频（不区分大小写），也可以使用正则表达式，如 <code>/abc&#124;\d+/</code>，用 <code>/</code> 包裹。
+    <br/>
+    在下表中，您可以按 <kbd>Enter</kbd> 键添加新的筛选条件或确认修改。
+    按 <kbd>Esc</kbd> 键取消修改。
+    双击列以编辑当前列。
+  filter_by_user: 按用户筛选
+  filter_by_user_desc: >
+    筛选掉包含您设置的用户名（全名，不区分大小写）或 MID 上传的视频，也可以使用正则表达式，如 <code>/abc&#124;\d+/</code>，用 <code>/</code> 包裹。
+    <br/>
+    在下表中，您可以按 <kbd>Enter</kbd> 键添加新的筛选条件或确认修改。
+    按 <kbd>Esc</kbd> 键取消修改。
+    双击列以编辑当前列。
+  filter_by_user_table:
+    username_or_mid: 用户名 / MID
+
+  following_tab_show_livestreaming_videos: 在 “正在关注” 中显示直播视频
+
+  use_search_page_mode: 首页使用搜索页模式
+  settings_shared_with_the_search_page: 与搜索页共用的配置
+  settings_shared_with_the_search_page_desc: 这些设置都与搜索页共用。
+  search_page_mode_wallpaper_fixed: 将搜索页模式的壁纸固定
+  home_tabs_adjustment: 标签栏调整
+  home_tabs_adjustment_desc: 第一个激活的标签项是默认界面
+  always_show_tabs_on_home_page: 总是显示首页标签栏
+
+  # Compatibility
+  # Common
+  topbar_visibility: 顶栏可见性
+  topbar_visibility_desc: 如果您正在使用 Bilibili Evolved 的顶栏，您可以在这里关闭 BewlyBewly 的顶栏。
+  use_original_bilibili_homepage: 使用原版 Bilibili 首页
+  use_original_bilibili_homepage_desc: 在您更改此设置后，如果在首页上，页面将自动刷新！
+  use_original_bilibili_topbar: 使用原版 Bilibili 顶栏
+  adapt_to_other_page_styles: 适应其他页面样式
+  adapt_to_other_page_styles_desc: 适应一些常见页面，以与 BewlyBewly 主题相匹配。
+  # Bilibili Evolved
+  follow_bilibili_evolved_color: 使用 Bilibili Evolved 主题色
+  follow_bilibili_evolved_color_desc: 每次选完 Bilibili Evolved 主题色时，记得重新选中这一选项以更新配置。
+
+  # About
+  links: 链接
+  sponsor: 赞助
+  sponsor_desc: 喜欢这个项目并希望看到它蓬勃发展吗？请考虑赞助它！您的支持是这个项目发展的动力。
+  afdian: 爱发电
+  import_settings: 导入设置
+  export_settings: 导出设置
+  export_settings_desc: 一些敏感的数据，例如 access key，可能需要重新获取。
+  reset_settings: 重置设置
+  reset_settings_confirm: |-
+    重置设置？
+    该操作无法撤销。你确定要重置你的设置吗？
+
+  safari_helpers: 帮助过上架 Safari 商店的人
+  safari_helpers_desc1: 提交 PR 支援 Safari
+  safari_helpers_desc2: 帮忙免费上架 Safari
+  safari_helpers_desc3: 帮解答注册苹果开发者问题
+  safari_helpers_desc4: 帮解答注册苹果开发者问题
+
+  contributors: 贡献者
+
+auth:
+  auth_access_key_first: 在这之前请先授权 BewlyBewly 使用 access key
+
+topbar:
+  switch_to_bewly_top_bar: 切换到 BewlyBewly 顶栏
+  switch_to_bili_top_bar: 切换到 Bilibili/Bilibili-Evolved 顶栏
+
+  sign_in: 登录
+  notifications: 通知
+  moments: 动态
+  favorites: 收藏
+  history: 历史
+  watch_later: 稍后再看
+  creative_center: 创作中心
+  upload: 投稿
+  logo_dropdown:
+    anime: 番剧
+    movies: 电影
+    chinese_anime: 中国动画
+    tv_shows: 电视剧
+    variety_shows: 综艺
+    documentary_films: 纪录片
+    animations: 动画
+    gaming: 游戏
+    kichiku: 鬼畜
+    music: 音乐
+    dance: 舞蹈
+    cinephile: 影视
+    showbiz: 娱乐
+    knowledge: 知识
+    technology: 科技
+    news: 资讯
+    foods: 美食
+    life: 生活
+    cars: 汽车
+    fashion: 时尚
+    sports: 运动
+    animals: 动物圈
+    vlog: VLOG
+    funny: 搞笑
+    standalone_gaming: 单机游戏
+    vtubers: 虚拟主播
+    charitable_events: 公益
+    moocs: 公开课
+    articles: 专栏
+    live: 直播
+    activities: 活动
+    paid_courses: 课堂
+    community: 社区中心
+    music_plus: 新歌热榜
+    game_center: 游戏中心
+    comic_con_and_goods: 漫展和周边
+    manga: 漫画
+    game_competitions: 游戏赛事
+  user_dropdown:
+    money: 硬币：
+    b_coins: B币：
+    exp_desc: '当前成长 {current_exp}，升级到 LV {level} 还需要 {need_exp}'
+    following: 关注
+    followers: 粉丝
+    posts: 动态
+    bilibili_premium: Bilibili 大会员
+    account_settings: 账号设置
+    uploads_manager: 投稿管理
+    b_coins_wallet: B币钱包
+    orders: 订单中心
+    workshop: 我的工房
+    my_stream_info: 直播中心
+    my_courses: 我的课程
+    log_out: 退出登录
+  noti_dropdown:
+    replys: 回复我的
+    mentions: 提到我的
+    likes: 收到的赞
+    messages: 系统消息
+    chats: 我的消息
+  moments_dropdown:
+    tabs:
+      videos: 视频
+      live: 直播
+      articles: 专栏
+    uploaded: 上传了：
+    now_streaming: 正在直播：
+    live_status: 直播中
+  upload_dropdown:
+    article: 上传专栏
+    music: 上传音频
+    sticker: 上传贴纸
+    video: 上传视频
+    manager: 投稿管理
+
+dock:
+  search: 搜索
+  home: 首页
+  anime: 番剧
+  history: 观看历史
+  favorites: 收藏
+  watch_later: 稍后再看
+  moments: 动态
+  dark_mode: 暗色模式
+  light_mode: 亮色模式
+  settings: 设置
+
+video_card:
+  operation:
+    not_interested: 不感兴趣
+    open_in_new_tab: 新标签页打开
+    open_in_background: 后台打开
+    open_in_new_window: 新窗口打开
+    open_in_current_tab: 当前标签页打开
+    open_in_drawer: 抽屉打开
+
+    copy_video_link: 复制视频链接
+    copy_bv_number: 复制 BV 号
+    copy_av_number: 复制 AV 号
+
+    view_the_original_cover: 查看封面
+
+  group_contribution: '{firstAuthor} 等 {num} 人联合创作'
+  video_removed: 视频已移除
+
+home:
+  tell_us_why: 为什么这么做...
+  not_interested_desc: 你可以使用 <kbd>↑</kbd> 和 <kbd>↓</kbd> 来选择原因，或者直接使用数字键选择原因，按 <kbd>Enter</kbd> 就直接提交。
+
+  for_you: 个性推荐
+  following: 正在关注
+  trending: 热门视频
+  ranking: 排行
+  subscribed_series: 订阅剧集
+  live: 直播
+
+ranking:
+  all: 全部
+  chinese_anime_related: 中国动画相关
+  original_content: 原创内容
+  debut_work: 新人作品
+
+anime:
+  total_episodes: 全 {ep} 话
+  update_to_n_episodes: 更新至 {ep} 话
+  your_watch_list: 正在追
+  recommended_for_you: 猜你喜欢
+  havent_seen: 尚未观看
+  popular_anime: 番剧热播榜
+  follow: '{num}追番'
+  anime_timetable:
+    title: 新番时间表
+    days_of_week:
+      mon: 周一
+      tue: 周二
+      wed: 周三
+      thu: 周四
+      fri: 周五
+      sat: 周六
+      sun: 周日
+
+history:
+  clear_all_watch_history: 清除所有观看历史
+  clear_all_watch_history_confirm: |-
+    要清除所有观看历史吗？
+    该操作无法撤销，你确定要清除所有观看历史吗？
+  pause_watch_history: 暂停记录观看历史
+  pause_watch_history_confirm: |-
+    要暂停记录观看历史吗？
+    你确定要要暂停记录观看历史吗？
+  search_watch_history: 搜索观看历史
+  title: 观看历史
+  turn_on_watch_history: 开启观看历史
+  turn_on_watch_history_confirm: |-
+    要开启观看历史吗？
+    你确定要开启观看历史吗？
+
+favorites:
+  unfavorite: 取消收藏
+  unfavorite_confirm: |-
+    要取消收藏选中的视频吗？
+    该操作无法撤销，你确定要取消收藏选中的视频吗？
+
+watch_later:
+  title: 稍后再看
+  clear_all: 清空稍后再看
+  clear_all_confirm: |-
+    要清空稍后再看吗？
+    该操作无法撤销，你确定要清空稍后再看吗？
+  remove_watched_videos: 清除已观看的视频
+  remove_watched_videos_confirm: |-
+    要清除已观看的视频吗？
+    该操作无法撤销，你确定要清除已观看的视频吗？
+
+search_bar:
+  history_title: 搜索历史
+  clear_history: 清空搜索历史

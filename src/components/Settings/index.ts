@@ -1,0 +1,1 @@
+export { default as BlockRulesSettings } from './BlockRulesSettings.vue' 
