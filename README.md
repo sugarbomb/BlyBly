@@ -1,9 +1,9 @@
 # BewlyBewly
-# 克隆自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 0.41.1 
+# 克隆自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 0.41.1 所有关联链接均为原作者 侵权连删
 
-## 添加了 屏蔽up或标题 的功能
+## 新增 屏蔽up或标题 的功能
 
-### 使用 视频关键词或uid 即可
+### 添加 视频关键词或uid 即可
 ![image](https://github.com/user-attachments/assets/b37c794e-9962-434e-b3f0-cf17a27f975f)
 
 
