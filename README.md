@@ -3,7 +3,7 @@
 
 ## 添加了 屏蔽up或标题 的功能
 
-### 添加名称或uid
+### 使用 视频关键词或uid 即可
 ![image](https://github.com/user-attachments/assets/b37c794e-9962-434e-b3f0-cf17a27f975f)
 
 
