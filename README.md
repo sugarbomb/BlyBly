@@ -1,5 +1,5 @@
 # BewlyBewly
-# 克隆自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 0.41.1 所有关联链接均为原作者 侵权连删
+# 克隆自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 0.41.1 所有赞助链接指向原作者 侵权连删
 
 ## 新增 屏蔽up或标题 的功能
 
