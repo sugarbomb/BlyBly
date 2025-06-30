@@ -1,11 +1,10 @@
 # BewlyBewly
-# 克隆自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 0.41.1 所有赞助链接指向原作者 侵权连删
+# 克隆自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 0.41.1 所有赞助链接指向原作者 侵删
 
-## 新增 屏蔽up或标题 的功能
-
-### 添加 视频关键词或uid 即可
-![image](https://github.com/user-attachments/assets/b37c794e-9962-434e-b3f0-cf17a27f975f)
-
+收到了github的第一颗星星（傲娇清嗓） 于是把界面弄的更拟人了些
+### 添加 视频关键词或uid 即可使用
+0.0.2
+![alt text](./assets/image-1.png)
 
 English | [官话 - 简体中文](README-cmn_CN.md) | [官話 - 繁體中文](README-cmn_TW.md) | [廣東話](README-jyut.md)
 
