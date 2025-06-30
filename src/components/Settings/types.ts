@@ -4,10 +4,9 @@ export enum MenuType {
   Appearance = 'appearance',
   BewlyPages = 'bewlyPages',
   Compatibility = 'compatibility',
-  ContentFilter = 'contentFilter',
+  Filters = 'filters',
   BilibiliSettings = 'BilibiliSettings',
   About = 'about',
-  RankingFilter = 'rankingFilter',
 }
 
 export enum BewlyPage {

@@ -18,12 +18,9 @@ const settingsMenu = {
   [MenuType.Appearance]: defineAsyncComponent(() => import('./Appearance/Appearance.vue')),
   [MenuType.BewlyPages]: defineAsyncComponent(() => import('./BewlyPages/BewlyPages.vue')),
   [MenuType.Compatibility]: defineAsyncComponent(() => import('./Compatibility/Compatibility.vue')),
-  [MenuType.ContentFilter]: defineAsyncComponent(() => import('./ContentFilter/ContentFilter.vue')),
+  [MenuType.Filters]: defineAsyncComponent(() => import('./Filters/Filters.vue')),
   // [MenuType.BilibiliSettings]: defineAsyncComponent(() => import('./BilibiliSettings/BilibiliSettings.vue')),
   [MenuType.About]: defineAsyncComponent(() => import('./About/About.vue')),
-  [MenuType.RankingFilter]: defineAsyncComponent(() => 
-    import('./RankingFilter/RankingFilter.vue')
-  ),
 }
 const activatedMenuItem = ref<MenuType>(MenuType.General)
 const title = ref<string>(t('settings.title'))
@@ -90,22 +87,16 @@ const settingsMenuItems = computed((): MenuItem[] => {
     //   title: 'Bilibili',
     // },
     {
-      value: MenuType.ContentFilter,
+      value: MenuType.Filters,
       icon: 'i-mingcute:filter-line',
       iconActivated: 'i-mingcute:filter-fill',
-      title: t('settings.menu_content_filter'),
+      title: t('settings.menu_filters'),
     },
     {
       value: MenuType.About,
       icon: 'i-mingcute:information-line',
       iconActivated: 'i-mingcute:information-fill',
       title: t('settings.menu_about'),
-    },
-    {
-      value: MenuType.RankingFilter,
-      icon: 'i-mingcute:filter-line',
-      iconActivated: 'i-mingcute:filter-fill',
-      title: t('settings.menu_ranking_filter'),
     },
   ]
 })

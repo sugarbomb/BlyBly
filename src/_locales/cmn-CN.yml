@@ -62,6 +62,7 @@ settings:
   menu_appearance: 外观
   menu_bewly_pages: BewlyBewly 页面
   menu_search_page: 搜索页
+  menu_filters: 内容过滤
   menu_home: 首页
   menu_compatibility: 兼容性
   menu_about: 关于
@@ -80,8 +81,6 @@ settings:
   group_wallpaper: 背景图片
   group_logo: LOGO
   group_search_bar: 搜索栏
-  group_recommendation_mode: “个性推荐” 推荐模式
-  group_recommendation_filters: “个性推荐” 过滤
   group_recommendation_filters_desc: |
     请勿将限制值设置得太大，不然可能会增加加载时间！
   group_following: 正在关注
@@ -299,6 +298,43 @@ settings:
   safari_helpers_desc4: 帮解答注册苹果开发者问题
 
   contributors: 贡献者
+
+  filters:
+    title: 过滤
+    contentFilter:
+      title: 内容过滤
+      description: 设置对内容的屏蔽和过滤规则
+      trending: 热门内容过滤
+      trendingDesc: 设置对热门内容的屏蔽规则
+
+    contentBlock:
+      title: 内容屏蔽设置
+      description: 设置对内容的屏蔽规则
+      input: 输入内容
+      add: 添加
+      noRules: 暂无屏蔽规则
+
+    rankingFilter:
+      title: 排行榜过滤设置
+      description: 对排行榜内容进行过滤和屏蔽
+      enable: 启用排行榜过滤
+      enableDesc: 开启后可对排行榜内容进行过滤
+      filterMode: 过滤模式
+      filterModeDesc: 黑名单模式：屏蔽命中规则的内容；白名单模式：仅显示命中规则的内容
+      modes:
+        blacklist: 黑名单
+        whitelist: 白名单
+      addRule: 添加过滤规则
+      addRuleDesc: 可按标题、用户名或UID添加过滤规则
+      add: 添加
+      inputValue: 请输入过滤内容
+      ruleList: 过滤规则列表
+      ruleListDesc: 可随时启用/禁用或删除规则
+      noRules: 暂无过滤规则
+      ruleTypes:
+        title: 标题
+        username: 用户名
+        uid: UID
 
 auth:
   auth_access_key_first: 在这之前请先授权 BewlyBewly 使用 access key
