@@ -2,9 +2,9 @@
 import { useI18n } from 'vue-i18n'
 
 import { useBewlyApp } from '~/composables/useAppProvider'
+import { useFilterAdvance } from '~/composables/useFilterAdvance'
 import type { GridLayoutType } from '~/logic'
 import { settings } from '~/logic'
-import { useRankingFilter } from '~/composables/useRankingFilter'
 import type { List as RankingVideoItem, RankingResult } from '~/models/video/ranking'
 import type { List as RankingPgcItem, RankingPgcResult } from '~/models/video/rankingPgc'
 import api from '~/utils/api'
@@ -23,7 +23,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const { handleBackToTop, handlePageRefresh } = useBewlyApp()
-const { filterVideos, filterPgcList, options: filterOptions } = useRankingFilter()
+const { filterVideos, filterPgcList, options: filterOptions } = useFilterAdvance('ranking-filter')
 
 const gridClass = computed((): string => {
   if (props.gridLayout === 'adaptive') {

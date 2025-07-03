@@ -2,10 +2,10 @@
 import type { Ref } from 'vue'
 
 import { useBewlyApp } from '~/composables/useAppProvider'
+import { useFilterAdvance } from '~/composables/useFilterAdvance'
 import type { GridLayoutType } from '~/logic'
 import type { List as VideoItem, TrendingResult } from '~/models/video/trending'
 import api from '~/utils/api'
-import { useTrendingFilter } from '~/composables/useTrendingFilter'
 
 // https://github.com/starknt/BewlyBewly/blob/fad999c2e482095dc3840bb291af53d15ff44130/src/contentScripts/views/Home/components/ForYou.vue#L16
 interface VideoElement {
@@ -35,7 +35,7 @@ const containerRef = ref<HTMLElement>() as Ref<HTMLElement>
 const pn = ref<number>(1)
 const noMoreContent = ref<boolean>(false)
 const { handleReachBottom, handlePageRefresh, haveScrollbar } = useBewlyApp()
-const { filterTrendingVideos } = useTrendingFilter()
+const { filterVideos } = useFilterAdvance('trending-filter')
 
 onMounted(() => {
   initData()
@@ -98,15 +98,16 @@ async function getTrendingVideos() {
       noMoreContent.value = response.data.no_more
 
       // 应用过滤器
-      const filteredList = filterTrendingVideos(response.data.list)
+      const filteredList = filterVideos(response.data.list)
 
       // 使用过滤后的列表
       if (!videoList.value.length) {
-        videoList.value = filteredList.map(item => ({ 
-          uniqueId: `${item.aid}`, 
-          item 
+        videoList.value = filteredList.map(item => ({
+          uniqueId: `${item.aid}`,
+          item,
         }))
-      } else {
+      }
+      else {
         filteredList.forEach((item) => {
           videoList.value[lastVideoListLength++] = {
             uniqueId: `${item.aid}`,
