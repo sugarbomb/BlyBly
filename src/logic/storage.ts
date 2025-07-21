@@ -98,6 +98,10 @@ export interface Settings {
   enableFilterByUser: boolean
   filterByUser: { keyword: string, remark: string }[]
 
+  // Advanced filter settings
+  enableAdvancedFilter: boolean
+  advancedFilterGlobalMode: boolean
+
   followingTabShowLivestreamingVideos: boolean
 
   homePageTabVisibilityList: { page: HomeSubPage, visible: boolean }[]
@@ -201,6 +205,10 @@ export const originalSettings: Settings = {
   filterByTitle: [],
   enableFilterByUser: false,
   filterByUser: [],
+
+  // Advanced filter settings
+  enableAdvancedFilter: false,
+  advancedFilterGlobalMode: false,
 
   followingTabShowLivestreamingVideos: false,
 

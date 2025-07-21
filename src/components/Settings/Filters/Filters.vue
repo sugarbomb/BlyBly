@@ -6,8 +6,8 @@ import FilterTemplate from './FilterTemplate.vue'
 
 <template>
   <div>
-    <SettingsItemGroup title="热门内容过滤器" desc="过滤热门页面中不感兴趣的内容">
-      <SettingsItem title="热门内容过滤设置" desc="配置热门内容过滤规则">
+    <SettingsItemGroup title="" desc="">
+      <SettingsItem title="" desc="">
         <template #bottom>
           <FilterTemplate
             title="热门内容过滤"
@@ -23,8 +23,8 @@ import FilterTemplate from './FilterTemplate.vue'
 
     <div class="my-8 border-b border-$bew-border-color" />
 
-    <SettingsItemGroup title="排行榜过滤器" desc="过滤排行榜页面中不感兴趣的内容">
-      <SettingsItem title="排行榜过滤设置" desc="配置排行榜内容过滤规则">
+    <SettingsItemGroup title="" desc="">
+      <SettingsItem title="" desc="">
         <template #bottom>
           <FilterTemplate
             title="排行榜内容过滤"

@@ -1,14 +1,13 @@
-name: CI
+# 名称：CI 持续集成流程
+name: CI # 工作流名称
 
-on:
-  push:
-    branches:
-      # The branch where the project source code resides
-      # 项目源代码所在的分支
-      - dev
-      - main
-    paths-ignore:
-      # Changes involving the following path files will not trigger the workflow
+on: # 触发条件
+  push: # 推送代码时触发
+    branches: # 仅限以下分支
+      # 项目源码所在的分支
+      - dev # 开发分支
+      - main # 主分支
+    paths-ignore: # 下列文件/路径的更改不会触发工作流
       # 涉及以下路径文件的更改不会触发工作流
       - LICENSE
       - README-cmn_CN.md
@@ -16,7 +15,7 @@ on:
       - README-jyut.md
       - docs/**
 
-  pull_request:
+  pull_request: # PR 时触发
     branches:
       - dev
       - main
@@ -27,62 +26,53 @@ on:
       - README-jyut.md
       - docs/**
 
-jobs:
-  test:
-    name: Test
-    strategy:
-      matrix:
-        node: [lts/*, lts/-1]
-        os: [ubuntu-latest, windows-latest]
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+jobs: # 工作任务定义
+  test: # 任务名
+    name: Test # 任务显示名
+    strategy: # 策略配置
+      matrix: # 多环境测试矩阵
+        node: [lts/*, lts/-1] # Node.js LTS最新和上一个版本
+        os: [ubuntu-latest, windows-latest] # 在Ubuntu和Windows上都跑
+      fail-fast: false # 某一环境失败不会终止全部
+    runs-on: ${{ matrix.os }} # 运行环境
+    timeout-minutes: 10 # 超时时间10分钟
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set node ${{ matrix.node }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          run_install: |
-            - args: [--frozen-lockfile]
-
-      - name: Lint
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: pnpm run lint
-
-      - name: Type check
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: pnpm run typecheck
-
-      - name: Test
-        run: pnpm run test
-
-      - name: Knip
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: pnpm run knip
-
-      - name: Build Extension
-        run: pnpm build
-
-      - name: Upload Zip
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == 'lts/*' && github.ref_name == 'main' }}
-        uses: actions/upload-artifact@v4.3.1
-        with:
-          name: BewlyBewly Zip
-          path: extension
-
-      - name: Build Extension-Firefox
-        run: pnpm build-firefox
-
-      - name: Upload Zip
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == 'lts/*' && github.ref_name == 'main' }}
-        uses: actions/upload-artifact@v4.3.1
-        with:
-          name: BewlyBewly-Firefox Zip
-          path: extension-firefox
+    steps: # 步骤
+    # 以下步骤已注释，暂不执行实际动作
+    #       - uses: actions/checkout@v4 # 拉取代码
+    #       - name: Set node ${{ matrix.node }} # 设置Node版本
+    #         uses: actions/setup-node@v4
+    #         with:
+    #           node-version: ${{ matrix.node }} # 指定Node版本
+    #       - name: Install pnpm # 安装pnpm
+    #         uses: pnpm/action-setup@v4
+    #         with:
+    #           run_install: |
+    #             - args: [--frozen-lockfile] # 严格锁定依赖
+    #       - name: Lint # 代码规范检查
+    #         if: ${{ matrix.os == 'ubuntu-latest' }} # 只在Ubuntu下执行
+    #         run: pnpm run lint
+    #       - name: Type check # 类型检查
+    #         if: ${{ matrix.os == 'ubuntu-latest' }}
+    #         run: pnpm run typecheck
+    #       - name: Test # 单元测试
+    #         run: pnpm run test
+    #       - name: Knip # 检查无用依赖
+    #         if: ${{ matrix.os == 'ubuntu-latest' }}
+    #         run: pnpm run knip
+    #       - name: Build Extension # 构建扩展
+    #         run: pnpm build
+    #       - name: Upload Zip # 上传构建产物（主分支且LTS最新Node且Ubuntu）
+    #         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == 'lts/*' && github.ref_name == 'main' }}
+    #         uses: actions/upload-artifact@v4.3.1
+    #         with:
+    #           name: BewlyBewly Zip # 产物名
+    #           path: extension # 产物路径
+    #       - name: Build Extension-Firefox # 构建Firefox扩展
+    #         run: pnpm build-firefox
+    #       - name: Upload Zip # 上传Firefox构建产物
+    #         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == 'lts/*' && github.ref_name == 'main' }}
+    #         uses: actions/upload-artifact@v4.3.1
+    #         with:
+    #           name: BewlyBewly-Firefox Zip
+    #           path: extension-firefox

@@ -37,6 +37,9 @@ const noMoreContent = ref<boolean>(false)
 const { handleReachBottom, handlePageRefresh, haveScrollbar } = useBewlyApp()
 const { filterVideos } = useFilterAdvance('trending-filter')
 
+// 提供页面类型给子组件
+provide('pageType', 'trending')
+
 onMounted(() => {
   initData()
   initPageAction()

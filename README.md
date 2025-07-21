@@ -1,10 +1,10 @@
 # BewlyBewly
-# 克隆自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 0.41.1 所有赞助链接指向原作者 侵删
 
-收到了github的第一颗星星（傲娇清嗓） 于是把界面弄的更拟人了些？
 ### 添加 视频关键词或用户uid，阻挡不想看的内容 [【Releases】](https://github.com/sugarbomb/BlyBly--morefilter/releases)
 
 ![image](https://github.com/user-attachments/assets/7834cf70-a49c-4fc2-8e1c-a5864fc5b523)
+
+# 克隆自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 0.41.1 所有赞助链接指向原作者 侵删
 
 English | [官话 - 简体中文](README-cmn_CN.md) | [官話 - 繁體中文](README-cmn_TW.md) | [廣東話](README-jyut.md)
 

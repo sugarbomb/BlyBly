@@ -25,6 +25,9 @@ const { t } = useI18n()
 const { handleBackToTop, handlePageRefresh } = useBewlyApp()
 const { filterVideos, filterPgcList, options: filterOptions } = useFilterAdvance('ranking-filter')
 
+// 提供页面类型给子组件
+provide('pageType', 'ranking')
+
 const gridClass = computed((): string => {
   if (props.gridLayout === 'adaptive') {
     // eslint-disable-next-line ts/no-use-before-define

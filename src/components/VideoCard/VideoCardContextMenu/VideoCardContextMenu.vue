@@ -3,6 +3,7 @@ import type { CSSProperties } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useBewlyApp } from '~/composables/useAppProvider'
+import { useFilterAdvance } from '~/composables/useFilterAdvance'
 import { Type as ThreePointV2Type } from '~/models/video/appForYou'
 import { openLinkToNewTab } from '~/utils/main'
 import { openLinkInBackground } from '~/utils/tabs'
@@ -21,6 +22,7 @@ const emit = defineEmits<{
 }>()
 
 const getVideoType = inject<() => string>('getVideoType')!
+const pageType = inject<string>('pageType', 'unknown')
 
 const videoOptions = reactive<{ id: number, name: string }[]>([
   { id: 1, name: '不感兴趣' },
@@ -32,6 +34,20 @@ const showContextMenu = ref<boolean>(false)
 const showDislikeDialog = ref<boolean>(false)
 const showPipWindow = ref<boolean>(false)
 const { openIframeDrawer } = useBewlyApp()
+const { addRule } = useFilterAdvance()
+
+function getFilterStorageKey() {
+  // 通过pageType判断当前页面
+  if (pageType === 'trending') {
+    return 'trending-filter'
+  }
+  if (pageType === 'ranking') {
+    return 'ranking-filter'
+  }
+
+  // 如果无法判断页面类型，返回undefined使用默认存储
+  return undefined
+}
 
 enum VideoOption {
   OpenInNewTab,
@@ -161,6 +177,29 @@ function handleRemoved(selectedOpt?: { dislikeReasonId: number }) {
   emit('removed', selectedOpt)
   handleClose()
 }
+
+function handleBlockUser() {
+  let mid: number | undefined
+  if (props.video?.author) {
+    if (Array.isArray(props.video.author)) {
+      // 多作者暂不处理
+      mid = undefined
+    }
+    else {
+      mid = props.video.author.mid
+    }
+  }
+  if (mid) {
+    const storageKey = getFilterStorageKey()
+    if (storageKey) {
+      useFilterAdvance(storageKey).addRule({ type: 'uid', value: String(mid), enabled: true })
+    }
+    else {
+      addRule({ type: 'uid', value: String(mid), enabled: true })
+    }
+  }
+  handleClose()
+}
 </script>
 
 <template>
@@ -176,6 +215,16 @@ function handleRemoved(selectedOpt?: { dislikeReasonId: number }) {
         z-10
       >
         <ul flex="~ col gap-1">
+          <!-- 屏蔽UP主菜单项 -->
+          <li
+            v-if="!Array.isArray(props.video?.author) && props.video?.author?.mid"
+            class="context-menu-item"
+            @click="handleBlockUser"
+          >
+            <i class="item-icon" i-solar:user-block-bold-duotone />
+            屏蔽此UP主
+          </li>
+          <!-- 原有菜单项 -->
           <template v-if="getVideoType() === 'appRcmd'">
             <template v-for="option in video.threePointV2" :key="option.type">
               <li
