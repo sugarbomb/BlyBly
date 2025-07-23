@@ -17,7 +17,7 @@ const handleThrottledBackToTop = useThrottleFn((targetScrollTop: number = 0) => 
 
 const activatedPage = ref<HomeSubPage>(HomeSubPage.ForYou)
 const pages = {
-  [HomeSubPage.ForYou]: defineAsyncComponent(() => import('./components/ForYou.vue')),
+  [HomeSubPage.ForYou]: defineAsyncComponent(() => import('./components/ForYouBlyBly.vue')),
   [HomeSubPage.Following]: defineAsyncComponent(() => import('./components/Following.vue')),
   [HomeSubPage.SubscribedSeries]: defineAsyncComponent(() => import('./components/SubscribedSeries.vue')),
   [HomeSubPage.Trending]: defineAsyncComponent(() => import('./components/Trending.vue')),
@@ -51,10 +51,12 @@ function computeTabs(): HomeTab[] {
   const targetTabs: HomeTab[] = []
 
   for (const tab of settings.value.homePageTabVisibilityList) {
-    tab.visible && targetTabs.push({
-      i18nKey: (mainStore.homeTabs.find(defaultTab => defaultTab.page === tab.page) || {})?.i18nKey || tab.page,
-      page: tab.page,
-    })
+    if (tab.visible) {
+      targetTabs.push({
+        i18nKey: (mainStore.homeTabs.find(defaultTab => defaultTab.page === tab.page) || {})?.i18nKey || tab.page,
+        page: tab.page,
+      })
+    }
   }
 
   return targetTabs
@@ -111,7 +113,9 @@ function handleChangeTab(tab: HomeTab) {
     else {
       if (tabContentLoading.value)
         return
-      tabPageRef.value && tabPageRef.value.initData()
+      if (tabPageRef.value) {
+        tabPageRef.value.initData()
+      }
     }
     return
   }

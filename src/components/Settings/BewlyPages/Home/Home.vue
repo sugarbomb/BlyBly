@@ -10,8 +10,6 @@ import { getTVLoginQRCode, pollTVLoginQRCode, revokeAccessKey } from '~/utils/au
 import SettingsItem from '../../components/SettingsItem.vue'
 import SettingsItemGroup from '../../components/SettingsItemGroup.vue'
 import SearchPage from '../SearchPage/SearchPage.vue'
-import FilterByTitleTable from './components/FilterByTitleTable.vue'
-import FilterByUserTable from './components/FilterByUserTable.vue'
 
 const mainStore = useMainStore()
 const toast = useToast()
@@ -93,71 +91,6 @@ function pollLoginQRCode() {
 function handleCloseQRCodeDialog() {
   clearInterval(pollLoginQRCodeInterval.value)
   showQRCodeDialog.value = false
-}
-
-function handleExport(filterType: 'title' | 'user') {
-  const filters = filterType === 'title' ? settings.value.filterByTitle : settings.value.filterByUser
-  const jsonString = JSON.stringify(filters, null, 2) // Pretty print JSON
-  const blob = new Blob([jsonString], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `filter-by-${filterType}.json`
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-function handleImport(filterType: 'title' | 'user') {
-  const input = document.createElement('input')
-  input.type = 'file'
-  input.accept = '.json'
-  input.onchange = async (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0]
-    if (!file)
-      return
-
-    try {
-      const fileContent = await file.text()
-      const importedFilters = JSON.parse(fileContent) as { keyword: string, remark: string }[]
-
-      if (!Array.isArray(importedFilters) || !importedFilters.every(filter => 'keyword' in filter && 'remark' in filter)) {
-        throw new Error('Invalid file format')
-      }
-
-      if (filterType === 'title') {
-        settings.value.filterByTitle = importedFilters
-      }
-      else {
-        settings.value.filterByUser = importedFilters
-      }
-      // toast.success(`${filterType} filters imported successfully`)
-    }
-    catch (error) {
-      console.error(`Error importing filter by ${filterType}:`, error)
-      toast.error(`Failed to import ${filterType} filters: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-    finally {
-      input.remove()
-    }
-  }
-  input.click()
-}
-
-// Update the existing functions to use the new generic ones
-function handleExportFilterByTitle() {
-  handleExport('title')
-}
-
-function handleImportFilterByTitle() {
-  handleImport('title')
-}
-
-function handleExportFilterByUser() {
-  handleExport('user')
-}
-
-function handleImportFilterByUser() {
-  handleImport('user')
 }
 
 function resetHomeTabs() {
@@ -267,103 +200,6 @@ function handleToggleHomeTab(tab: any) {
           </Button>
         </div>
       </Dialog>
-    </SettingsItemGroup>
-
-    <SettingsItemGroup
-      :title="$t('settings.group_recommendation_filters')"
-      :desc="$t('settings.group_recommendation_filters_desc')"
-    >
-      <SettingsItem :title="$t('settings.disable_filters_for_followed_users')" :desc="$t('settings.disable_filters_for_followed_users_desc')">
-        <Radio v-model="settings.disableFilterForFollowedUser" />
-      </SettingsItem>
-      <SettingsItem :title="$t('settings.filter_out_vertical_videos')">
-        <Radio v-model="settings.filterOutVerticalVideos" />
-      </SettingsItem>
-      <SettingsItem :title="$t('settings.filter_by_view_count')" :desc="$t('settings.filter_by_view_count_desc')">
-        <div flex="~ justify-end" w-full>
-          <Input
-            v-if="settings.enableFilterByViewCount"
-            v-model="settings.filterByViewCount" type="number" :min="1" :max="1000000"
-            flex-1
-          >
-            <template #suffix>
-              {{ $t('settings.filter_by_view_count_unit') }}
-            </template>
-          </Input>
-          <Radio v-model="settings.enableFilterByViewCount" />
-        </div>
-      </SettingsItem>
-      <SettingsItem :title="$t('settings.filter_by_duration')" :desc="$t('settings.filter_by_duration_desc')">
-        <div flex="~ justify-end" w-full>
-          <Input
-            v-if="settings.enableFilterByDuration"
-            v-model="settings.filterByDuration" type="number" :min="1" :max="1000000"
-            flex-1
-          >
-            <template #suffix>
-              {{ $t('settings.filter_by_duration_unit') }}
-            </template>
-          </Input>
-          <Radio v-model="settings.enableFilterByDuration" />
-        </div>
-      </SettingsItem>
-
-      <div grid="~ lg:gap-4 lg:cols-2 cols-1" lg:border="t-1 $bew-border-color">
-        <SettingsItem
-          class="unrestricted-width-settings-item"
-          :title="$t('settings.filter_by_title')"
-          border="lg:none t-1 $bew-border-color"
-        >
-          <Radio v-model="settings.enableFilterByTitle" />
-          <template v-if="settings.enableFilterByTitle" #bottom>
-            <div text="$bew-text-2 sm" mb-2 v-html="$t('settings.filter_by_title_desc')" />
-            <div flex="~ gap-2" mb-2>
-              <Button type="secondary" size="small" @click="handleImportFilterByTitle">
-                <template #left>
-                  <div i-uil:import />
-                </template>
-                <input type="file" accept=".json" hidden>
-                {{ $t('common.operation.import') }}
-              </Button>
-              <Button type="secondary" size="small" @click="handleExportFilterByTitle">
-                <template #left>
-                  <div i-uil:export />
-                </template>
-                {{ $t('common.operation.export') }}
-              </Button>
-            </div>
-
-            <FilterByTitleTable />
-          </template>
-        </SettingsItem>
-        <SettingsItem
-          class="unrestricted-width-settings-item"
-          :title="$t('settings.filter_by_user')"
-          border="lg:none b-1 $bew-border-color"
-        >
-          <Radio v-model="settings.enableFilterByUser" />
-          <template v-if="settings.enableFilterByUser" #bottom>
-            <div text="$bew-text-2 sm" mb-2 v-html="$t('settings.filter_by_user_desc')" />
-            <div flex="~ gap-2" mb-2>
-              <Button type="secondary" size="small" @click="handleImportFilterByUser">
-                <template #left>
-                  <div i-uil:import />
-                </template>
-                <input type="file" accept=".json" hidden>
-                {{ $t('common.operation.import') }}
-              </Button>
-              <Button type="secondary" size="small" @click="handleExportFilterByUser">
-                <template #left>
-                  <div i-uil:export />
-                </template>
-                {{ $t('common.operation.export') }}
-              </Button>
-            </div>
-
-            <FilterByUserTable />
-          </template>
-        </SettingsItem>
-      </div>
     </SettingsItemGroup>
 
     <SettingsItemGroup :title="$t('settings.group_following')">

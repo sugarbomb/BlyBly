@@ -37,6 +37,23 @@ import FilterTemplate from './FilterTemplate.vue'
         </template>
       </SettingsItem>
     </SettingsItemGroup>
+
+    <div class="my-8 border-b border-$bew-border-color" />
+
+    <SettingsItemGroup title="" desc="">
+      <SettingsItem title="" desc="">
+        <template #bottom>
+          <FilterTemplate
+            title="推荐页内容过滤"
+            description="过滤推荐页中不感兴趣的内容"
+            storage-key="foryou-filter"
+            placeholder="输入要过滤的内容"
+            :max-visible-rules="3"
+            :default-collapsed="true"
+          />
+        </template>
+      </SettingsItem>
+    </SettingsItemGroup>
   </div>
 </template>
 

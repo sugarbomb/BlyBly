@@ -44,7 +44,9 @@ function getFilterStorageKey() {
   if (pageType === 'ranking') {
     return 'ranking-filter'
   }
-
+  if (pageType === 'rcmd' || pageType === 'appRcmd') {
+    return 'foryou-filter'
+  }
   // 如果无法判断页面类型，返回undefined使用默认存储
   return undefined
 }
