@@ -1,26 +1,26 @@
 # 名称：Release 发布流程
-name: Release # 工作流名称
+# name: Release # 工作流名称
 
-permissions: # 权限声明
-  contents: write # 允许写入仓库内容
-  id-token: write # 允许写入ID令牌
+# permissions: # 权限声明
+#   contents: write # 允许写入仓库内容
+#   id-token: write # 允许写入ID令牌
 
-on: # 触发条件
-  workflow_dispatch: # 手动触发
-    inputs:
-      increment: # 版本号递增类型
-        required: true # 必填
-        default: patch # 默认patch
-        type: choice # 选项类型
-        options:
-          - major # 主版本
-          - minor # 次版本
-          - patch # 修订号
+# on: # 触发条件
+#   workflow_dispatch: # 手动触发
+#     inputs:
+#       increment: # 版本号递增类型
+#         required: true # 必填
+#         default: patch # 默认patch
+#         type: choice # 选项类型
+#         options:
+#           - major # 主版本
+#           - minor # 次版本
+#           - patch # 修订号
 
-jobs: # 工作任务定义
-  release: # 任务名
-    runs-on: ubuntu-latest # 运行环境
-    steps: # 步骤
+# jobs: # 工作任务定义
+#   release: # 任务名
+#     runs-on: ubuntu-latest # 运行环境
+#     steps: # 步骤
     # 以下步骤已注释，暂不执行实际动作
     #     - uses: actions/checkout@v4 # 拉取代码
     #       with:

@@ -20,7 +20,7 @@ const props = withDefaults(defineProps<Props>(), {
   defaultCollapsed: false,
 })
 
-const { options, addRule, removeRule, toggleRule, exportToSharedSpace, importFromSharedSpace, clearAllRules } = useFilterAdvance(props.storageKey)
+const { options, addRule, removeRule, toggleRule, exportToSharedSpace, importFromSharedSpace, exportToFile, importFromFile, clearAllRules } = useFilterAdvance(props.storageKey)
 
 const newRule = ref<Omit<FilterRule, 'id'>>({
   type: 'title',
@@ -91,6 +91,38 @@ function handleExportShared() {
 function handleImportShared() {
   importFromSharedSpace()
 }
+
+const fileInputRef = ref<HTMLInputElement>()
+
+function handleExportFile() {
+  exportToFile()
+}
+
+function handleImportFile() {
+  if (fileInputRef.value) {
+    fileInputRef.value.click()
+  }
+}
+
+function handleFileChange(event: Event) {
+  const file = (event.target as HTMLInputElement)?.files?.[0]
+  if (file) {
+    importFromFile(file).then((result) => {
+      if (result.success) {
+        // 可以添加成功提示
+        // console.log(`导入成功: ${result.imported} 条规则, 跳过: ${result.skipped} 条`)
+      }
+      else {
+        // 可以添加错误提示
+        console.error(`导入失败: ${result.error}`)
+      }
+    })
+    // 清空文件输入，允许重复选择同一文件
+    if (fileInputRef.value) {
+      fileInputRef.value.value = ''
+    }
+  }
+}
 </script>
 
 <template>
@@ -159,6 +191,29 @@ function handleImportShared() {
             <i class="i-mingcute:import-line mr-1" />
             粘贴
           </button>
+          <button
+            :disabled="options.rules.length === 0"
+            class="px-2 py-1 text-xs rounded bg-$bew-fill-2 hover:bg-$bew-fill-3 text-$bew-text-3 hover:text-$bew-text-2 transition-colors disabled:opacity-50"
+            @click="handleExportFile"
+          >
+            <i class="i-mingcute:download-line mr-1" />
+            导出
+          </button>
+          <button
+            class="px-2 py-1 text-xs rounded bg-$bew-fill-2 hover:bg-$bew-fill-3 text-$bew-text-3 hover:text-$bew-text-2 transition-colors"
+            @click="handleImportFile"
+          >
+            <i class="i-mingcute:upload-line mr-1" />
+            导入
+          </button>
+          <!-- 隐藏的文件输入 -->
+          <input
+            ref="fileInputRef"
+            type="file"
+            accept=".json"
+            style="display: none"
+            @change="handleFileChange"
+          >
           <button
             :disabled="options.rules.length === 0"
             class="px-2 py-1 text-xs rounded bg-$bew-fill-2 hover:bg-$bew-fill-3 text-$bew-text-3 hover:text-$bew-text-2 transition-colors disabled:opacity-50"

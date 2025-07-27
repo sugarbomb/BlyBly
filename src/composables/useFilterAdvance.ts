@@ -142,6 +142,96 @@ export function useFilterAdvance(storageKey: string = 'bewlybewly-filter-advance
   }
 
   /**
+   * 导出规则到文件
+   */
+  const exportToFile = () => {
+    const exportData = {
+      type: 'bewlybewly-filter-rules',
+      version: '1.0',
+      timestamp: Date.now(),
+      rules: options.value.rules.map(rule => ({
+        type: rule.type,
+        value: rule.value,
+        enabled: rule.enabled,
+      })),
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `bewlybewly-filter-rules-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    return { success: true, count: options.value.rules.length }
+  }
+
+  /**
+   * 从文件导入规则
+   */
+  const importFromFile = (file: File): Promise<{ success: boolean, imported?: number, skipped?: number, error?: string }> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const text = e.target?.result as string
+          const importData = JSON.parse(text)
+
+          if (importData.type !== 'bewlybewly-filter-rules' || !Array.isArray(importData.rules)) {
+            resolve({ success: false, error: '无效的文件格式' })
+            return
+          }
+
+          const validRules = importData.rules.filter((rule: any) => {
+            return rule.type && ['title', 'username', 'uid'].includes(rule.type)
+              && rule.value && typeof rule.value === 'string'
+              && typeof rule.enabled === 'boolean'
+          })
+
+          if (validRules.length === 0) {
+            resolve({ success: false, error: '文件中没有找到有效的规则' })
+            return
+          }
+
+          // 过滤重复 type+value
+          const existingSet = new Set(options.value.rules.map(r => `${r.type}::${r.value}`))
+          let added = 0
+          validRules.forEach((rule: any) => {
+            const key = `${rule.type}::${rule.value}`
+            if (!existingSet.has(key)) {
+              addRule({
+                type: rule.type,
+                value: rule.value,
+                enabled: rule.enabled,
+              })
+              existingSet.add(key)
+              added++
+            }
+          })
+
+          resolve({
+            success: true,
+            imported: added,
+            skipped: validRules.length - added,
+          })
+        }
+        catch {
+          resolve({ success: false, error: '解析文件失败' })
+        }
+      }
+      reader.onerror = () => {
+        resolve({ success: false, error: '读取文件失败' })
+      }
+      reader.readAsText(file)
+    })
+  }
+
+  /**
    * 清空共享空间
    */
   const clearSharedSpace = () => {
@@ -233,6 +323,8 @@ export function useFilterAdvance(storageKey: string = 'bewlybewly-filter-advance
     toggleEnabled,
     exportToSharedSpace,
     importFromSharedSpace,
+    exportToFile,
+    importFromFile,
     clearSharedSpace,
     clearAllRules,
     filterVideos,
