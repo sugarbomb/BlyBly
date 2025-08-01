@@ -1,15 +1,20 @@
 # BewlyBewly
 
-### 新增功能 阻挡屏蔽[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 热门和排行榜中的相关内容
+### 屏蔽并阻挡[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 插件中热门、排行榜、个性推荐板块的内容
 
 <img width="972" height="74" alt="image" src="https://github.com/user-attachments/assets/ecf1cea6-9352-4e9b-a6dc-498827241a06" />
 
-#### 规则设置，如 用户名、标题名、用户id
+  
+#### 设置规则
 <img width="1227" height="489" alt="image" src="https://github.com/user-attachments/assets/7e40936a-43f0-4aef-a783-d0a03cdbeece" />
 
-#### 这是Chromium自用版本，适用chrome/Edge等。需要手动加载插件，在这之前，请先下载并解压 [extension.rar](https://github.com/sugarbomb/BlyBly--morefilter/releases) 获得文件夹 
+- 直接添加
+> <img width="1212" height="324" alt="image" src="https://github.com/user-attachments/assets/4c97cbf5-3cc0-43ab-b46c-2188b7dae27f" />
+> 记得先在设置面板启用过滤
+#### ⚠ 这是自用版本，没有经过严格测试，如介意 请勿使用，适用chrome/Edge等Chromium内核，并且需要手动加载插件
 <img width="1571" height="149" alt="image" src="https://github.com/user-attachments/assets/42acb468-3c10-4567-910b-64767dad8c00" />
 
+在这之前，请先下载并解压 [extension.rar](https://github.com/sugarbomb/BlyBly--morefilter/releases) 获得文件夹 
 
 
 # 克隆自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 0.41.1 所有赞助链接指向原作者 侵删
