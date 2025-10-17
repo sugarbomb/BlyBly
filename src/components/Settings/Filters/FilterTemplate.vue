@@ -196,14 +196,14 @@ function handleFileChange(event: Event) {
             class="px-2 py-1 text-xs rounded bg-$bew-fill-2 hover:bg-$bew-fill-3 text-$bew-text-3 hover:text-$bew-text-2 transition-colors disabled:opacity-50"
             @click="handleExportFile"
           >
-            <i class="i-mingcute:download-line mr-1" />
+            <i class="i-mingcute:upload-line mr-1" />
             导出
           </button>
           <button
             class="px-2 py-1 text-xs rounded bg-$bew-fill-2 hover:bg-$bew-fill-3 text-$bew-text-3 hover:text-$bew-text-2 transition-colors"
             @click="handleImportFile"
           >
-            <i class="i-mingcute:upload-line mr-1" />
+            <i class="i-mingcute:download-line mr-1" />
             导入
           </button>
           <!-- 隐藏的文件输入 -->

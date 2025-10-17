@@ -1,27 +1,23 @@
-# BewlyBewly
+# BlyBly
 
-### 屏蔽并阻挡[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 插件中热门、排行榜、个性推荐板块的内容
+### 阻挡 热门、排行榜、个性推荐 板块中不感兴趣的内容
 
 <img width="972" height="74" alt="image" src="https://github.com/user-attachments/assets/ecf1cea6-9352-4e9b-a6dc-498827241a06" />
 
-  
-#### 设置规则
+#### 设置屏蔽规则，打开过滤，心情美美哒😊 ✨
 <img width="1227" height="489" alt="image" src="https://github.com/user-attachments/assets/7e40936a-43f0-4aef-a783-d0a03cdbeece" />
 
-- 直接添加
+#### 快捷添加方式
 > <img width="1212" height="324" alt="image" src="https://github.com/user-attachments/assets/4c97cbf5-3cc0-43ab-b46c-2188b7dae27f" />
-> 记得先在设置面板启用过滤
-#### ⚠ 这是自用版本，没有经过严格测试，如介意 请勿使用，适用chrome/Edge等Chromium内核，并且需要手动加载插件
+
+#### 插件适用chrome/Edge等Chromium系浏览器，需要手动加载 在这之前，请先下载并解压 [extension.rar](https://github.com/sugarbomb/BlyBly--morefilter/releases) 获得文件夹
 <img width="1571" height="149" alt="image" src="https://github.com/user-attachments/assets/42acb468-3c10-4567-910b-64767dad8c00" />
 
-在这之前，请先下载并解压 [extension.rar](https://github.com/sugarbomb/BlyBly--morefilter/releases) 获得文件夹 
+## 本项目为学习交流目的， 所有赞助以及链接均保存自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly)  侵删。
 
-
-# 克隆自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly) 0.41.1 所有赞助链接指向原作者 侵删
+## 以下为原项目介绍：
 
 English | [官话 - 简体中文](README-cmn_CN.md) | [官話 - 繁體中文](README-cmn_TW.md) | [廣東話](README-jyut.md)
-
-
 
 <p align="center" style="margin-bottom: 0px !important;">
 <img width="300" alt="BewlyBewly icon" src="https://cdn.jsdelivr.net/gh/BewlyBewly/Imgs/logos/bewlybewly-vtuber-logo.png"><br/>
