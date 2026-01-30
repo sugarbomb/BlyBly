@@ -15,19 +15,43 @@ const mainStore = useMainStore()
 const { handleBackToTop, scrollbarRef } = useBewlyApp()
 const handleThrottledBackToTop = useThrottleFn((targetScrollTop: number = 0) => handleBackToTop(targetScrollTop), 1000)
 
-const activatedPage = ref<HomeSubPage>(HomeSubPage.ForYou)
-const pages = {
-  [HomeSubPage.ForYou]: defineAsyncComponent(() => import('./components/ForYouBlyBly.vue')),
-  [HomeSubPage.Following]: defineAsyncComponent(() => import('./components/Following.vue')),
-  [HomeSubPage.SubscribedSeries]: defineAsyncComponent(() => import('./components/SubscribedSeries.vue')),
-  [HomeSubPage.Trending]: defineAsyncComponent(() => import('./components/Trending.vue')),
+const activatedPage = ref<HomeSubPage>(HomeSubPage.Ranking)
+// Split the page map into 3 groups to keep related sub-pages together.
+// 1) ranking/trending imports unchanged
+const pagesRankTrending = {
   [HomeSubPage.Ranking]: defineAsyncComponent(() => import('./components/Ranking.vue')),
+  [HomeSubPage.Trending]: defineAsyncComponent(() => import('./components/Trending.vue')),
+
+} as const
+
+// 2) following/live
+const pagesFollowLive = {
+  [HomeSubPage.Following]: defineAsyncComponent(() => import('./components/Following.vue')),
   [HomeSubPage.Live]: defineAsyncComponent(() => import('./components/Live.vue')),
-}
+} as const
+
+// 3) subscribed/foryou
+const pagesSubForYou = {
+  [HomeSubPage.ForYou]: defineAsyncComponent(() => import('./components/ForYouBlyBly.vue')),
+  [HomeSubPage.SubscribedSeries]: defineAsyncComponent(() => import('./components/SubscribedSeries.vue')),
+} as const
+
+const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.Trending])
+const groupFollowLive = new Set<HomeSubPage>([HomeSubPage.Following, HomeSubPage.Live])
+const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.SubscribedSeries, HomeSubPage.ForYou])
+
+const pages = {
+  ...pagesRankTrending,
+  ...pagesFollowLive,
+  ...pagesSubForYou,
+} as const
 const showSearchPageMode = ref<boolean>(false)
 const shouldMoveTabsUp = ref<boolean>(false)
 const tabContentLoading = ref<boolean>(false)
-const currentTabs = ref<HomeTab[]>([])
+const allTabs = ref<HomeTab[]>([])
+const tabsRankTrending = ref<HomeTab[]>([])
+const tabsFollowLive = ref<HomeTab[]>([])
+const tabsSubForYou = ref<HomeTab[]>([])
 const tabPageRef = ref()
 const topBarVisibility = ref<boolean>(false)
 const gridLayoutIcons = computed((): GridLayoutIcon[] => {
@@ -40,7 +64,7 @@ const gridLayoutIcons = computed((): GridLayoutIcon[] => {
 
 // use Json stringify to watch the changes of the array item properties
 watch(() => JSON.stringify(settings.value.homePageTabVisibilityList), () => {
-  currentTabs.value = computeTabs()
+  computeTabs()
 })
 
 function computeTabs(): HomeTab[] {
@@ -48,19 +72,48 @@ function computeTabs(): HomeTab[] {
   if (!settings.value.homePageTabVisibilityList.length || settings.value.homePageTabVisibilityList.length !== mainStore.homeTabs.length)
     settings.value.homePageTabVisibilityList = mainStore.homeTabs.map(tab => ({ page: tab.page, visible: true }))
 
-  const targetTabs: HomeTab[] = []
+  const tabI18nKeyByPage = new Map(mainStore.homeTabs.map(t => [t.page, t.i18nKey]))
 
+  const targetTabs: HomeTab[] = []
+  const targetTabsRankTrending: HomeTab[] = []
+  const targetTabsFollowLive: HomeTab[] = []
+  const targetTabsSubForYou: HomeTab[] = []
+
+  // Keep the order from `homePageTabVisibilityList` (user-configurable), but split into 3 visual groups.
   for (const tab of settings.value.homePageTabVisibilityList) {
-    if (tab.visible) {
-      targetTabs.push({
-        i18nKey: (mainStore.homeTabs.find(defaultTab => defaultTab.page === tab.page) || {})?.i18nKey || tab.page,
-        page: tab.page,
-      })
+    if (!tab.visible)
+      continue
+
+    const tabItem: HomeTab = {
+      i18nKey: tabI18nKeyByPage.get(tab.page) || tab.page,
+      page: tab.page,
     }
+    targetTabs.push(tabItem)
+
+    if (groupRankTrending.has(tabItem.page))
+      targetTabsRankTrending.push(tabItem)
+    else if (groupFollowLive.has(tabItem.page))
+      targetTabsFollowLive.push(tabItem)
+    else if (groupSubForYou.has(tabItem.page))
+      targetTabsSubForYou.push(tabItem)
+  }
+
+  allTabs.value = targetTabs
+  tabsRankTrending.value = targetTabsRankTrending
+  tabsFollowLive.value = targetTabsFollowLive
+  tabsSubForYou.value = targetTabsSubForYou
+
+  // If current page is hidden, fallback to the first visible tab.
+  if (!targetTabs.some(t => t.page === activatedPage.value) && targetTabs.length) {
+    activatedPage.value = tabsRankTrending.value[0]?.page
+      ?? tabsFollowLive.value[0]?.page
+      ?? tabsSubForYou.value[0]?.page
   }
 
   return targetTabs
 }
+
+const visibleTabsCount = computed(() => allTabs.value.length)
 
 onMounted(() => {
   showSearchPageMode.value = true
@@ -94,8 +147,12 @@ onMounted(() => {
     }
   })
 
-  currentTabs.value = computeTabs()
-  activatedPage.value = currentTabs.value[0].page
+  computeTabs()
+  if (allTabs.value.length) {
+    activatedPage.value = tabsRankTrending.value[0]?.page
+      ?? tabsFollowLive.value[0]?.page
+      ?? tabsSubForYou.value[0]?.page
+  }
 })
 
 onUnmounted(() => {
@@ -200,47 +257,134 @@ function toggleTabContentLoading(loading: boolean) {
         ease-in-out flex="~ justify-between items-start gap-4"
         :class="{ hide: shouldMoveTabsUp }"
       >
-        <section
-          v-if="!(!settings.alwaysShowTabsOnHomePage && currentTabs.length === 1)"
-          style="backdrop-filter: var(--bew-filter-glass-1)"
-          bg="$bew-elevated" p-1
-          w="[calc(100vw-280px)]" max-w="fit"
-          h-38px rounded-full
-          text="sm"
-          shadow="[var(--bew-shadow-1),var(--bew-shadow-edge-glow-1)]"
-          box-border border="1 $bew-border-color"
+        <div
+          v-if="!(!settings.alwaysShowTabsOnHomePage && visibleTabsCount === 1)"
+          w="[calc(100vw-280px)]"
+          flex="~ gap-2 items-center wrap"
         >
-          <OverlayScrollbarsComponent
-            class="home-tabs-inside"
-            element="div" defer
-            :options="{
-              x: 'scroll',
-              y: 'hidden',
-            }"
-            h-full of-hidden
+          <section
+            v-if="tabsRankTrending.length"
+            style="backdrop-filter: var(--bew-filter-glass-1)"
+            bg="$bew-elevated" p-1
+            h-38px rounded-full
+            text="sm"
+            shadow="[var(--bew-shadow-1),var(--bew-shadow-edge-glow-1)]"
+            box-border border="1 $bew-border-color"
           >
-            <button
-              v-for="tab in currentTabs" :key="tab.page"
-              :class="{ 'tab-activated': activatedPage === tab.page }"
-              px-3 h-inherit
-              bg="transparent hover:$bew-fill-2" text="$bew-text-2 hover:$bew-text-1" fw-bold rounded-full
-              cursor-pointer duration-300
-              flex="~ gap-2 items-center shrink-0" relative
-              @click="handleChangeTab(tab)"
+            <OverlayScrollbarsComponent
+              class="home-tabs-inside"
+              element="div" defer
+              :options="{
+                x: 'scroll',
+                y: 'hidden',
+              }"
+              h-full of-hidden
             >
-              <span class="text-center">{{ $t(tab.i18nKey) }}</span>
+              <button
+                v-for="tab in tabsRankTrending" :key="tab.page"
+                :class="{ 'tab-activated': activatedPage === tab.page }"
+                px-3 h-inherit
+                bg="transparent hover:$bew-fill-2" text="$bew-text-2 hover:$bew-text-1" fw-bold rounded-full
+                cursor-pointer duration-300
+                flex="~ gap-2 items-center shrink-0" relative
+                @click="handleChangeTab(tab)"
+              >
+                <span class="text-center">{{ $t(tab.i18nKey) }}</span>
 
-              <Transition name="fade">
-                <div
-                  v-show="activatedPage === tab.page && tabContentLoading"
-                  i-svg-spinners:ring-resize
-                  pos="absolute right-4px top-4px" duration-300
-                  text="8px white"
-                />
-              </Transition>
-            </button>
-          </OverlayScrollbarsComponent>
-        </section>
+                <Transition name="fade">
+                  <div
+                    v-show="activatedPage === tab.page && tabContentLoading"
+                    i-svg-spinners:ring-resize
+                    pos="absolute right-4px top-4px" duration-300
+                    text="8px white"
+                  />
+                </Transition>
+              </button>
+            </OverlayScrollbarsComponent>
+          </section>
+
+          <section
+            v-if="tabsFollowLive.length"
+            style="backdrop-filter: var(--bew-filter-glass-1)"
+            bg="$bew-elevated" p-1
+            h-38px rounded-full
+            text="sm"
+            shadow="[var(--bew-shadow-1),var(--bew-shadow-edge-glow-1)]"
+            box-border border="1 $bew-border-color"
+          >
+            <OverlayScrollbarsComponent
+              class="home-tabs-inside"
+              element="div" defer
+              :options="{
+                x: 'scroll',
+                y: 'hidden',
+              }"
+              h-full of-hidden
+            >
+              <button
+                v-for="tab in tabsFollowLive" :key="tab.page"
+                :class="{ 'tab-activated': activatedPage === tab.page }"
+                px-3 h-inherit
+                bg="transparent hover:$bew-fill-2" text="$bew-text-2 hover:$bew-text-1" fw-bold rounded-full
+                cursor-pointer duration-300
+                flex="~ gap-2 items-center shrink-0" relative
+                @click="handleChangeTab(tab)"
+              >
+                <span class="text-center">{{ $t(tab.i18nKey) }}</span>
+
+                <Transition name="fade">
+                  <div
+                    v-show="activatedPage === tab.page && tabContentLoading"
+                    i-svg-spinners:ring-resize
+                    pos="absolute right-4px top-4px" duration-300
+                    text="8px white"
+                  />
+                </Transition>
+              </button>
+            </OverlayScrollbarsComponent>
+          </section>
+
+          <section
+            v-if="tabsSubForYou.length"
+            style="backdrop-filter: var(--bew-filter-glass-1)"
+            bg="$bew-elevated" p-1
+            h-38px rounded-full
+            text="sm"
+            shadow="[var(--bew-shadow-1),var(--bew-shadow-edge-glow-1)]"
+            box-border border="1 $bew-border-color"
+          >
+            <OverlayScrollbarsComponent
+              class="home-tabs-inside"
+              element="div" defer
+              :options="{
+                x: 'scroll',
+                y: 'hidden',
+              }"
+              h-full of-hidden
+            >
+              <button
+                v-for="tab in tabsSubForYou" :key="tab.page"
+                :class="{ 'tab-activated': activatedPage === tab.page }"
+                px-3 h-inherit
+                bg="transparent hover:$bew-fill-2" text="$bew-text-2 hover:$bew-text-1" fw-bold rounded-full
+                cursor-pointer duration-300
+                flex="~ gap-2 items-center shrink-0" relative
+                @click="handleChangeTab(tab)"
+              >
+                <span class="text-center">{{ $t(tab.i18nKey) }}</span>
+
+                <Transition name="fade">
+                  <div
+                    v-show="activatedPage === tab.page && tabContentLoading"
+                    i-svg-spinners:ring-resize
+                    pos="absolute right-4px top-4px" duration-300
+                    text="8px white"
+                  />
+                </Transition>
+              </button>
+            </OverlayScrollbarsComponent>
+          </section>
+        </div>
 
         <div
           v-if="settings.enableGridLayoutSwitcher"

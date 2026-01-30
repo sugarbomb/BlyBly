@@ -3,6 +3,7 @@ import QRCodeVue from 'qrcode.vue'
 import { useToast } from 'vue-toastification'
 import draggable from 'vuedraggable'
 
+import { HomeSubPage } from '~/contentScripts/views/Home/types'
 import { accessKey, settings } from '~/logic'
 import { useMainStore } from '~/stores/mainStore'
 import { getTVLoginQRCode, pollTVLoginQRCode, revokeAccessKey } from '~/utils/authProvider'
@@ -21,6 +22,52 @@ const pollLoginQRCodeInterval = ref<any>(null)
 const authCode = ref<string>('')
 const qrcodeMsg = ref<string>('')
 
+const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.Trending])
+const groupFollowLive = new Set<HomeSubPage>([HomeSubPage.Following, HomeSubPage.Live])
+const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.SubscribedSeries, HomeSubPage.ForYou])
+
+const homeTabsRankTrending = ref<{ page: HomeSubPage, visible: boolean }[]>([])
+const homeTabsFollowLive = ref<{ page: HomeSubPage, visible: boolean }[]>([])
+const homeTabsSubForYou = ref<{ page: HomeSubPage, visible: boolean }[]>([])
+
+function normalizeHomeTabsList(list: { page: HomeSubPage, visible: boolean }[]) {
+  const rankTrending: { page: HomeSubPage, visible: boolean }[] = []
+  const followLive: { page: HomeSubPage, visible: boolean }[] = []
+  const subForYou: { page: HomeSubPage, visible: boolean }[] = []
+
+  for (const tab of list) {
+    if (groupRankTrending.has(tab.page))
+      rankTrending.push(tab)
+    else if (groupFollowLive.has(tab.page))
+      followLive.push(tab)
+    else if (groupSubForYou.has(tab.page))
+      subForYou.push(tab)
+  }
+
+  return { rankTrending, followLive, subForYou, all: [...rankTrending, ...followLive, ...subForYou] }
+}
+
+function syncHomeTabsFromSettings() {
+  const { rankTrending, followLive, subForYou, all } = normalizeHomeTabsList(settings.value.homePageTabVisibilityList)
+
+  const current = settings.value.homePageTabVisibilityList.map(t => t.page).join('|')
+  const normalized = all.map(t => t.page).join('|')
+  if (current !== normalized)
+    settings.value.homePageTabVisibilityList = all
+
+  homeTabsRankTrending.value = rankTrending
+  homeTabsFollowLive.value = followLive
+  homeTabsSubForYou.value = subForYou
+}
+
+function rebuildHomeTabsToSettings() {
+  settings.value.homePageTabVisibilityList = [
+    ...homeTabsRankTrending.value,
+    ...homeTabsFollowLive.value,
+    ...homeTabsSubForYou.value,
+  ]
+}
+
 onDeactivated(() => {
   clearInterval(pollLoginQRCodeInterval.value)
 })
@@ -28,6 +75,12 @@ onDeactivated(() => {
 onBeforeUnmount(() => {
   clearInterval(pollLoginQRCodeInterval.value)
 })
+
+watch(
+  () => settings.value.homePageTabVisibilityList.map(t => `${t.page}:${t.visible}`).join('|'),
+  () => syncHomeTabsFromSettings(),
+  { immediate: true },
+)
 
 function changeAppRecommendationMode() {
   settings.value.recommendationMode = 'app'
@@ -94,12 +147,14 @@ function handleCloseQRCodeDialog() {
 }
 
 function resetHomeTabs() {
-  settings.value.homePageTabVisibilityList = mainStore.homeTabs.map((tab) => {
+  const resetList = mainStore.homeTabs.map((tab) => {
     return {
       page: tab.page,
       visible: true,
     }
   })
+  const { all } = normalizeHomeTabsList(resetList)
+  settings.value.homePageTabVisibilityList = all
 }
 
 function handleToggleHomeTab(tab: any) {
@@ -225,25 +280,91 @@ function handleToggleHomeTab(tab: any) {
         </template>
 
         <template #bottom>
-          <draggable
-            v-model="settings.homePageTabVisibilityList"
-            item-key="page"
-            :component-data="{ style: 'display: flex; gap: 0.5rem; flex-wrap: wrap;' }"
-          >
-            <template #item="{ element }">
-              <div
-                flex="~ gap-2 items-center" p="x-4 y-2" bg="$bew-fill-1" rounded="$bew-radius" cursor-all-scroll
-                duration-300
-                :style="{
-                  background: element.visible ? 'var(--bew-theme-color-20)' : 'var(--bew-fill-1)',
-                  color: element.visible ? 'var(--bew-theme-color)' : 'var(--bew-text-1)',
-                }"
-                @click="handleToggleHomeTab(element)"
+          <div flex="~ col gap-2" w-full>
+            <div
+              v-if="homeTabsRankTrending.length"
+              style="backdrop-filter: var(--bew-filter-glass-1)"
+              bg="$bew-elevated" p-2 rounded="$bew-radius"
+              box-border border="1 $bew-border-color"
+            >
+              <draggable
+                v-model="homeTabsRankTrending"
+                item-key="page"
+                :component-data="{ style: 'display: flex; gap: 0.5rem; flex-wrap: wrap;' }"
+                @change="rebuildHomeTabsToSettings"
               >
-                {{ $t(mainStore.homeTabs.find(tab => tab.page === element.page)?.i18nKey ?? '') }}
-              </div>
-            </template>
-          </draggable>
+                <template #item="{ element }">
+                  <div
+                    flex="~ gap-2 items-center" p="x-4 y-2" bg="$bew-fill-1" rounded="$bew-radius" cursor-all-scroll
+                    duration-300
+                    :style="{
+                      background: element.visible ? 'var(--bew-theme-color-20)' : 'var(--bew-fill-1)',
+                      color: element.visible ? 'var(--bew-theme-color)' : 'var(--bew-text-1)',
+                    }"
+                    @click="handleToggleHomeTab(element)"
+                  >
+                    {{ $t(mainStore.homeTabs.find(tab => tab.page === element.page)?.i18nKey ?? '') }}
+                  </div>
+                </template>
+              </draggable>
+            </div>
+
+            <div
+              v-if="homeTabsFollowLive.length"
+              style="backdrop-filter: var(--bew-filter-glass-1)"
+              bg="$bew-elevated" p-2 rounded="$bew-radius"
+              box-border border="1 $bew-border-color"
+            >
+              <draggable
+                v-model="homeTabsFollowLive"
+                item-key="page"
+                :component-data="{ style: 'display: flex; gap: 0.5rem; flex-wrap: wrap;' }"
+                @change="rebuildHomeTabsToSettings"
+              >
+                <template #item="{ element }">
+                  <div
+                    flex="~ gap-2 items-center" p="x-4 y-2" bg="$bew-fill-1" rounded="$bew-radius" cursor-all-scroll
+                    duration-300
+                    :style="{
+                      background: element.visible ? 'var(--bew-theme-color-20)' : 'var(--bew-fill-1)',
+                      color: element.visible ? 'var(--bew-theme-color)' : 'var(--bew-text-1)',
+                    }"
+                    @click="handleToggleHomeTab(element)"
+                  >
+                    {{ $t(mainStore.homeTabs.find(tab => tab.page === element.page)?.i18nKey ?? '') }}
+                  </div>
+                </template>
+              </draggable>
+            </div>
+
+            <div
+              v-if="homeTabsSubForYou.length"
+              style="backdrop-filter: var(--bew-filter-glass-1)"
+              bg="$bew-elevated" p-2 rounded="$bew-radius"
+              box-border border="1 $bew-border-color"
+            >
+              <draggable
+                v-model="homeTabsSubForYou"
+                item-key="page"
+                :component-data="{ style: 'display: flex; gap: 0.5rem; flex-wrap: wrap;' }"
+                @change="rebuildHomeTabsToSettings"
+              >
+                <template #item="{ element }">
+                  <div
+                    flex="~ gap-2 items-center" p="x-4 y-2" bg="$bew-fill-1" rounded="$bew-radius" cursor-all-scroll
+                    duration-300
+                    :style="{
+                      background: element.visible ? 'var(--bew-theme-color-20)' : 'var(--bew-fill-1)',
+                      color: element.visible ? 'var(--bew-theme-color)' : 'var(--bew-text-1)',
+                    }"
+                    @click="handleToggleHomeTab(element)"
+                  >
+                    {{ $t(mainStore.homeTabs.find(tab => tab.page === element.page)?.i18nKey ?? '') }}
+                  </div>
+                </template>
+              </draggable>
+            </div>
+          </div>
         </template>
       </SettingsItem>
       <SettingsItem :title="$t('settings.always_show_tabs_on_home_page')">
