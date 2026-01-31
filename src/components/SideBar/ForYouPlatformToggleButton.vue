@@ -39,8 +39,8 @@ const label = computed<string>(() => {
   if (props.modelValue === 'app')
     return 'App'
   if (props.modelValue === 'guest')
-    return 'Guest'
-  return 'Web'
+    return '游客'
+  return '网页'
 })
 
 function handleToggle() {

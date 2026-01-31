@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onKeyStroke, useWindowSize } from '@vueuse/core'
+import { useWindowSize } from '@vueuse/core'
 import type { Ref } from 'vue'
 import { computed, provide, watch } from 'vue'
 
@@ -12,10 +12,10 @@ import { LanguageType } from '~/enums/appEnums'
 import type { GridLayoutType } from '~/logic'
 import { accessKey, settings } from '~/logic'
 import type { AppForYouResult, Item as AppVideoItem } from '~/models/video/appForYou'
-import { Type as ThreePointV2Type } from '~/models/video/appForYou'
 import type { forYouResult, Item as VideoItem } from '~/models/video/forYou'
 import api from '~/utils/api'
 import { TVAppKey } from '~/utils/authProvider'
+import { getUserID } from '~/utils/main'
 import { isVerticalVideo } from '~/utils/uriParse'
 
 const props = defineProps<{
@@ -54,10 +54,10 @@ const containerRef = ref<HTMLElement>() as Ref<HTMLElement>
 const refreshIdx = ref<number>(1)
 const noMoreContent = ref<boolean>(false)
 const { handleReachBottom, handlePageRefresh, haveScrollbar } = useBewlyApp()
-const activatedAppVideo = ref<AppVideoItem | null>()
+const _activatedAppVideo = ref<AppVideoItem | null>()
 const videoCardRef = ref(null)
-const showDislikeDialog = ref<boolean>(false)
-const selectedDislikeReason = ref<number>(1)
+const _showDislikeDialog = ref<boolean>(false)
+const _selectedDislikeReason = ref<number>(1)
 const { width } = useWindowSize()
 
 type ForYouPlatformMode = 'web' | 'app' | 'guest'
@@ -124,37 +124,25 @@ function shouldFilterByForYou(item: any): boolean {
   })
 }
 
-onKeyStroke((e: KeyboardEvent) => {
-  if (showDislikeDialog.value) {
-    const dislikeReasons = activatedAppVideo.value?.three_point_v2?.find(option => option.type === ThreePointV2Type.Dislike)?.reasons || []
-
-    if (e.key >= '0' && e.key <= '9') {
-      e.preventDefault()
-      dislikeReasons.forEach((reason) => {
-        if (dislikeReasons[Number(e.key) - 1] && reason.id === dislikeReasons[Number(e.key) - 1].id)
-          selectedDislikeReason.value = reason.id
-      })
-    }
-    else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      const currentIndex = dislikeReasons.findIndex(reason => selectedDislikeReason.value === reason.id)
-      if (currentIndex > 0)
-        selectedDislikeReason.value = dislikeReasons[currentIndex - 1].id
-    }
-    else if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      const currentIndex = dislikeReasons.findIndex(reason => selectedDislikeReason.value === reason.id)
-      if (currentIndex < dislikeReasons.length - 1)
-        selectedDislikeReason.value = dislikeReasons[currentIndex + 1].id
-    }
-  }
-})
-
 onMounted(() => {
   // Delay by 0.2 seconds to obtain the `settings.value.recommendationMode` value
   // otherwise the `settings.value.recommendationMode` value will be undefined
   // i have no idea to fix that...
   setTimeout(() => {
+    // Initialize platformMode from settings
+    const isLoggedIn = !!getUserID()
+
+    if (!isLoggedIn) {
+      // If not logged in, use guest mode
+      platformMode.value = 'guest'
+    }
+    else if (settings.value.recommendationMode === 'app') {
+      platformMode.value = 'app'
+    }
+    else {
+      platformMode.value = 'web'
+    }
+
     initData()
   }, 200)
 
@@ -165,10 +153,34 @@ onActivated(() => {
   initPageAction()
 })
 
-watch(platformMode, async () => {
+watch(platformMode, async (newMode, oldMode) => {
+  // Check if user is trying to switch from guest to web/app without login
+  const isLoggedIn = !!getUserID()
+  if (!isLoggedIn && oldMode === 'guest' && (newMode === 'web' || newMode === 'app')) {
+    needToLoginFirst.value = true
+    // Revert back to guest mode
+    platformMode.value = 'guest'
+    return
+  }
+
+  // Sync platformMode to settings.recommendationMode
+  if (newMode === 'app')
+    settings.value.recommendationMode = 'app'
+  else if (newMode === 'web')
+    settings.value.recommendationMode = 'web'
+  // guest mode doesn't change settings
+
   if (isLoading.value)
     return
   await initData()
+})
+
+watch(() => settings.value.recommendationMode, (newMode) => {
+  // Sync settings.recommendationMode to platformMode
+  if (newMode === 'app')
+    platformMode.value = 'app'
+  else
+    platformMode.value = 'web'
 })
 
 watch(() => accessKey.value, async (newAccessKey) => {
@@ -272,9 +284,9 @@ async function getRecommendVideos() {
   finally {
     const filledItems = videoList.value.filter(video => video.item)
     videoList.value = filledItems
-    if (!needToLoginFirst.value) {
+    if (!needToLoginFirst.value && filledItems.length < pageSize.value) {
       await nextTick()
-      if (!await haveScrollbar() || filledItems.length < pageSize.value || filledItems.length < 1) {
+      if (!await haveScrollbar() || filledItems.length < 1) {
         getRecommendVideos()
       }
     }
@@ -337,9 +349,9 @@ async function getAppRecommendVideos() {
   finally {
     const filledItems = appVideoList.value.filter(video => video.item)
     appVideoList.value = filledItems
-    if (!needToLoginFirst.value) {
+    if (!needToLoginFirst.value && filledItems.length < pageSize.value) {
       await nextTick()
-      if (!await haveScrollbar() || filledItems.length < pageSize.value || filledItems.length < 1) {
+      if (!await haveScrollbar() || filledItems.length < 1) {
         getAppRecommendVideos()
       }
     }
