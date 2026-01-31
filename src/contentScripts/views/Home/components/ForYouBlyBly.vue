@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onKeyStroke } from '@vueuse/core'
+import { onKeyStroke, useWindowSize } from '@vueuse/core'
 import type { Ref } from 'vue'
-import { computed, provide } from 'vue'
+import { computed, provide, watch } from 'vue'
 
+import AccessKeyAuthorizeDialog from '~/components/AccessKeyAuthorizeDialog.vue'
 import ForYouRefreshRail from '~/components/SideBar/ForYouRefreshRail.vue'
 import ForYouVideoCard from '~/components/VideoCard/ForYouVideoCard.vue'
 import { useBewlyApp } from '~/composables/useAppProvider'
@@ -57,13 +58,53 @@ const activatedAppVideo = ref<AppVideoItem | null>()
 const videoCardRef = ref(null)
 const showDislikeDialog = ref<boolean>(false)
 const selectedDislikeReason = ref<number>(1)
-const PAGE_SIZE = 30
+const { width } = useWindowSize()
+
+type ForYouPlatformMode = 'web' | 'app' | 'guest'
+
+const platformMode = ref<ForYouPlatformMode>('web')
+const isAppMode = computed(() => platformMode.value === 'app')
+const isGuestMode = computed(() => platformMode.value === 'guest')
+const isWebMode = computed(() => platformMode.value === 'web')
+const isWebLikeMode = computed(() => isWebMode.value || isGuestMode.value)
+
+const showAccessKeyAuthorizeDialog = ref<boolean>(false)
+
+const pageSize = computed<number>(() => {
+  const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n))
+
+  let columns = 1
+
+  if (props.gridLayout === 'adaptive') {
+    // Keep consistent with template breakpoints: 2xl:5 xl:4 lg:3 md:2 sm:1
+    if (width.value >= 1536)
+      columns = 5
+    else if (width.value >= 1280)
+      columns = 4
+    else if (width.value >= 1024)
+      columns = 3
+    else if (width.value >= 768)
+      columns = 2
+    else
+      columns = 1
+  }
+  else if (props.gridLayout === 'twoColumns') {
+    // template: cols-1 xl:cols-2
+    columns = width.value >= 1280 ? 2 : 1
+  }
+  else {
+    columns = 1
+  }
+
+  // Aim for ~2 rows; 5->10, 4->8, 3->6, 2->4...
+  return clamp(columns * 2, 4, 10)
+})
 
 // 推荐页过滤器
 const { options: forYouFilterOptions } = useFilterAdvance('foryou-filter')
 
 // 动态 provide pageType，确保 context menu 能正确识别
-const pageType = computed(() => settings.value.recommendationMode === 'web' ? 'rcmd' : 'appRcmd')
+const pageType = computed(() => isWebLikeMode.value ? 'rcmd' : 'appRcmd')
 provide('pageType', pageType.value)
 
 function shouldFilterByForYou(item: any): boolean {
@@ -124,7 +165,26 @@ onActivated(() => {
   initPageAction()
 })
 
+watch(platformMode, async () => {
+  if (isLoading.value)
+    return
+  await initData()
+})
+
+watch(() => accessKey.value, async (newAccessKey) => {
+  if (!newAccessKey)
+    return
+  if (!isAppMode.value)
+    return
+  if (isLoading.value)
+    return
+  await initData()
+})
+
 async function initData() {
+  noMoreContent.value = false
+  needToLoginFirst.value = false
+  refreshIdx.value = 1
   videoList.value.length = 0
   appVideoList.value.length = 0
   await getData()
@@ -134,10 +194,13 @@ async function getData() {
   emit('beforeLoading')
   isLoading.value = true
   try {
-    if (settings.value.recommendationMode === 'web') {
+    if (isAppMode.value && !accessKey.value)
+      return
+
+    if (isWebLikeMode.value) {
       await getRecommendVideos()
     }
-    else {
+    if (isAppMode.value) {
       for (let i = 0; i < 3; i++)
         await getAppRecommendVideos()
     }
@@ -149,14 +212,8 @@ async function getData() {
 }
 
 function initPageAction() {
-  handleReachBottom.value = async () => {
-    if (isLoading.value)
-      return
-    if (noMoreContent.value)
-      return
-
-    getData()
-  }
+  // Disable auto-loading on scroll-to-bottom for this page.
+  handleReachBottom.value = undefined
 
   handlePageRefresh.value = async () => {
     if (isLoading.value)
@@ -169,9 +226,9 @@ function initPageAction() {
 async function getRecommendVideos() {
   try {
     let i = 0
-    if (videoList.value.length < PAGE_SIZE) {
+    if (videoList.value.length < pageSize.value) {
       const pendingVideos: VideoElement[] = Array.from({
-        length: PAGE_SIZE - videoList.value.length,
+        length: pageSize.value - videoList.value.length,
       }, () => ({
         uniqueId: `unique-id-${(videoList.value.length || 0) + i++})}`,
       } satisfies VideoElement))
@@ -179,7 +236,7 @@ async function getRecommendVideos() {
     }
     const response: forYouResult = await api.video.getRecommendVideos({
       fresh_idx: refreshIdx.value++,
-      ps: PAGE_SIZE,
+      ps: pageSize.value,
     })
     if (!response.data) {
       noMoreContent.value = true
@@ -217,7 +274,7 @@ async function getRecommendVideos() {
     videoList.value = filledItems
     if (!needToLoginFirst.value) {
       await nextTick()
-      if (!await haveScrollbar() || filledItems.length < PAGE_SIZE || filledItems.length < 1) {
+      if (!await haveScrollbar() || filledItems.length < pageSize.value || filledItems.length < 1) {
         getRecommendVideos()
       }
     }
@@ -227,9 +284,9 @@ async function getRecommendVideos() {
 async function getAppRecommendVideos() {
   try {
     let i = 0
-    if (appVideoList.value.length < PAGE_SIZE) {
+    if (appVideoList.value.length < pageSize.value) {
       const pendingVideos: AppVideoElement[] = Array.from({
-        length: PAGE_SIZE - appVideoList.value.length,
+        length: pageSize.value - appVideoList.value.length,
       }, () => ({
         uniqueId: `unique-id-${(appVideoList.value.length || 0) + i++})}`,
       } satisfies AppVideoElement))
@@ -282,7 +339,7 @@ async function getAppRecommendVideos() {
     appVideoList.value = filledItems
     if (!needToLoginFirst.value) {
       await nextTick()
-      if (!await haveScrollbar() || filledItems.length < PAGE_SIZE || filledItems.length < 1) {
+      if (!await haveScrollbar() || filledItems.length < pageSize.value || filledItems.length < 1) {
         getAppRecommendVideos()
       }
     }
@@ -298,23 +355,38 @@ defineExpose({ initData })
 
 <template>
   <div>
-    <Empty v-if="needToLoginFirst" mt-6 :description="$t('common.please_log_in_first')">
-      <Button type="primary" @click="jumpToLoginPage()">
-        {{ $t('common.login') }}
-      </Button>
-    </Empty>
+    <div flex="~ gap-40px" w-full>
+      <div v-if="isAppMode && !accessKey" flex="~ col" flex-1>
+        <div flex justify-center>
+          <Empty mt-6 :description="$t('settings.authorize_app_desc')">
+            <Button type="primary" @click="showAccessKeyAuthorizeDialog = true">
+              {{ $t('settings.btn.authorize') }}...
+            </Button>
+          </Empty>
+        </div>
+      </div>
 
-    <div
-      v-else
-      m="b-0 t-0" relative w-full h-full
-    >
-      <div flex="~ gap-40px">
+      <div v-else-if="needToLoginFirst" flex="~ col" flex-1>
+        <div flex justify-center>
+          <Empty mt-6 :description="$t('common.please_log_in_first')">
+            <Button type="primary" @click="jumpToLoginPage()">
+              {{ $t('common.login') }}
+            </Button>
+          </Empty>
+        </div>
+      </div>
+
+      <div
+        v-else
+        m="b-0 t-0" relative w-full h-full
+        flex-1
+      >
         <main
           ref="containerRef"
           w-full
           :class="gridClass"
         >
-          <template v-if="settings.recommendationMode === 'web'">
+          <template v-if="isWebLikeMode">
             <ForYouVideoCard
               v-for="video in videoList"
               :key="video.uniqueId"
@@ -342,7 +414,7 @@ defineExpose({ initData })
               :more-btn="true"
             />
           </template>
-          <template v-else>
+          <template v-if="isAppMode">
             <ForYouVideoCard
               v-for="video in appVideoList"
               :key="video.uniqueId"
@@ -377,16 +449,18 @@ defineExpose({ initData })
             <!-- :more-options="video.three_point_v2" -->
           </template>
         </main>
+      </div>
 
-        <div hidden xl:block>
-          <ForYouRefreshRail :loading="isLoading" @refresh="initData" />
-        </div>
+      <div hidden xl:block>
+        <ForYouRefreshRail v-model="platformMode" :loading="isLoading" @refresh="initData" />
       </div>
     </div>
 
     <Loading v-show="isLoading" />
     <!-- no more content -->
     <Empty v-if="noMoreContent" class="pb-4" :description="$t('common.no_more_content')" />
+
+    <AccessKeyAuthorizeDialog v-model="showAccessKeyAuthorizeDialog" />
   </div>
 </template>
 

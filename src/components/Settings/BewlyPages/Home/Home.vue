@@ -1,26 +1,20 @@
 <script lang="ts" setup>
-import QRCodeVue from 'qrcode.vue'
-import { useToast } from 'vue-toastification'
 import draggable from 'vuedraggable'
 
+import AccessKeyAuthorizeDialog from '~/components/AccessKeyAuthorizeDialog.vue'
 import { HomeSubPage } from '~/contentScripts/views/Home/types'
 import { accessKey, settings } from '~/logic'
 import { useMainStore } from '~/stores/mainStore'
-import { getTVLoginQRCode, pollTVLoginQRCode, revokeAccessKey } from '~/utils/authProvider'
+import { revokeAccessKey } from '~/utils/authProvider'
 
 import SettingsItem from '../../components/SettingsItem.vue'
 import SettingsItemGroup from '../../components/SettingsItemGroup.vue'
 import SearchPage from '../SearchPage/SearchPage.vue'
 
 const mainStore = useMainStore()
-const toast = useToast()
 
 const showSearchPageModeSharedSettings = ref<boolean>(false)
-const showQRCodeDialog = ref<boolean>(false)
-const loginQRCodeUrl = ref<string>()
-const pollLoginQRCodeInterval = ref<any>(null)
-const authCode = ref<string>('')
-const qrcodeMsg = ref<string>('')
+const showAccessKeyAuthorizeDialog = ref<boolean>(false)
 
 const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.Trending])
 const groupFollowLive = new Set<HomeSubPage>([HomeSubPage.Following, HomeSubPage.Live])
@@ -68,82 +62,14 @@ function rebuildHomeTabsToSettings() {
   ]
 }
 
-onDeactivated(() => {
-  clearInterval(pollLoginQRCodeInterval.value)
-})
-
-onBeforeUnmount(() => {
-  clearInterval(pollLoginQRCodeInterval.value)
-})
-
 watch(
   () => settings.value.homePageTabVisibilityList.map(t => `${t.page}:${t.visible}`).join('|'),
   () => syncHomeTabsFromSettings(),
   { immediate: true },
 )
 
-function changeAppRecommendationMode() {
-  settings.value.recommendationMode = 'app'
-  if (!accessKey.value)
-    handleAuthorize()
-}
-
-async function handleAuthorize() {
-  showQRCodeDialog.value = true
-  try {
-    await setLoginQRCode()
-    pollLoginQRCode()
-  }
-  catch (error) {
-    console.error(error)
-  }
-}
-
 function handleRevoke() {
   revokeAccessKey()
-}
-
-async function setLoginQRCode() {
-  const res = await getTVLoginQRCode()
-  if (res.code === 0) {
-    loginQRCodeUrl.value = res.data.url
-    authCode.value = res.data.auth_code
-  }
-}
-
-function pollLoginQRCode() {
-  clearInterval(pollLoginQRCodeInterval.value)
-
-  pollLoginQRCodeInterval.value = setInterval(async () => {
-    const pollRes = await pollTVLoginQRCode(authCode.value)
-
-    // 0：成功
-    // -3：API校验密匙错误
-    // -400：请求错误
-    // -404：啥都木有
-    // 86038：二维码已失效
-    // 86039：二维码尚未确认
-    // 86090：二维码已扫码未确认
-    if (pollRes.code !== 0)
-      qrcodeMsg.value = pollRes.message
-    if (pollRes.code === 0) {
-      showQRCodeDialog.value = false
-      accessKey.value = pollRes.data.access_token
-      clearInterval(pollLoginQRCodeInterval.value)
-      toast.success('授权成功')
-    }
-    else if (pollRes.code === 86038) {
-      await setLoginQRCode()
-    }
-    else if (pollRes.code === -3 || pollRes.code === -400 || pollRes.code === -404) {
-      toast.error(pollRes.message)
-    }
-  }, 3000)
-}
-
-function handleCloseQRCodeDialog() {
-  clearInterval(pollLoginQRCodeInterval.value)
-  showQRCodeDialog.value = false
 }
 
 function resetHomeTabs() {
@@ -169,35 +95,7 @@ function handleToggleHomeTab(tab: any) {
 <template>
   <div>
     <SettingsItemGroup :title="$t('settings.group_recommendation_mode')">
-      <SettingsItem :title="$t('settings.recommendation_mode')">
-        <template #desc>
-          <p>{{ $t('settings.recommendation_mode_desc') }}</p>
-        </template>
-        <div w-full flex rounded="$bew-radius" bg="$bew-fill-1" p-1>
-          <div
-            flex-1 py-1 cursor-pointer text-center rounded="$bew-radius"
-            :style="{
-              background: settings.recommendationMode === 'web' ? 'var(--bew-theme-color)' : '',
-              color: settings.recommendationMode === 'web' ? 'white' : '',
-            }"
-            @click="settings.recommendationMode = 'web'"
-          >
-            Web
-          </div>
-          <div
-            flex-1 py-1 cursor-pointer text-center rounded="$bew-radius"
-            :style="{
-              background: settings.recommendationMode === 'app' ? 'var(--bew-theme-color)' : '',
-              color: settings.recommendationMode === 'app' ? 'white' : '',
-            }"
-            @click="changeAppRecommendationMode"
-          >
-            App
-          </div>
-        </div>
-      </SettingsItem>
-
-      <SettingsItem v-if="settings.recommendationMode === 'app'" :title="$t('settings.authorize_app')">
+      <SettingsItem :title="$t('settings.authorize_app')">
         <template #desc>
           {{ $t('settings.authorize_app_desc') }}
           <br>
@@ -207,7 +105,7 @@ function handleToggleHomeTab(tab: any) {
         </template>
 
         <div w-full>
-          <Button v-if="!accessKey" type="primary" center block @click="handleAuthorize">
+          <Button v-if="!accessKey" type="primary" center block @click="showAccessKeyAuthorizeDialog = true">
             {{ $t('settings.btn.authorize') }}...
           </Button>
           <Button
@@ -219,42 +117,7 @@ function handleToggleHomeTab(tab: any) {
         </div>
       </SettingsItem>
 
-      <Dialog
-        v-if="showQRCodeDialog"
-        width="50%"
-        max-width="800px"
-        append-to-bewly-body
-        :show-footer="false"
-        :title="$t('settings.authorize_app')" center
-        @close="handleCloseQRCodeDialog"
-      >
-        <div flex="~ col gap-4 items-center">
-          <div>
-            <p mb-2 text-center>
-              {{ $t('settings.scan_qrcode_desc') }}
-            </p>
-            <p text="$bew-text-2 sm">
-              {{ $t('settings.authorize_app_desc') }}
-            </p>
-          </div>
-
-          <div bg-white border="white 4">
-            <QRCodeVue v-if="loginQRCodeUrl" :value="loginQRCodeUrl" :size="150" />
-            <div v-else w-150px h-150px grid="~ place-items-center">
-              <div i-svg-spinners:ring-resize />
-            </div>
-          </div>
-
-          <p>{{ qrcodeMsg }}</p>
-
-          <Button
-            type="secondary"
-            @click="setLoginQRCode"
-          >
-            {{ $t('common.operation.refresh') }}
-          </Button>
-        </div>
-      </Dialog>
+      <AccessKeyAuthorizeDialog v-model="showAccessKeyAuthorizeDialog" />
     </SettingsItemGroup>
 
     <SettingsItemGroup :title="$t('settings.group_following')">

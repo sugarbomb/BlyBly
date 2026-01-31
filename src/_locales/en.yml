@@ -16,6 +16,7 @@ common:
   minute: minute ago | minutes ago
   second: second ago | seconds ago
   please_log_in_first: Please log in first
+  authorize_success: Authorized successfully
   login: Login
   save_to_watch_later: Save to Watch later
   added: Added

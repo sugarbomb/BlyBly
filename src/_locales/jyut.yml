@@ -16,6 +16,7 @@ common:
   minute: 分鐘前
   second: 秒前
   please_log_in_first: 唔該登入先
+  authorize_success: 授權成功
   login: 登入
   save_to_watch_later: 陣間至睇
   added: 已添加

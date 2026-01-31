@@ -16,6 +16,7 @@ common:
   minute: 分钟前
   second: 秒前
   please_log_in_first: 请先登录
+  authorize_success: 授权成功
   login: 登录
   save_to_watch_later: 稍后再看
   added: 已添加

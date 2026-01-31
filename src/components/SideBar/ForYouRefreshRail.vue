@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
 import Button from '~/components/Button.vue'
 import Tooltip from '~/components/Tooltip.vue'
 
@@ -8,16 +6,17 @@ import ForYouPlatformToggleButton, { type ForYouPlatformMode } from './ForYouPla
 
 const props = withDefaults(defineProps<{
   loading: boolean
+  modelValue?: ForYouPlatformMode
   variant?: 'sidebar' | 'floating'
 }>(), {
+  modelValue: 'web',
   variant: 'sidebar',
 })
 
 const emit = defineEmits<{
   (e: 'refresh'): void
+  (e: 'update:modelValue', value: ForYouPlatformMode): void
 }>()
-
-const platformMode = ref<ForYouPlatformMode>('web')
 </script>
 
 <template>
@@ -49,7 +48,11 @@ const platformMode = ref<ForYouPlatformMode>('web')
           </Button>
         </Tooltip>
 
-        <ForYouPlatformToggleButton v-model="platformMode" :disabled="props.loading" />
+        <ForYouPlatformToggleButton
+          :model-value="props.modelValue"
+          :disabled="props.loading"
+          @update:model-value="emit('update:modelValue', $event)"
+        />
       </div>
     </div>
   </aside>
@@ -82,7 +85,11 @@ const platformMode = ref<ForYouPlatformMode>('web')
         </Button>
       </Tooltip>
 
-      <ForYouPlatformToggleButton v-model="platformMode" :disabled="props.loading" />
+      <ForYouPlatformToggleButton
+        :model-value="props.modelValue"
+        :disabled="props.loading"
+        @update:model-value="emit('update:modelValue', $event)"
+      />
     </div>
   </div>
 </template>
