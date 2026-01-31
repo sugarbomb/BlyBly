@@ -3,6 +3,8 @@ import { onKeyStroke } from '@vueuse/core'
 import type { Ref } from 'vue'
 import { computed, provide } from 'vue'
 
+import ForYouRefreshRail from '~/components/SideBar/ForYouRefreshRail.vue'
+import ForYouVideoCard from '~/components/VideoCard/ForYouVideoCard.vue'
 import { useBewlyApp } from '~/composables/useAppProvider'
 import { useFilterAdvance } from '~/composables/useFilterAdvance'
 import { LanguageType } from '~/enums/appEnums'
@@ -105,10 +107,6 @@ onKeyStroke((e: KeyboardEvent) => {
         selectedDislikeReason.value = dislikeReasons[currentIndex + 1].id
     }
   }
-})
-
-watch(() => settings.value.recommendationMode, () => {
-  initData()
 })
 
 onMounted(() => {
@@ -308,72 +306,82 @@ defineExpose({ initData })
 
     <div
       v-else
-      ref="containerRef"
       m="b-0 t-0" relative w-full h-full
-      :class="gridClass"
     >
-      <template v-if="settings.recommendationMode === 'web'">
-        <VideoCard
-          v-for="video in videoList"
-          :key="video.uniqueId"
-          :skeleton="!video.item"
-          type="rcmd"
-          :video="video.item ? {
-            id: video.item.id,
-            duration: video.item.duration,
-            title: video.item.title,
-            cover: video.item.pic,
-            author: {
-              name: video.item.owner.name,
-              authorFace: video.item.owner.face,
-              followed: !!video.item.is_followed,
-              mid: video.item.owner.mid,
-            },
-            view: video.item.stat.view,
-            danmaku: video.item.stat.danmaku,
-            publishedTimestamp: video.item.pubdate,
-            bvid: video.item.bvid,
-            cid: video.item.cid,
-          } : undefined"
-          show-preview
-          :horizontal="gridLayout !== 'adaptive'"
-          more-btn
-        />
-      </template>
-      <template v-else>
-        <VideoCard
-          v-for="video in appVideoList"
-          :key="video.uniqueId"
-          ref="videoCardRef"
-          :skeleton="!video.item"
-          type="appRcmd"
-          :video="video.item ? {
-            id: video.item.args.aid ?? 0,
-            durationStr: video.item.cover_right_text,
-            title: `${video.item.title}`,
-            cover: `${video.item.cover}`,
-            author: {
-              name: video.item?.mask?.avatar.text,
-              authorFace: video.item?.mask?.avatar.cover || video.item?.avatar?.cover,
-              followed: video.item?.bottom_rcmd_reason === '已关注' || video.item?.bottom_rcmd_reason === '已關注',
-              mid: video.item?.mask?.avatar.up_id,
-            },
-            capsuleText: video.item?.desc?.split('·')[1],
-            bvid: video.item.bvid,
-            viewStr: video.item.cover_left_text_1,
-            danmakuStr: video.item.cover_left_text_2,
-            cid: video.item?.player_args?.cid,
-            goto: video.item?.goto,
-            url: video.item?.goto === 'bangumi' ? video.item.uri : '',
-            type: video.item.card_goto === 'bangumi' ? 'bangumi' : isVerticalVideo(video.item.uri!) ? 'vertical' : 'horizontal',
-            threePointV2: video.item?.three_point_v2,
-          } : undefined"
-          show-preview
-          :horizontal="gridLayout !== 'adaptive'"
-          more-btn
-        />
-        <!-- :more-options="video.three_point_v2" -->
-      </template>
+      <div flex="~ gap-40px">
+        <main
+          ref="containerRef"
+          w-full
+          :class="gridClass"
+        >
+          <template v-if="settings.recommendationMode === 'web'">
+            <ForYouVideoCard
+              v-for="video in videoList"
+              :key="video.uniqueId"
+              :skeleton="!video.item"
+              type="rcmd"
+              :video="video.item ? {
+                id: video.item.id,
+                duration: video.item.duration,
+                title: video.item.title,
+                cover: video.item.pic,
+                author: {
+                  name: video.item.owner.name,
+                  authorFace: video.item.owner.face,
+                  followed: !!video.item.is_followed,
+                  mid: video.item.owner.mid,
+                },
+                view: video.item.stat.view,
+                danmaku: video.item.stat.danmaku,
+                publishedTimestamp: video.item.pubdate,
+                bvid: video.item.bvid,
+                cid: video.item.cid,
+              } : undefined"
+              :show-preview="true"
+              :horizontal="gridLayout !== 'adaptive'"
+              :more-btn="true"
+            />
+          </template>
+          <template v-else>
+            <ForYouVideoCard
+              v-for="video in appVideoList"
+              :key="video.uniqueId"
+              ref="videoCardRef"
+              :skeleton="!video.item"
+              type="appRcmd"
+              :video="video.item ? {
+                id: video.item.args.aid ?? 0,
+                durationStr: video.item.cover_right_text,
+                title: `${video.item.title}`,
+                cover: `${video.item.cover}`,
+                author: {
+                  name: video.item?.mask?.avatar.text,
+                  authorFace: video.item?.mask?.avatar.cover || video.item?.avatar?.cover,
+                  followed: video.item?.bottom_rcmd_reason === '已关注' || video.item?.bottom_rcmd_reason === '已關注',
+                  mid: video.item?.mask?.avatar.up_id,
+                },
+                capsuleText: video.item?.desc?.split('·')[1],
+                bvid: video.item.bvid,
+                viewStr: video.item.cover_left_text_1,
+                danmakuStr: video.item.cover_left_text_2,
+                cid: video.item?.player_args?.cid,
+                goto: video.item?.goto,
+                url: video.item?.goto === 'bangumi' ? video.item.uri : '',
+                type: video.item.card_goto === 'bangumi' ? 'bangumi' : isVerticalVideo(video.item.uri!) ? 'vertical' : 'horizontal',
+                threePointV2: video.item?.three_point_v2,
+              } : undefined"
+              :show-preview="true"
+              :horizontal="gridLayout !== 'adaptive'"
+              :more-btn="true"
+            />
+            <!-- :more-options="video.three_point_v2" -->
+          </template>
+        </main>
+
+        <div hidden xl:block>
+          <ForYouRefreshRail :loading="isLoading" @refresh="initData" />
+        </div>
+      </div>
     </div>
 
     <Loading v-show="isLoading" />
