@@ -7,6 +7,46 @@ const API_VIDEO = {
     _fetch: {
       method: 'get',
     },
+    // Legacy entry (kept for compatibility): treat as guest-mode (no cookies).
+    // Prefer using `getRecommendVideosGuest` / `getRecommendVideosWeb` explicitly.
+    useCookie: false,
+    params: {
+      fresh_idx: 0,
+      feed_version: 'V2',
+      fresh_type: 4,
+      ps: 30,
+      plat: 1,
+    },
+    afterHandle: AHS.J_D,
+  },
+  // Guest-mode feed: never attach cookies.
+  getRecommendVideosGuest: {
+    url: 'https://api.bilibili.com/x/web-interface/index/top/feed/rcmd',
+    _fetch: {
+      method: 'get',
+      credentials: 'omit',
+    },
+    useCookie: false,
+    params: {
+      fresh_idx: 0,
+      feed_version: 'V2',
+      fresh_type: 4,
+      ps: 30,
+      plat: 1,
+    },
+    afterHandle: AHS.J_D,
+  },
+  // Web-login feed: allow cookie attachment (Firefox multi-account mode will inject cookies).
+  getRecommendVideosWeb: {
+    url: 'https://api.bilibili.com/x/web-interface/wbi/index/top/feed/rcmd',
+    _fetch: {
+      method: 'get',
+      // Firefox multi-account uses manual cookie header injection, so keep browser credentials disabled there
+      // to avoid potentially sending duplicate cookies.
+      // eslint-disable-next-line node/prefer-global/process
+      credentials: process.env.FIREFOX ? 'omit' : 'include',
+    },
+    useCookie: true,
     params: {
       fresh_idx: 0,
       feed_version: 'V2',
@@ -20,7 +60,10 @@ const API_VIDEO = {
     url: 'https://app.bilibili.com/x/v2/feed/index',
     _fetch: {
       method: 'get',
+      credentials: 'omit',
     },
+    // App API is access_key based; keep it isolated from web cookies.
+    useCookie: false,
     params: {
       build: 74800100,
       device: 'pad',
@@ -38,7 +81,10 @@ const API_VIDEO = {
     url: 'https://app.bilibili.com/x/feed/dislike',
     _fetch: {
       method: 'get',
+      credentials: 'omit',
     },
+    // App API is access_key based; keep it isolated from web cookies.
+    useCookie: false,
     params: {
       access_key: '',
       goto: '',
@@ -58,7 +104,10 @@ const API_VIDEO = {
     url: 'https://app.bilibili.com/x/feed/dislike/cancel',
     _fetch: {
       method: 'get',
+      credentials: 'omit',
     },
+    // App API is access_key based; keep it isolated from web cookies.
+    useCookie: false,
     params: {
       access_key: '',
       goto: '',

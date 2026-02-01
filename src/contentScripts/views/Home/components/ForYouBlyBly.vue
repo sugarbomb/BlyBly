@@ -54,19 +54,13 @@ const containerRef = ref<HTMLElement>() as Ref<HTMLElement>
 const refreshIdx = ref<number>(1)
 const noMoreContent = ref<boolean>(false)
 const { handleReachBottom, handlePageRefresh, haveScrollbar } = useBewlyApp()
-const _activatedAppVideo = ref<AppVideoItem | null>()
-const videoCardRef = ref(null)
-const _showDislikeDialog = ref<boolean>(false)
-const _selectedDislikeReason = ref<number>(1)
 const { width } = useWindowSize()
 
 type ForYouPlatformMode = 'web' | 'app' | 'guest'
-
-const platformMode = ref<ForYouPlatformMode>('web')
+const platformMode = ref<ForYouPlatformMode>('guest')
 const isAppMode = computed(() => platformMode.value === 'app')
-const isGuestMode = computed(() => platformMode.value === 'guest')
 const isWebMode = computed(() => platformMode.value === 'web')
-const isWebLikeMode = computed(() => isWebMode.value || isGuestMode.value)
+const isWebLikeMode = computed(() => platformMode.value === 'web' || platformMode.value === 'guest')
 
 const showAccessKeyAuthorizeDialog = ref<boolean>(false)
 
@@ -103,9 +97,9 @@ const pageSize = computed<number>(() => {
 // 推荐页过滤器
 const { options: forYouFilterOptions } = useFilterAdvance('foryou-filter')
 
-// 动态 provide pageType，确保 context menu 能正确识别
-const pageType = computed(() => isWebLikeMode.value ? 'rcmd' : 'appRcmd')
-provide('pageType', pageType.value)
+// Context menu uses `pageType` to determine which filter storage to use.
+// For both rcmd/appRcmd we map to the same key (`foryou-filter`), so a constant is fine here.
+provide('pageType', 'rcmd')
 
 function shouldFilterByForYou(item: any): boolean {
   if (!forYouFilterOptions.value.enabled || forYouFilterOptions.value.rules.length === 0)
@@ -125,27 +119,18 @@ function shouldFilterByForYou(item: any): boolean {
 }
 
 onMounted(() => {
-  // Delay by 0.2 seconds to obtain the `settings.value.recommendationMode` value
-  // otherwise the `settings.value.recommendationMode` value will be undefined
-  // i have no idea to fix that...
-  setTimeout(() => {
-    // Initialize platformMode from settings
-    const isLoggedIn = !!getUserID()
+  const isLoggedIn = !!getUserID()
+  if (!isLoggedIn) {
+    platformMode.value = 'guest'
+  }
+  else if (settings.value.recommendationMode === 'app') {
+    platformMode.value = 'app'
+  }
+  else {
+    platformMode.value = 'web'
+  }
 
-    if (!isLoggedIn) {
-      // If not logged in, use guest mode
-      platformMode.value = 'guest'
-    }
-    else if (settings.value.recommendationMode === 'app') {
-      platformMode.value = 'app'
-    }
-    else {
-      platformMode.value = 'web'
-    }
-
-    initData()
-  }, 200)
-
+  initData()
   initPageAction()
 })
 
@@ -153,17 +138,10 @@ onActivated(() => {
   initPageAction()
 })
 
-watch(platformMode, async (newMode, oldMode) => {
-  // Check if user is trying to switch from guest to web/app without login
-  const isLoggedIn = !!getUserID()
-  if (!isLoggedIn && oldMode === 'guest' && (newMode === 'web' || newMode === 'app')) {
-    needToLoginFirst.value = true
-    // Revert back to guest mode
-    platformMode.value = 'guest'
-    return
-  }
+watch(platformMode, async (newMode) => {
+  needToLoginFirst.value = false
+  noMoreContent.value = false
 
-  // Sync platformMode to settings.recommendationMode
   if (newMode === 'app')
     settings.value.recommendationMode = 'app'
   else if (newMode === 'web')
@@ -172,15 +150,8 @@ watch(platformMode, async (newMode, oldMode) => {
 
   if (isLoading.value)
     return
-  await initData()
-})
 
-watch(() => settings.value.recommendationMode, (newMode) => {
-  // Sync settings.recommendationMode to platformMode
-  if (newMode === 'app')
-    platformMode.value = 'app'
-  else
-    platformMode.value = 'web'
+  await initData()
 })
 
 watch(() => accessKey.value, async (newAccessKey) => {
@@ -195,7 +166,6 @@ watch(() => accessKey.value, async (newAccessKey) => {
 
 async function initData() {
   noMoreContent.value = false
-  needToLoginFirst.value = false
   refreshIdx.value = 1
   videoList.value.length = 0
   appVideoList.value.length = 0
@@ -206,15 +176,16 @@ async function getData() {
   emit('beforeLoading')
   isLoading.value = true
   try {
-    if (isAppMode.value && !accessKey.value)
-      return
-
-    if (isWebLikeMode.value) {
-      await getRecommendVideos()
-    }
     if (isAppMode.value) {
-      for (let i = 0; i < 3; i++)
-        await getAppRecommendVideos()
+      if (!accessKey.value)
+        return
+      await getAppRecommendVideos()
+    }
+    else if (isWebMode.value) {
+      await getRecommendVideosWeb()
+    }
+    else {
+      await getRecommendVideosGuest()
     }
   }
   finally {
@@ -235,7 +206,7 @@ function initPageAction() {
   }
 }
 
-async function getRecommendVideos() {
+async function getRecommendVideosGuest() {
   try {
     let i = 0
     if (videoList.value.length < pageSize.value) {
@@ -246,10 +217,69 @@ async function getRecommendVideos() {
       } satisfies VideoElement))
       videoList.value.push(...pendingVideos)
     }
-    const response: forYouResult = await api.video.getRecommendVideos({
+
+    const response: forYouResult = await api.video.getRecommendVideosGuest({
       fresh_idx: refreshIdx.value++,
       ps: pageSize.value,
     })
+
+    if (!response.data) {
+      noMoreContent.value = true
+      return
+    }
+    if (response.code === 0) {
+      const resData = response.data.item.filter(item => !shouldFilterByForYou(item))
+      if (!videoList.value.length) {
+        videoList.value = resData.map(item => ({ uniqueId: `${item.id}`, item }))
+      }
+      else {
+        resData.forEach((item) => {
+          const findFirstEmptyItemIndex = videoList.value.findIndex(video => !video.item)
+          if (findFirstEmptyItemIndex !== -1) {
+            videoList.value[findFirstEmptyItemIndex] = {
+              uniqueId: `${item.id}`,
+              item,
+            }
+          }
+          else {
+            videoList.value.push({
+              uniqueId: `${item.id}`,
+              item,
+            })
+          }
+        })
+      }
+    }
+  }
+  finally {
+    const filledItems = videoList.value.filter(video => video.item)
+    videoList.value = filledItems
+    if (filledItems.length < pageSize.value) {
+      await nextTick()
+      if (!await haveScrollbar() || filledItems.length < 1) {
+        getRecommendVideosGuest()
+      }
+    }
+  }
+}
+
+async function getRecommendVideosWeb() {
+  try {
+    let i = 0
+    if (videoList.value.length < pageSize.value) {
+      const pendingVideos: VideoElement[] = Array.from({
+        length: pageSize.value - videoList.value.length,
+      }, () => ({
+        uniqueId: `unique-id-${(videoList.value.length || 0) + i++})}`,
+      } satisfies VideoElement))
+      videoList.value.push(...pendingVideos)
+    }
+
+    const response: forYouResult = await api.video.getRecommendVideosWeb({
+      fresh_idx: refreshIdx.value++,
+      ps: pageSize.value,
+    })
+
     if (!response.data) {
       noMoreContent.value = true
       return
@@ -287,7 +317,7 @@ async function getRecommendVideos() {
     if (!needToLoginFirst.value && filledItems.length < pageSize.value) {
       await nextTick()
       if (!await haveScrollbar() || filledItems.length < 1) {
-        getRecommendVideos()
+        getRecommendVideosWeb()
       }
     }
   }
@@ -304,6 +334,7 @@ async function getAppRecommendVideos() {
       } satisfies AppVideoElement))
       appVideoList.value.push(...pendingVideos)
     }
+
     const response: AppForYouResult = await api.video.getAppRecommendVideos({
       access_key: accessKey.value,
       s_locale: settings.value.language === LanguageType.Mandarin_TW || settings.value.language === LanguageType.Cantonese ? 'zh-Hant_TW' : 'zh-Hans_CN',
@@ -311,6 +342,12 @@ async function getAppRecommendVideos() {
       appkey: TVAppKey.appkey,
       idx: appVideoList.value.length > 0 ? appVideoList.value[appVideoList.value.length - 1].item?.idx : 1,
     })
+
+    if (!response.data) {
+      noMoreContent.value = true
+      return
+    }
+
     if (response.code === 0) {
       let resData = response.data.items.filter(item => !item.card_type.includes('banner') && item.card_type !== 'cm_v1')
       resData = resData.filter((item) => {
@@ -321,6 +358,7 @@ async function getAppRecommendVideos() {
         }
         return !shouldFilterByForYou({ ...item, owner, title: item.title || '' })
       })
+
       if (!appVideoList.value.length) {
         appVideoList.value = resData.map(item => ({ uniqueId: `${item.idx}`, item }))
       }
@@ -426,11 +464,11 @@ defineExpose({ initData })
               :more-btn="true"
             />
           </template>
-          <template v-if="isAppMode">
+
+          <template v-else>
             <ForYouVideoCard
               v-for="video in appVideoList"
               :key="video.uniqueId"
-              ref="videoCardRef"
               :skeleton="!video.item"
               type="appRcmd"
               :video="video.item ? {
@@ -458,7 +496,6 @@ defineExpose({ initData })
               :horizontal="gridLayout !== 'adaptive'"
               :more-btn="true"
             />
-            <!-- :more-options="video.three_point_v2" -->
           </template>
         </main>
       </div>

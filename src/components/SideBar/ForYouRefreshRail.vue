@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import Button from '~/components/Button.vue'
 import Tooltip from '~/components/Tooltip.vue'
 
-import ForYouPlatformToggleButton, { type ForYouPlatformMode } from './ForYouPlatformToggleButton.vue'
+import type { ForYouPlatformMode } from './ForYouPlatformToggleButton.vue'
 
 const props = withDefaults(defineProps<{
   loading: boolean
@@ -17,6 +19,37 @@ const emit = defineEmits<{
   (e: 'refresh'): void
   (e: 'update:modelValue', value: ForYouPlatformMode): void
 }>()
+
+const modeOrder: ForYouPlatformMode[] = ['web', 'app', 'guest']
+
+const nextMode = computed<ForYouPlatformMode>(() => {
+  const idx = modeOrder.indexOf(props.modelValue)
+  if (idx === -1)
+    return 'web'
+  return modeOrder[(idx + 1) % modeOrder.length]
+})
+
+const currentModeIcon = computed<string>(() => {
+  if (props.modelValue === 'app')
+    return 'i-mingcute:cellphone-line'
+  if (props.modelValue === 'guest')
+    return 'i-mingcute:user-4-line'
+  return 'i-mingcute:world-2-line'
+})
+
+const currentModeLabel = computed<string>(() => {
+  if (props.modelValue === 'app')
+    return 'App'
+  if (props.modelValue === 'guest')
+    return '游客'
+  return '网页'
+})
+
+function handleToggle() {
+  if (props.loading)
+    return
+  emit('update:modelValue', nextMode.value)
+}
 </script>
 
 <template>
@@ -48,11 +81,30 @@ const emit = defineEmits<{
           </Button>
         </Tooltip>
 
-        <ForYouPlatformToggleButton
-          :model-value="props.modelValue"
-          :disabled="props.loading"
-          @update:model-value="emit('update:modelValue', $event)"
-        />
+        <!-- Current mode indicator (non-clickable) -->
+        <Tooltip :content="`当前模式: ${currentModeLabel}`" placement="left">
+          <div
+            class="rail-btn mode-indicator"
+            round
+            center
+          >
+            <div :class="currentModeIcon" text="lg" />
+          </div>
+        </Tooltip>
+
+        <!-- Toggle button -->
+        <Tooltip content="切换" placement="left">
+          <Button
+            type="secondary"
+            :disabled="props.loading"
+            round
+            center
+            class="rail-btn"
+            @click="handleToggle"
+          >
+            <div i-mingcute:transfer-3-line text="lg" />
+          </Button>
+        </Tooltip>
       </div>
     </div>
   </aside>
@@ -61,7 +113,7 @@ const emit = defineEmits<{
     v-else
     pos="fixed right-14px top-1/2"
     style="transform: translateY(-50%)"
-    z-50
+    z-100
     flex="~ col"
   >
     <div
@@ -85,11 +137,30 @@ const emit = defineEmits<{
         </Button>
       </Tooltip>
 
-      <ForYouPlatformToggleButton
-        :model-value="props.modelValue"
-        :disabled="props.loading"
-        @update:model-value="emit('update:modelValue', $event)"
-      />
+      <!-- Current mode indicator (non-clickable) -->
+      <Tooltip :content="`当前模式: ${currentModeLabel}`" placement="left">
+        <div
+          class="rail-btn mode-indicator"
+          round
+          center
+        >
+          <div :class="currentModeIcon" text="lg" />
+        </div>
+      </Tooltip>
+
+      <!-- Toggle button -->
+      <Tooltip content="切换" placement="left">
+        <Button
+          type="secondary"
+          :disabled="props.loading"
+          round
+          center
+          class="rail-btn"
+          @click="handleToggle"
+        >
+          <div i-mingcute:transfer-3-line text="lg" />
+        </Button>
+      </Tooltip>
     </div>
   </div>
 </template>
@@ -105,5 +176,19 @@ const emit = defineEmits<{
   --b-button-shadow: var(--bew-shadow-1);
   --b-button-shadow-hover: var(--bew-shadow-2);
   --b-button-shadow-active: var(--bew-shadow-1);
+}
+
+.mode-indicator {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bew-elevated);
+  border: 1px solid var(--bew-border-color);
+  border-radius: 50%;
+  box-shadow: var(--bew-shadow-1);
+  cursor: default;
+  opacity: 0.8;
 }
 </style>
