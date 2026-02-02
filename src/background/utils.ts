@@ -4,13 +4,14 @@
 
 import type Browser from 'webextension-polyfill'
 
-type FetchAfterHandler = ((data: Response) => Promise<any>) | ((data: any) => any)
 type SendResponse = (response?: any) => void
+type FetchAfterHandler = (data: any) => any | Promise<any>
+type AfterHandleStep = FetchAfterHandler | typeof sendResponseHandler
 
 function toJsonHandler(data: Response): Promise<any> {
   return data.json()
 }
-function toData(data: Promise<any>): Promise<any> {
+function toData<T>(data: T): T {
   return data
 }
 
@@ -58,7 +59,7 @@ interface API {
    * Set to false for "guest mode" requests to avoid accidentally mixing with web-login behavior.
    */
   useCookie?: boolean
-  afterHandle: ((response: Response) => Response | Promise<Response>)[]
+  afterHandle: AfterHandleStep[]
 }
 // 重载API 可以为函数
 type APIFunction = (message: Message, sender?: any, sendResponse?: SendResponse) => any
@@ -132,15 +133,15 @@ function doRequest(message: Message, api: API, sendResponse?: SendResponse, cook
     if (!isGET)
       Object.assign(fetchOpt, { body: targetBody })
     // fetch and after handle
-    let baseFunc = fetch(url, {
+    let baseFunc: Promise<any> = fetch(url, {
       ...fetchOpt,
     })
     afterHandle.forEach((func) => {
-      if (func.name === sendResponseHandler.name && sendResponse)
+      if (func === sendResponseHandler && sendResponse)
         // sendResponseHandler 是一个特殊的后处理函数，需要传入sendResponse
         baseFunc = baseFunc.then(sendResponseHandler(sendResponse))
       else
-        baseFunc = baseFunc.then(func)
+        baseFunc = baseFunc.then(func as FetchAfterHandler)
     })
     baseFunc.catch(console.error)
     return baseFunc

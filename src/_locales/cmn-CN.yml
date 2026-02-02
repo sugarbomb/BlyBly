@@ -82,9 +82,11 @@ settings:
   group_wallpaper: 背景图片
   group_logo: LOGO
   group_search_bar: 搜索栏
+  group_recommendation_mode: 「随便看看」接口选择
   group_recommendation_filters_desc: |
     请勿将限制值设置得太大，不然可能会增加加载时间！
-  group_following: 正在关注
+  group_recommendation_filters: 「随便看看」过滤
+  group_following: 订阅关注
   group_search_page_mode: 搜索页模式
   group_home_tabs: 首页标签栏
 
@@ -462,11 +464,11 @@ home:
   tell_us_why: 为什么这么做...
   not_interested_desc: 你可以使用 <kbd>↑</kbd> 和 <kbd>↓</kbd> 来选择原因，或者直接使用数字键选择原因，按 <kbd>Enter</kbd> 就直接提交。
 
-  for_you: 个性推荐
-  following: 正在关注
-  trending: 热门视频
+  for_you: 随便看看
+  following: 关注频道
+  trending: 全站热门
   ranking: 排行
-  subscribed_series: 订阅剧集
+  subscribed_series: 追番
   live: 直播
 
 ranking:

@@ -53,6 +53,7 @@ const needToLoginFirst = ref<boolean>(false)
 const containerRef = ref<HTMLElement>() as Ref<HTMLElement>
 const refreshIdx = ref<number>(1)
 const noMoreContent = ref<boolean>(false)
+const pendingInit = ref<boolean>(false)
 const { handleReachBottom, handlePageRefresh, haveScrollbar } = useBewlyApp()
 const { width } = useWindowSize()
 
@@ -148,9 +149,6 @@ watch(platformMode, async (newMode) => {
     settings.value.recommendationMode = 'web'
   // guest mode doesn't change settings
 
-  if (isLoading.value)
-    return
-
   await initData()
 })
 
@@ -159,14 +157,16 @@ watch(() => accessKey.value, async (newAccessKey) => {
     return
   if (!isAppMode.value)
     return
-  if (isLoading.value)
-    return
   await initData()
 })
 
 async function initData() {
+  if (isLoading.value) {
+    pendingInit.value = true
+    return
+  }
+
   noMoreContent.value = false
-  refreshIdx.value = 1
   videoList.value.length = 0
   appVideoList.value.length = 0
   await getData()
@@ -191,6 +191,11 @@ async function getData() {
   finally {
     isLoading.value = false
     emit('afterLoading')
+
+    if (pendingInit.value) {
+      pendingInit.value = false
+      await initData()
+    }
   }
 }
 
@@ -199,10 +204,7 @@ function initPageAction() {
   handleReachBottom.value = undefined
 
   handlePageRefresh.value = async () => {
-    if (isLoading.value)
-      return
-
-    initData()
+    await initData()
   }
 }
 
@@ -254,10 +256,10 @@ async function getRecommendVideosGuest() {
   finally {
     const filledItems = videoList.value.filter(video => video.item)
     videoList.value = filledItems
-    if (filledItems.length < pageSize.value) {
+    if (!noMoreContent.value && filledItems.length < pageSize.value) {
       await nextTick()
       if (!await haveScrollbar() || filledItems.length < 1) {
-        getRecommendVideosGuest()
+        await getRecommendVideosGuest()
       }
     }
   }
@@ -314,10 +316,10 @@ async function getRecommendVideosWeb() {
   finally {
     const filledItems = videoList.value.filter(video => video.item)
     videoList.value = filledItems
-    if (!needToLoginFirst.value && filledItems.length < pageSize.value) {
+    if (!needToLoginFirst.value && !noMoreContent.value && filledItems.length < pageSize.value) {
       await nextTick()
       if (!await haveScrollbar() || filledItems.length < 1) {
-        getRecommendVideosWeb()
+        await getRecommendVideosWeb()
       }
     }
   }
@@ -387,10 +389,10 @@ async function getAppRecommendVideos() {
   finally {
     const filledItems = appVideoList.value.filter(video => video.item)
     appVideoList.value = filledItems
-    if (!needToLoginFirst.value && filledItems.length < pageSize.value) {
+    if (!needToLoginFirst.value && !noMoreContent.value && filledItems.length < pageSize.value) {
       await nextTick()
       if (!await haveScrollbar() || filledItems.length < 1) {
-        getAppRecommendVideos()
+        await getAppRecommendVideos()
       }
     }
   }

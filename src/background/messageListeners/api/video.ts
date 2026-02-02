@@ -21,7 +21,7 @@ const API_VIDEO = {
   },
   // Guest-mode feed: never attach cookies.
   getRecommendVideosGuest: {
-    url: 'https://api.bilibili.com/x/web-interface/index/top/feed/rcmd',
+    url: 'https://api.bilibili.com/x/web-interface/wbi/index/top/feed/rcmd',
     _fetch: {
       method: 'get',
       credentials: 'omit',
