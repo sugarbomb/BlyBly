@@ -53,13 +53,13 @@ function initPageAction() {
     if (noMoreContent.value)
       return
 
-    getData()
+    await getData()
   }
   handlePageRefresh.value = async () => {
     if (isLoading.value)
       return
 
-    initData()
+    await initData()
   }
 }
 
@@ -98,7 +98,7 @@ async function getFollowedUsersVideos() {
     let i = 0
     // https://github.com/starknt/BewlyBewly/blob/fad999c2e482095dc3840bb291af53d15ff44130/src/contentScripts/views/Home/components/ForYou.vue#L208
     const pendingVideos: VideoElement[] = Array.from({ length: 30 }, () => ({
-      uniqueId: `unique-id-${(videoList.value.length || 0) + i++})}`,
+      uniqueId: `unique-id-${(videoList.value.length || 0) + i++}`,
     } satisfies VideoElement))
     let lastVideoListLength = videoList.value.length
     videoList.value.push(...pendingVideos)
@@ -132,15 +132,15 @@ async function getFollowedUsersVideos() {
       }
       else {
         resData.forEach((item) => {
-          videoList.value[lastVideoListLength++] = {
+          videoList.value.splice(lastVideoListLength++, 1, {
             uniqueId: `${item.roomid}`,
             item,
-          }
+          })
         })
       }
 
       if (!await haveScrollbar() && !noMoreContent.value) {
-        getFollowedUsersVideos()
+        await getFollowedUsersVideos()
       }
     }
     else if (response.code === -101) {

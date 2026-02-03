@@ -18,84 +18,48 @@ const showAccessKeyAuthorizeDialog = ref<boolean>(false)
 
 const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.Trending])
 const groupFollowLive = new Set<HomeSubPage>([HomeSubPage.Following, HomeSubPage.SubscribedSeries, HomeSubPage.Live])
+const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.ForYou])
 
-type HomeTabGroupId = 'rankTrending' | 'followLive' | 'subForYou'
+const homeTabsRankTrending = ref<{ page: HomeSubPage, visible: boolean }[]>([])
+const homeTabsFollowLive = ref<{ page: HomeSubPage, visible: boolean }[]>([])
+const homeTabsSubForYou = ref<{ page: HomeSubPage, visible: boolean }[]>([])
 
-interface HomeTabVisibility {
-  page: HomeSubPage
-  visible: boolean
-}
-
-interface HomeTabGroup {
-  id: HomeTabGroupId
-  tabs: HomeTabVisibility[]
-}
-
-const defaultGroupOrder: HomeTabGroupId[] = ['rankTrending', 'followLive', 'subForYou']
-const homeTabGroups = ref<HomeTabGroup[]>([])
-
-function getGroupId(page: HomeSubPage): HomeTabGroupId {
-  if (groupRankTrending.has(page))
-    return 'rankTrending'
-  if (groupFollowLive.has(page))
-    return 'followLive'
-  return 'subForYou'
-}
-
-function normalizeHomeTabsList(list: HomeTabVisibility[]) {
-  const groups: Record<HomeTabGroupId, HomeTabVisibility[]> = {
-    rankTrending: [],
-    followLive: [],
-    subForYou: [],
-  }
-
-  const groupOrder: HomeTabGroupId[] = []
-  const seenPages = new Set<HomeSubPage>()
+function normalizeHomeTabsList(list: { page: HomeSubPage, visible: boolean }[]) {
+  const rankTrending: { page: HomeSubPage, visible: boolean }[] = []
+  const followLive: { page: HomeSubPage, visible: boolean }[] = []
+  const subForYou: { page: HomeSubPage, visible: boolean }[] = []
 
   for (const tab of list) {
-    if (seenPages.has(tab.page))
-      continue
-    seenPages.add(tab.page)
-
-    const groupId = getGroupId(tab.page)
-    groups[groupId].push(tab)
-    if (!groupOrder.includes(groupId))
-      groupOrder.push(groupId)
+    if (groupRankTrending.has(tab.page))
+      rankTrending.push(tab)
+    else if (groupFollowLive.has(tab.page))
+      followLive.push(tab)
+    else if (groupSubForYou.has(tab.page))
+      subForYou.push(tab)
   }
 
-  // Ensure all tabs exist (keep default order for missing ones)
-  for (const tab of mainStore.homeTabs) {
-    if (seenPages.has(tab.page))
-      continue
-    seenPages.add(tab.page)
-    groups[getGroupId(tab.page)].push({ page: tab.page, visible: true })
-  }
-
-  const normalizedOrder = [...groupOrder]
-  for (const id of defaultGroupOrder) {
-    if (!normalizedOrder.includes(id))
-      normalizedOrder.push(id)
-  }
-
-  const normalizedGroups = normalizedOrder.map(id => ({ id, tabs: groups[id] }))
-  const all = normalizedGroups.flatMap(g => g.tabs)
-
-  return { normalizedGroups, all }
+  return { rankTrending, followLive, subForYou, all: [...rankTrending, ...followLive, ...subForYou] }
 }
 
 function syncHomeTabsFromSettings() {
-  const { normalizedGroups, all } = normalizeHomeTabsList(settings.value.homePageTabVisibilityList)
+  const { rankTrending, followLive, subForYou, all } = normalizeHomeTabsList(settings.value.homePageTabVisibilityList)
 
-  const currentKey = settings.value.homePageTabVisibilityList.map(t => `${t.page}:${t.visible}`).join('|')
-  const normalizedKey = all.map(t => `${t.page}:${t.visible}`).join('|')
-  if (currentKey !== normalizedKey)
+  const current = settings.value.homePageTabVisibilityList.map(t => t.page).join('|')
+  const normalized = all.map(t => t.page).join('|')
+  if (current !== normalized)
     settings.value.homePageTabVisibilityList = all
 
-  homeTabGroups.value = normalizedGroups
+  homeTabsRankTrending.value = rankTrending
+  homeTabsFollowLive.value = followLive
+  homeTabsSubForYou.value = subForYou
 }
 
 function rebuildHomeTabsToSettings() {
-  settings.value.homePageTabVisibilityList = homeTabGroups.value.flatMap(g => g.tabs)
+  settings.value.homePageTabVisibilityList = [
+    ...homeTabsRankTrending.value,
+    ...homeTabsFollowLive.value,
+    ...homeTabsSubForYou.value,
+  ]
 }
 
 watch(
@@ -109,21 +73,22 @@ function handleRevoke() {
 }
 
 function resetHomeTabs() {
-  const defaultList = mainStore.homeTabs.map(tab => ({ page: tab.page, visible: true }))
-  const { normalizedGroups, all } = normalizeHomeTabsList(defaultList)
-  homeTabGroups.value = normalizedGroups
+  const resetList = mainStore.homeTabs.map((tab) => {
+    return {
+      page: tab.page,
+      visible: true,
+    }
+  })
+  const { all } = normalizeHomeTabsList(resetList)
   settings.value.homePageTabVisibilityList = all
 }
 
-function handleToggleHomeTab(tab: HomeTabVisibility) {
+function handleToggleHomeTab(tab: any) {
   // Prevent disabling all tabs if there is only one
-  const allTabs = homeTabGroups.value.flatMap(g => g.tabs)
-  const visibleCount = allTabs.filter(t => t.visible).length
-  if (tab.visible && visibleCount <= 1)
-    return
-
-  tab.visible = !tab.visible
-  rebuildHomeTabsToSettings()
+  if (settings.value.homePageTabVisibilityList.filter(tab => tab.visible === true).length > 1)
+    tab.visible = !tab.visible
+  else
+    tab.visible = true
 }
 </script>
 
@@ -179,59 +144,89 @@ function handleToggleHomeTab(tab: HomeTabVisibility) {
 
         <template #bottom>
           <div flex="~ col gap-2" w-full>
-            <draggable
-              v-model="homeTabGroups"
-              item-key="id"
-              handle=".home-tab-group-handle"
-              :component-data="{ style: 'display: flex; flex-direction: column; gap: 0.5rem;' }"
-              @change="rebuildHomeTabsToSettings"
+            <div
+              v-if="homeTabsRankTrending.length"
+              style="backdrop-filter: var(--bew-filter-glass-1)"
+              bg="$bew-elevated" p-2 rounded="$bew-radius"
+              box-border border="1 $bew-border-color"
             >
-              <template #item="{ element: group }">
-                <div
-                  style="backdrop-filter: var(--bew-filter-glass-1)"
-                  bg="$bew-elevated" p-2 rounded="$bew-radius"
-                  box-border border="1 $bew-border-color"
-                >
-                  <div flex="~ items-center justify-between" p="x-2 y-1">
-                    <div flex="~ items-center gap-2">
-                      <div class="home-tab-group-handle" cursor-grab text="$bew-text-2">
-                        <div i-mingcute:move-line />
-                      </div>
-                      <div v-if="group.id === 'rankTrending'" text="$bew-text-2" text-sm>
-                        {{ $t('home.ranking') }} / {{ $t('home.trending') }}
-                      </div>
-                      <div v-else-if="group.id === 'followLive'" text="$bew-text-2" text-sm>
-                        {{ $t('home.following') }} / {{ $t('home.subscribed_series') }} / {{ $t('home.live') }}
-                      </div>
-                      <div v-else text="$bew-text-2" text-sm>
-                        {{ $t('home.for_you') }}
-                      </div>
-                    </div>
-                  </div>
-
-                  <draggable
-                    v-model="group.tabs"
-                    item-key="page"
-                    :component-data="{ style: 'display: flex; gap: 0.5rem; flex-wrap: wrap;' }"
-                    @change="rebuildHomeTabsToSettings"
+              <draggable
+                v-model="homeTabsRankTrending"
+                item-key="page"
+                :component-data="{ style: 'display: flex; gap: 0.5rem; flex-wrap: wrap;' }"
+                @change="rebuildHomeTabsToSettings"
+              >
+                <template #item="{ element }">
+                  <div
+                    flex="~ gap-2 items-center" p="x-4 y-2" bg="$bew-fill-1" rounded="$bew-radius" cursor-all-scroll
+                    duration-300
+                    :style="{
+                      background: element.visible ? 'var(--bew-theme-color-20)' : 'var(--bew-fill-1)',
+                      color: element.visible ? 'var(--bew-theme-color)' : 'var(--bew-text-1)',
+                    }"
+                    @click="handleToggleHomeTab(element)"
                   >
-                    <template #item="{ element }">
-                      <div
-                        flex="~ gap-2 items-center" p="x-4 y-2" bg="$bew-fill-1" rounded="$bew-radius" cursor-all-scroll
-                        duration-300
-                        :style="{
-                          background: element.visible ? 'var(--bew-theme-color-20)' : 'var(--bew-fill-1)',
-                          color: element.visible ? 'var(--bew-theme-color)' : 'var(--bew-text-1)',
-                        }"
-                        @click="handleToggleHomeTab(element)"
-                      >
-                        {{ $t(mainStore.homeTabs.find(tab => tab.page === element.page)?.i18nKey ?? '') }}
-                      </div>
-                    </template>
-                  </draggable>
-                </div>
-              </template>
-            </draggable>
+                    {{ $t(mainStore.homeTabs.find(tab => tab.page === element.page)?.i18nKey ?? '') }}
+                  </div>
+                </template>
+              </draggable>
+            </div>
+
+            <div
+              v-if="homeTabsFollowLive.length"
+              style="backdrop-filter: var(--bew-filter-glass-1)"
+              bg="$bew-elevated" p-2 rounded="$bew-radius"
+              box-border border="1 $bew-border-color"
+            >
+              <draggable
+                v-model="homeTabsFollowLive"
+                item-key="page"
+                :component-data="{ style: 'display: flex; gap: 0.5rem; flex-wrap: wrap;' }"
+                @change="rebuildHomeTabsToSettings"
+              >
+                <template #item="{ element }">
+                  <div
+                    flex="~ gap-2 items-center" p="x-4 y-2" bg="$bew-fill-1" rounded="$bew-radius" cursor-all-scroll
+                    duration-300
+                    :style="{
+                      background: element.visible ? 'var(--bew-theme-color-20)' : 'var(--bew-fill-1)',
+                      color: element.visible ? 'var(--bew-theme-color)' : 'var(--bew-text-1)',
+                    }"
+                    @click="handleToggleHomeTab(element)"
+                  >
+                    {{ $t(mainStore.homeTabs.find(tab => tab.page === element.page)?.i18nKey ?? '') }}
+                  </div>
+                </template>
+              </draggable>
+            </div>
+
+            <div
+              v-if="homeTabsSubForYou.length"
+              style="backdrop-filter: var(--bew-filter-glass-1)"
+              bg="$bew-elevated" p-2 rounded="$bew-radius"
+              box-border border="1 $bew-border-color"
+            >
+              <draggable
+                v-model="homeTabsSubForYou"
+                item-key="page"
+                :component-data="{ style: 'display: flex; gap: 0.5rem; flex-wrap: wrap;' }"
+                @change="rebuildHomeTabsToSettings"
+              >
+                <template #item="{ element }">
+                  <div
+                    flex="~ gap-2 items-center" p="x-4 y-2" bg="$bew-fill-1" rounded="$bew-radius" cursor-all-scroll
+                    duration-300
+                    :style="{
+                      background: element.visible ? 'var(--bew-theme-color-20)' : 'var(--bew-fill-1)',
+                      color: element.visible ? 'var(--bew-theme-color)' : 'var(--bew-text-1)',
+                    }"
+                    @click="handleToggleHomeTab(element)"
+                  >
+                    {{ $t(mainStore.homeTabs.find(tab => tab.page === element.page)?.i18nKey ?? '') }}
+                  </div>
+                </template>
+              </draggable>
+            </div>
           </div>
         </template>
       </SettingsItem>

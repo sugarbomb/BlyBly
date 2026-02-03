@@ -845,7 +845,7 @@ defineExpose({
                   </template>
 
                   <ALink
-                    :href="settings.openNotificationsPageAsDrawer ? undefined : 'https://message.bilibili.com'"
+                    href="https://message.bilibili.com"
                     :class="{ 'white-icon': forceWhiteIcon }"
                     :title="$t('topbar.notifications')"
                     type="topBar"

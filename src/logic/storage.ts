@@ -223,7 +223,7 @@ export const originalSettings: Settings = {
   useOriginalBilibiliHomepage: false,
 }
 
-export const settings = useStorageLocal('settings', ref<Settings>(originalSettings), { mergeDefaults: true })
+export const settings = useStorageLocal<Settings>('settings', originalSettings, { mergeDefaults: true })
 
 export type GridLayoutType = 'adaptive' | 'twoColumns' | 'oneColumn'
 
@@ -231,12 +231,10 @@ export interface GridLayout {
   home: GridLayoutType
 }
 
-export const gridLayout = useStorageLocal('gridLayout', ref<GridLayout>({
+export const gridLayout = useStorageLocal<GridLayout>('gridLayout', {
   home: 'adaptive',
-}), { mergeDefaults: true })
+}, { mergeDefaults: true })
 
-export const sidePanel = useStorageLocal('sidePanel', ref<{
-  home: boolean
-}>({
+export const sidePanel = useStorageLocal<{ home: boolean }>('sidePanel', {
   home: true,
-}), { mergeDefaults: true })
+}, { mergeDefaults: true })

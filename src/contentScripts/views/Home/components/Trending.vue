@@ -31,6 +31,7 @@ const gridClass = computed((): string => {
 })
 const videoList = ref<VideoElement[]>([])
 const isLoading = ref<boolean>(false)
+const pendingRefresh = ref<boolean>(false)
 const containerRef = ref<HTMLElement>() as Ref<HTMLElement>
 const pn = ref<number>(1)
 const noMoreContent = ref<boolean>(false)
@@ -65,17 +66,25 @@ async function getData() {
   finally {
     isLoading.value = false
     emit('afterLoading')
+    if (pendingRefresh.value) {
+      pendingRefresh.value = false
+      await initData()
+    }
   }
 }
 
 function initPageAction() {
   handleReachBottom.value = async () => {
-    if (!isLoading.value)
+    if (!isLoading.value && !noMoreContent.value)
       await getData()
   }
 
   handlePageRefresh.value = async () => {
-    initData()
+    if (isLoading.value) {
+      pendingRefresh.value = true
+      return
+    }
+    await initData()
   }
 }
 
@@ -87,7 +96,7 @@ async function getTrendingVideos() {
     let i = 0
     // https://github.com/starknt/BewlyBewly/blob/fad999c2e482095dc3840bb291af53d15ff44130/src/contentScripts/views/Home/components/ForYou.vue#L208
     const pendingVideos: VideoElement[] = Array.from({ length: 30 }, () => ({
-      uniqueId: `unique-id-${(videoList.value.length || 0) + i++})}`,
+      uniqueId: `unique-id-${(videoList.value.length || 0) + i++}`,
     } satisfies VideoElement))
     let lastVideoListLength = videoList.value.length
     videoList.value.push(...pendingVideos)
@@ -112,15 +121,15 @@ async function getTrendingVideos() {
       }
       else {
         filteredList.forEach((item) => {
-          videoList.value[lastVideoListLength++] = {
+          videoList.value.splice(lastVideoListLength++, 1, {
             uniqueId: `${item.aid}`,
             item,
-          }
+          })
         })
       }
 
       if (!await haveScrollbar() && !noMoreContent.value) {
-        getTrendingVideos()
+        await getTrendingVideos()
       }
     }
   }
@@ -158,7 +167,7 @@ defineExpose({ initData })
           danmaku: video.item.stat.danmaku,
           publishedTimestamp: video.item.pubdate,
           bvid: video.item.bvid,
-          tag: video.item.rcmd_reason.content,
+          tag: video.item.rcmd_reason?.content ?? '',
           cid: video.item.cid,
         } : undefined"
         show-preview

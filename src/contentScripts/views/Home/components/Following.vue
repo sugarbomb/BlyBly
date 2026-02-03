@@ -69,13 +69,13 @@ function initPageAction() {
     if (noMoreContent.value)
       return
 
-    getData()
+    await getData()
   }
   handlePageRefresh.value = async () => {
     if (isLoading.value)
       return
 
-    initData()
+    await initData()
   }
 }
 
@@ -88,7 +88,7 @@ async function initData() {
   noMoreContent.value = false
 
   if (settings.value.followingTabShowLivestreamingVideos)
-    getLiveVideoList()
+    void getLiveVideoList()
   await getData()
 }
 
@@ -140,10 +140,10 @@ async function getLiveVideoList() {
       }
       else {
         resData.forEach((item) => {
-          liveVideoList.value[lastLiveVideoListLength++] = {
+          liveVideoList.value.splice(lastLiveVideoListLength++, 1, {
             uniqueId: `${item.roomid}`,
             item,
-          }
+          })
         })
       }
     }
@@ -151,7 +151,7 @@ async function getLiveVideoList() {
   finally {
     // 當直播列表結果大於9時（9是返回的列表數量）且如果最后一支影片還是正在直播，則繼續獲取
     if (liveVideoList.value.length > 9 && liveVideoList.value[liveVideoList.value.length - 1]?.item?.live_status === 1) {
-      getLiveVideoList()
+      await getLiveVideoList()
     }
   }
 }
@@ -174,7 +174,7 @@ async function getFollowedUsersVideos() {
     let i = 0
     // https://github.com/starknt/BewlyBewly/blob/fad999c2e482095dc3840bb291af53d15ff44130/src/contentScripts/views/Home/components/ForYou.vue#L208
     const pendingVideos: VideoElement[] = Array.from({ length: 30 }, () => ({
-      uniqueId: `unique-id-${(videoList.value.length || 0) + i++})}`,
+      uniqueId: `unique-id-${(videoList.value.length || 0) + i++}`,
     } satisfies VideoElement))
     let lastVideoListLength = videoList.value.length
     videoList.value.push(...pendingVideos)
@@ -237,7 +237,7 @@ async function getFollowedUsersVideos() {
           }
           else {
             // UP主个人投稿视频
-            videoList.value[lastVideoListLength++] = currentVideo
+            videoList.value.splice(lastVideoListLength++, 1, currentVideo)
           }
 
           lastVideo = currentVideo
@@ -246,7 +246,7 @@ async function getFollowedUsersVideos() {
       }
 
       if (!await haveScrollbar() && !noMoreContent.value) {
-        getFollowedUsersVideos()
+        await getFollowedUsersVideos()
       }
     }
     else if (response.code === -101) {

@@ -215,7 +215,7 @@ async function getRecommendVideosGuest() {
       const pendingVideos: VideoElement[] = Array.from({
         length: pageSize.value - videoList.value.length,
       }, () => ({
-        uniqueId: `unique-id-${(videoList.value.length || 0) + i++})}`,
+        uniqueId: `unique-id-${(videoList.value.length || 0) + i++}`,
       } satisfies VideoElement))
       videoList.value.push(...pendingVideos)
     }
@@ -272,7 +272,7 @@ async function getRecommendVideosWeb() {
       const pendingVideos: VideoElement[] = Array.from({
         length: pageSize.value - videoList.value.length,
       }, () => ({
-        uniqueId: `unique-id-${(videoList.value.length || 0) + i++})}`,
+        uniqueId: `unique-id-${(videoList.value.length || 0) + i++}`,
       } satisfies VideoElement))
       videoList.value.push(...pendingVideos)
     }
@@ -332,7 +332,7 @@ async function getAppRecommendVideos() {
       const pendingVideos: AppVideoElement[] = Array.from({
         length: pageSize.value - appVideoList.value.length,
       }, () => ({
-        uniqueId: `unique-id-${(appVideoList.value.length || 0) + i++})}`,
+        uniqueId: `unique-id-${(appVideoList.value.length || 0) + i++}`,
       } satisfies AppVideoElement))
       appVideoList.value.push(...pendingVideos)
     }
