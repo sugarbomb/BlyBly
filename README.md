@@ -10,8 +10,11 @@
 #### 快捷添加方式
 > <img width="1212" height="324" alt="image" src="https://github.com/user-attachments/assets/4c97cbf5-3cc0-43ab-b46c-2188b7dae27f" />
 
-#### 插件适用chrome/Edge等Chromium系浏览器，需要手动加载 在这之前，请先下载并解压 [extension.rar](https://github.com/sugarbomb/BlyBly--morefilter/releases) 获得文件夹
-<img width="1571" height="149" alt="image" src="https://github.com/user-attachments/assets/42acb468-3c10-4567-910b-64767dad8c00" />
+#### 安装
+#### 插件适用chrome/Edge等Chromium系浏览器，需要手动加载文件夹
+1. 请先下载并解压 [extension.rar](https://github.com/sugarbomb/BlyBly--morefilter/releases)
+<img width="800" height="600" alt="PixPin_2026-02-03_10-45-09" src="https://github.com/user-attachments/assets/81bc81ea-86e4-4db4-a91f-e942b00a7715" />
+<img width="800" height="600" alt="PixPin_2026-02-03_08-32-56" src="https://github.com/user-attachments/assets/cf4a5339-57cc-4657-be10-c5d3c2686db9" />
 
 ## 本项目为学习交流目的， 所有赞助以及链接均保存自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly)  侵删。
 
