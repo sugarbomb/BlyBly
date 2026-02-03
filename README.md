@@ -1,6 +1,8 @@
 # BlyBly
 
-### 阻挡 热门、排行榜、个性推荐 板块中不感兴趣的内容
+### 功能
+
+#### 阻挡 热门、排行榜、个性推荐 板块中不感兴趣的内容
 
 <img width="972" height="74" alt="image" src="https://github.com/user-attachments/assets/ecf1cea6-9352-4e9b-a6dc-498827241a06" />
 
@@ -10,11 +12,18 @@
 #### 快捷添加方式
 > <img width="1212" height="324" alt="image" src="https://github.com/user-attachments/assets/4c97cbf5-3cc0-43ab-b46c-2188b7dae27f" />
 
-#### 安装
+### 更新速览
+
+- [新推荐页 展示 v0.2.0 ](docs/features/v0.2.0新版本推荐页.md)
+
+### 安装
 #### 插件适用chrome/Edge等Chromium系浏览器，需要手动加载文件夹
 1. 请先下载并解压 [extension.rar](https://github.com/sugarbomb/BlyBly--morefilter/releases)
 <img width="800" height="600" alt="PixPin_2026-02-03_10-45-09" src="https://github.com/user-attachments/assets/81bc81ea-86e4-4db4-a91f-e942b00a7715" />
+
+2. 开发者模式打开
 <img width="800" height="600" alt="PixPin_2026-02-03_08-32-56" src="https://github.com/user-attachments/assets/cf4a5339-57cc-4657-be10-c5d3c2686db9" />
+<img width="800" height="412" alt="PixPin_2026-02-03_10-20-22" src="https://github.com/user-attachments/assets/06e6ce1c-a12c-4b86-bd3f-3a5148d1de82" />
 
 ## 本项目为学习交流目的， 所有赞助以及链接均保存自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly)  侵删。
 
