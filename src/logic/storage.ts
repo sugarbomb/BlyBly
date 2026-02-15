@@ -1,6 +1,6 @@
 import { useStorageLocal } from '~/composables/useStorageLocal'
 import type { wallpaperItem } from '~/constants/imgs'
-import type { HomeSubPage } from '~/contentScripts/views/Home/types'
+import { type HomePageGroup, HomeSubPage } from '~/contentScripts/views/Home/types'
 import type { AppPage } from '~/enums/appEnums'
 
 export const storageDemo = useStorageLocal('webext-demo', 'Storage Demo')
@@ -104,7 +104,7 @@ export interface Settings {
 
   followingTabShowLivestreamingVideos: boolean
 
-  homePageTabVisibilityList: { page: HomeSubPage, visible: boolean }[]
+  homePageGroups: HomePageGroup[]
   alwaysShowTabsOnHomePage: boolean
   useSearchPageModeOnHomePage: boolean
   searchPageModeWallpaperFixed: boolean
@@ -212,7 +212,29 @@ export const originalSettings: Settings = {
 
   followingTabShowLivestreamingVideos: false,
 
-  homePageTabVisibilityList: [],
+  homePageGroups: [
+    {
+      id: 'rankTrending',
+      items: [
+        { page: HomeSubPage.Ranking, visible: true },
+        { page: HomeSubPage.Trending, visible: true },
+      ],
+    },
+    {
+      id: 'followLive',
+      items: [
+        { page: HomeSubPage.Following, visible: true },
+        { page: HomeSubPage.SubscribedSeries, visible: true },
+        { page: HomeSubPage.Live, visible: true },
+      ],
+    },
+    {
+      id: 'subForYou',
+      items: [
+        { page: HomeSubPage.ForYou, visible: true },
+      ],
+    },
+  ],
   alwaysShowTabsOnHomePage: false,
   useSearchPageModeOnHomePage: false,
   searchPageModeWallpaperFixed: false,

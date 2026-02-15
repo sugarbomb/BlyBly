@@ -36,10 +36,6 @@ const pagesSubForYou = {
   [HomeSubPage.ForYou]: defineAsyncComponent(() => import('./components/ForYouBlyBly.vue')),
 } as const
 
-const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.Trending])
-const groupFollowLive = new Set<HomeSubPage>([HomeSubPage.Following, HomeSubPage.SubscribedSeries, HomeSubPage.Live])
-const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.ForYou])
-
 const pages = {
   ...pagesRankTrending,
   ...pagesFollowLive,
@@ -52,6 +48,7 @@ const allTabs = ref<HomeTab[]>([])
 const tabsRankTrending = ref<HomeTab[]>([])
 const tabsFollowLive = ref<HomeTab[]>([])
 const tabsSubForYou = ref<HomeTab[]>([])
+const tabGroups = ref<{ id: GroupId, tabs: HomeTab[] }[]>([])
 const tabPageRef = ref()
 const topBarVisibility = ref<boolean>(false)
 const gridLayoutIcons = computed((): GridLayoutIcon[] => {
@@ -62,52 +59,123 @@ const gridLayoutIcons = computed((): GridLayoutIcon[] => {
   ]
 })
 
+const GROUP_ORDER = ['rankTrending', 'followLive', 'subForYou'] as const
+type GroupId = typeof GROUP_ORDER[number]
+
+const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.Trending])
+const groupFollowLive = new Set<HomeSubPage>([HomeSubPage.Following, HomeSubPage.SubscribedSeries, HomeSubPage.Live])
+const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.ForYou])
+
+const GROUP_MATCHER: Record<GroupId, ReadonlySet<HomeSubPage>> = {
+  rankTrending: groupRankTrending,
+  followLive: groupFollowLive,
+  subForYou: groupSubForYou,
+}
+
+function resolveGroupOrder(groups: { id: string }[]): GroupId[] {
+  const order: GroupId[] = []
+  for (const group of groups) {
+    const id = group?.id as string
+    if ((GROUP_ORDER as readonly string[]).includes(id) && !order.includes(id as GroupId))
+      order.push(id as GroupId)
+  }
+  return order.length === GROUP_ORDER.length ? order : [...GROUP_ORDER]
+}
+
+function groupsSignature(groups: { id: string, items: { page: HomeSubPage, visible: boolean }[] }[]) {
+  return groups
+    .map(g => `${g.id}:${g.items.map(i => `${i.page}:${i.visible ? 1 : 0}`).join(',')}`)
+    .join('|')
+}
+
+function ensureHomePageGroups(allPages: HomeSubPage[]) {
+  const allowedPages = new Set(allPages)
+
+  const order = resolveGroupOrder(settings.value.homePageGroups as any)
+  const usedPages = new Set<HomeSubPage>()
+
+  const nextGroups = order.map((id) => {
+    const matcher = GROUP_MATCHER[id]
+    const existingItems = settings.value.homePageGroups.find(g => g.id === id)?.items ?? []
+    const items: { page: HomeSubPage, visible: boolean }[] = []
+
+    for (const raw of existingItems) {
+      const page = (raw as any)?.page as HomeSubPage
+      if (!allowedPages.has(page))
+        continue
+      if (usedPages.has(page))
+        continue
+      if (!matcher.has(page))
+        continue
+
+      usedPages.add(page)
+      items.push({ page, visible: typeof (raw as any)?.visible === 'boolean' ? (raw as any).visible : true })
+    }
+
+    for (const page of allPages) {
+      if (usedPages.has(page))
+        continue
+      if (!matcher.has(page))
+        continue
+      usedPages.add(page)
+      items.push({ page, visible: true })
+    }
+
+    return { id, items }
+  })
+
+  const nextSig = groupsSignature(nextGroups as any)
+  const curSig = groupsSignature(settings.value.homePageGroups as any)
+  if (nextSig !== curSig)
+    settings.value.homePageGroups = nextGroups as any
+}
+
 // use Json stringify to watch the changes of the array item properties
-watch(() => JSON.stringify(settings.value.homePageTabVisibilityList), () => {
+watch(() => JSON.stringify(settings.value.homePageGroups), () => {
   computeTabs()
 })
 
 function computeTabs(): HomeTab[] {
-  // if homePageTabVisibilityList not fresh , set it to default
-  if (!settings.value.homePageTabVisibilityList.length || settings.value.homePageTabVisibilityList.length !== mainStore.homeTabs.length)
-    settings.value.homePageTabVisibilityList = mainStore.homeTabs.map(tab => ({ page: tab.page, visible: true }))
+  const allPages = mainStore.homeTabs.map(tab => tab.page)
+  ensureHomePageGroups(allPages)
 
   const tabI18nKeyByPage = new Map(mainStore.homeTabs.map(t => [t.page, t.i18nKey]))
 
   const targetTabs: HomeTab[] = []
-  const targetTabsRankTrending: HomeTab[] = []
-  const targetTabsFollowLive: HomeTab[] = []
-  const targetTabsSubForYou: HomeTab[] = []
+  const targetTabsByGroup: Record<GroupId, HomeTab[]> = {
+    rankTrending: [],
+    followLive: [],
+    subForYou: [],
+  }
 
-  // Keep the order from `homePageTabVisibilityList` (user-configurable), but split into 3 visual groups.
-  for (const tab of settings.value.homePageTabVisibilityList) {
-    if (!tab.visible)
-      continue
+  for (const group of settings.value.homePageGroups) {
+    for (const tab of group.items) {
+      if (!tab.visible)
+        continue
 
-    const tabItem: HomeTab = {
-      i18nKey: tabI18nKeyByPage.get(tab.page) || tab.page,
-      page: tab.page,
+      const tabItem: HomeTab = {
+        i18nKey: tabI18nKeyByPage.get(tab.page) || tab.page,
+        page: tab.page,
+      }
+      targetTabs.push(tabItem)
+
+      if (group.id === 'rankTrending' || group.id === 'followLive' || group.id === 'subForYou')
+        targetTabsByGroup[group.id].push(tabItem)
     }
-    targetTabs.push(tabItem)
-
-    if (groupRankTrending.has(tabItem.page))
-      targetTabsRankTrending.push(tabItem)
-    else if (groupFollowLive.has(tabItem.page))
-      targetTabsFollowLive.push(tabItem)
-    else if (groupSubForYou.has(tabItem.page))
-      targetTabsSubForYou.push(tabItem)
   }
 
   allTabs.value = targetTabs
-  tabsRankTrending.value = targetTabsRankTrending
-  tabsFollowLive.value = targetTabsFollowLive
-  tabsSubForYou.value = targetTabsSubForYou
+  tabsRankTrending.value = targetTabsByGroup.rankTrending
+  tabsFollowLive.value = targetTabsByGroup.followLive
+  tabsSubForYou.value = targetTabsByGroup.subForYou
+  tabGroups.value = settings.value.homePageGroups
+    .filter(g => g.id === 'rankTrending' || g.id === 'followLive' || g.id === 'subForYou')
+    .map(g => ({ id: g.id, tabs: targetTabsByGroup[g.id] }))
+    .filter(g => g.tabs.length)
 
   // If current page is hidden, fallback to the first visible tab.
   if (!targetTabs.some(t => t.page === activatedPage.value) && targetTabs.length) {
-    activatedPage.value = tabsRankTrending.value[0]?.page
-      ?? tabsFollowLive.value[0]?.page
-      ?? tabsSubForYou.value[0]?.page
+    activatedPage.value = tabGroups.value[0]?.tabs[0]?.page
   }
 
   return targetTabs
@@ -149,9 +217,7 @@ onMounted(() => {
 
   computeTabs()
   if (allTabs.value.length) {
-    activatedPage.value = tabsRankTrending.value[0]?.page
-      ?? tabsFollowLive.value[0]?.page
-      ?? tabsSubForYou.value[0]?.page
+    activatedPage.value = tabGroups.value[0]?.tabs[0]?.page
   }
 })
 
@@ -263,7 +329,7 @@ function toggleTabContentLoading(loading: boolean) {
           flex="~ gap-2 items-center wrap"
         >
           <section
-            v-if="tabsRankTrending.length"
+            v-for="group in tabGroups" :key="group.id"
             style="backdrop-filter: var(--bew-filter-glass-1)"
             bg="$bew-elevated" p-1
             h-38px rounded-full
@@ -281,89 +347,7 @@ function toggleTabContentLoading(loading: boolean) {
               h-full of-hidden
             >
               <button
-                v-for="tab in tabsRankTrending" :key="tab.page"
-                :class="{ 'tab-activated': activatedPage === tab.page }"
-                px-3 h-inherit
-                bg="transparent hover:$bew-fill-2" text="$bew-text-2 hover:$bew-text-1" fw-bold rounded-full
-                cursor-pointer duration-300
-                flex="~ gap-2 items-center shrink-0" relative
-                @click="handleChangeTab(tab)"
-              >
-                <span class="text-center">{{ $t(tab.i18nKey) }}</span>
-
-                <Transition name="fade">
-                  <div
-                    v-show="activatedPage === tab.page && tabContentLoading"
-                    i-svg-spinners:ring-resize
-                    pos="absolute right-4px top-4px" duration-300
-                    text="8px white"
-                  />
-                </Transition>
-              </button>
-            </OverlayScrollbarsComponent>
-          </section>
-
-          <section
-            v-if="tabsFollowLive.length"
-            style="backdrop-filter: var(--bew-filter-glass-1)"
-            bg="$bew-elevated" p-1
-            h-38px rounded-full
-            text="sm"
-            shadow="[var(--bew-shadow-1),var(--bew-shadow-edge-glow-1)]"
-            box-border border="1 $bew-border-color"
-          >
-            <OverlayScrollbarsComponent
-              class="home-tabs-inside"
-              element="div" defer
-              :options="{
-                x: 'scroll',
-                y: 'hidden',
-              }"
-              h-full of-hidden
-            >
-              <button
-                v-for="tab in tabsFollowLive" :key="tab.page"
-                :class="{ 'tab-activated': activatedPage === tab.page }"
-                px-3 h-inherit
-                bg="transparent hover:$bew-fill-2" text="$bew-text-2 hover:$bew-text-1" fw-bold rounded-full
-                cursor-pointer duration-300
-                flex="~ gap-2 items-center shrink-0" relative
-                @click="handleChangeTab(tab)"
-              >
-                <span class="text-center">{{ $t(tab.i18nKey) }}</span>
-
-                <Transition name="fade">
-                  <div
-                    v-show="activatedPage === tab.page && tabContentLoading"
-                    i-svg-spinners:ring-resize
-                    pos="absolute right-4px top-4px" duration-300
-                    text="8px white"
-                  />
-                </Transition>
-              </button>
-            </OverlayScrollbarsComponent>
-          </section>
-
-          <section
-            v-if="tabsSubForYou.length"
-            style="backdrop-filter: var(--bew-filter-glass-1)"
-            bg="$bew-elevated" p-1
-            h-38px rounded-full
-            text="sm"
-            shadow="[var(--bew-shadow-1),var(--bew-shadow-edge-glow-1)]"
-            box-border border="1 $bew-border-color"
-          >
-            <OverlayScrollbarsComponent
-              class="home-tabs-inside"
-              element="div" defer
-              :options="{
-                x: 'scroll',
-                y: 'hidden',
-              }"
-              h-full of-hidden
-            >
-              <button
-                v-for="tab in tabsSubForYou" :key="tab.page"
+                v-for="tab in group.tabs" :key="tab.page"
                 :class="{ 'tab-activated': activatedPage === tab.page }"
                 px-3 h-inherit
                 bg="transparent hover:$bew-fill-2" text="$bew-text-2 hover:$bew-text-1" fw-bold rounded-full

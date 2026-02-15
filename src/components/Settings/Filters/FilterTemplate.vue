@@ -138,7 +138,7 @@ function handleFileChange(event: Event) {
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <span class="text-sm text-$bew-text-2">启用过滤</span>
+        <span class="text-sm text-$bew-text-2">开启</span>
         <input v-model="options.enabled" type="checkbox" class="toggle">
       </div>
     </div>
@@ -170,7 +170,7 @@ function handleFileChange(event: Event) {
     <!-- 规则列表 -->
     <div class="space-y-2">
       <div v-if="options.rules.length === 0" class="text-center text-$bew-text-3 py-4">
-        暂无过滤规则
+        暂无内容
       </div>
 
       <!-- 批量操作工具栏 -->
@@ -237,7 +237,7 @@ function handleFileChange(event: Event) {
       <!-- 规则列表头部 -->
       <div v-if="options.rules.length > 0" class="flex items-center justify-between mb-3">
         <div class="text-sm text-$bew-text-2">
-          过滤规则列表 ({{ options.rules.length }})
+          列表 ({{ options.rules.length }})
         </div>
       </div>
 

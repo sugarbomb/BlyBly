@@ -9,6 +9,18 @@ export enum HomeSubPage {
   Live = 'Live',
 }
 
+export type HomePageGroupId = 'rankTrending' | 'followLive' | 'subForYou'
+
+export interface HomePageTabVisibilityItem {
+  page: HomeSubPage
+  visible: boolean
+}
+
+export interface HomePageGroup {
+  id: HomePageGroupId
+  items: HomePageTabVisibilityItem[]
+}
+
 export interface RankingType {
   id: number
   name: string

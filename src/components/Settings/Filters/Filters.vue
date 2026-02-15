@@ -10,8 +10,8 @@ import FilterTemplate from './FilterTemplate.vue'
       <SettingsItem title="" desc="">
         <template #bottom>
           <FilterTemplate
-            title="热门内容过滤"
-            description="过滤热门页面中不感兴趣的内容"
+            title="热门页"
+            description=" "
             storage-key="trending-filter"
             placeholder="输入要过滤的内容"
             :max-visible-rules="3"
@@ -27,8 +27,8 @@ import FilterTemplate from './FilterTemplate.vue'
       <SettingsItem title="" desc="">
         <template #bottom>
           <FilterTemplate
-            title="排行榜内容过滤"
-            description="过滤排行榜页面中不感兴趣的内容"
+            title="排行页"
+            description=" "
             storage-key="ranking-filter"
             placeholder="输入要过滤的内容"
             :max-visible-rules="3"
@@ -44,8 +44,8 @@ import FilterTemplate from './FilterTemplate.vue'
       <SettingsItem title="" desc="">
         <template #bottom>
           <FilterTemplate
-            title="推荐页内容过滤"
-            description="过滤推荐页中不感兴趣的内容"
+            title="随便看看"
+            description=" "
             storage-key="foryou-filter"
             placeholder="输入要过滤的内容"
             :max-visible-rules="3"
