@@ -468,10 +468,11 @@ home:
   following: 关注频道
   trending: 全站热门
   ranking: 排行
+  weekly_ranking: 周榜
   subscribed_series: 追番
   live: 直播
   partition_for_you: 分区探索
-  partition_realtime: 新稿件
+  partition_realtime: 新作品
 
 ranking:
   all: 全部

@@ -31,7 +31,7 @@ function homeTabsGroupSignature() {
 const GROUP_ORDER = ['rankTrending', 'followLive', 'partition', 'subForYou'] as const
 type GroupId = typeof GROUP_ORDER[number]
 
-const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.Trending])
+const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.WeeklyRanking, HomeSubPage.Trending])
 const groupFollowLive = new Set<HomeSubPage>([HomeSubPage.Following, HomeSubPage.SubscribedSeries, HomeSubPage.Live])
 const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.ForYou])
 const groupPartition = new Set<HomeSubPage>([HomeSubPage.PartitionForYou, HomeSubPage.PartitionRealtime])

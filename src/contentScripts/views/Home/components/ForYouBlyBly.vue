@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useWindowSize } from '@vueuse/core'
-import type { Ref } from 'vue'
 import { computed, provide, watch } from 'vue'
 
 import AccessKeyAuthorizeDialog from '~/components/AccessKeyAuthorizeDialog.vue'
@@ -50,7 +49,6 @@ const videoList = ref<VideoElement[]>([])
 const appVideoList = ref<AppVideoElement[]>([])
 const isLoading = ref<boolean>(false)
 const needToLoginFirst = ref<boolean>(false)
-const containerRef = ref<HTMLElement>() as Ref<HTMLElement>
 const refreshIdx = ref<number>(1)
 const noMoreContent = ref<boolean>(false)
 const pendingInit = ref<boolean>(false)
@@ -434,7 +432,6 @@ defineExpose({ initData })
         flex-1
       >
         <main
-          ref="containerRef"
           w-full
           :class="gridClass"
         >

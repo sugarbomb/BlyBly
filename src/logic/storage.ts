@@ -217,6 +217,7 @@ export const originalSettings: Settings = {
       id: 'rankTrending',
       items: [
         { page: HomeSubPage.Ranking, visible: true },
+        { page: HomeSubPage.WeeklyRanking, visible: true },
         { page: HomeSubPage.Trending, visible: true },
       ],
     },
