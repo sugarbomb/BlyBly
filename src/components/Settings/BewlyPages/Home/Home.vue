@@ -28,17 +28,19 @@ function homeTabsGroupSignature() {
     .join('|')
 }
 
-const GROUP_ORDER = ['rankTrending', 'followLive', 'subForYou'] as const
+const GROUP_ORDER = ['rankTrending', 'followLive', 'partition', 'subForYou'] as const
 type GroupId = typeof GROUP_ORDER[number]
 
 const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.Trending])
 const groupFollowLive = new Set<HomeSubPage>([HomeSubPage.Following, HomeSubPage.SubscribedSeries, HomeSubPage.Live])
 const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.ForYou])
+const groupPartition = new Set<HomeSubPage>([HomeSubPage.PartitionForYou, HomeSubPage.PartitionRealtime])
 
 const GROUP_MATCHER: Record<GroupId, ReadonlySet<HomeSubPage>> = {
   rankTrending: groupRankTrending,
   followLive: groupFollowLive,
   subForYou: groupSubForYou,
+  partition: groupPartition,
 }
 
 function resolveGroupOrder(groups: { id: string }[]): GroupId[] {

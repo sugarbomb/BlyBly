@@ -36,10 +36,16 @@ const pagesSubForYou = {
   [HomeSubPage.ForYou]: defineAsyncComponent(() => import('./components/ForYouBlyBly.vue')),
 } as const
 
+const pagesPartition = {
+  [HomeSubPage.PartitionForYou]: defineAsyncComponent(() => import('./components/PartitionForYou.vue')),
+  [HomeSubPage.PartitionRealtime]: defineAsyncComponent(() => import('./components/PartitionRealtime.vue')),
+} as const
+
 const pages = {
   ...pagesRankTrending,
   ...pagesFollowLive,
   ...pagesSubForYou,
+  ...pagesPartition,
 } as const
 const showSearchPageMode = ref<boolean>(false)
 const shouldMoveTabsUp = ref<boolean>(false)
@@ -59,17 +65,19 @@ const gridLayoutIcons = computed((): GridLayoutIcon[] => {
   ]
 })
 
-const GROUP_ORDER = ['rankTrending', 'followLive', 'subForYou'] as const
+const GROUP_ORDER = ['rankTrending', 'followLive', 'partition', 'subForYou'] as const
 type GroupId = typeof GROUP_ORDER[number]
 
 const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.Trending])
 const groupFollowLive = new Set<HomeSubPage>([HomeSubPage.Following, HomeSubPage.SubscribedSeries, HomeSubPage.Live])
 const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.ForYou])
+const groupPartition = new Set<HomeSubPage>([HomeSubPage.PartitionForYou, HomeSubPage.PartitionRealtime])
 
 const GROUP_MATCHER: Record<GroupId, ReadonlySet<HomeSubPage>> = {
   rankTrending: groupRankTrending,
   followLive: groupFollowLive,
   subForYou: groupSubForYou,
+  partition: groupPartition,
 }
 
 function resolveGroupOrder(groups: { id: string }[]): GroupId[] {
@@ -146,6 +154,7 @@ function computeTabs(): HomeTab[] {
     rankTrending: [],
     followLive: [],
     subForYou: [],
+    partition: [],
   }
 
   for (const group of settings.value.homePageGroups) {
@@ -159,7 +168,7 @@ function computeTabs(): HomeTab[] {
       }
       targetTabs.push(tabItem)
 
-      if (group.id === 'rankTrending' || group.id === 'followLive' || group.id === 'subForYou')
+      if (group.id === 'rankTrending' || group.id === 'followLive' || group.id === 'subForYou' || group.id === 'partition')
         targetTabsByGroup[group.id].push(tabItem)
     }
   }
@@ -169,7 +178,7 @@ function computeTabs(): HomeTab[] {
   tabsFollowLive.value = targetTabsByGroup.followLive
   tabsSubForYou.value = targetTabsByGroup.subForYou
   tabGroups.value = settings.value.homePageGroups
-    .filter(g => g.id === 'rankTrending' || g.id === 'followLive' || g.id === 'subForYou')
+    .filter(g => g.id === 'rankTrending' || g.id === 'followLive' || g.id === 'subForYou' || g.id === 'partition')
     .map(g => ({ id: g.id, tabs: targetTabsByGroup[g.id] }))
     .filter(g => g.tabs.length)
 

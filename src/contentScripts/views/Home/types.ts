@@ -2,6 +2,8 @@ import type { GridLayoutType } from '~/logic'
 
 export enum HomeSubPage {
   ForYou = 'ForYou',
+  PartitionForYou = 'PartitionForYou',
+  PartitionRealtime = 'PartitionRealtime',
   Following = 'Following',
   SubscribedSeries = 'SubscribedSeries',
   Trending = 'Trending',
@@ -9,7 +11,7 @@ export enum HomeSubPage {
   Live = 'Live',
 }
 
-export type HomePageGroupId = 'rankTrending' | 'followLive' | 'subForYou'
+export type HomePageGroupId = 'rankTrending' | 'followLive' | 'subForYou' | 'partition'
 
 export interface HomePageTabVisibilityItem {
   page: HomeSubPage

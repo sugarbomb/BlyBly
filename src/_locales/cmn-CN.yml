@@ -470,6 +470,8 @@ home:
   ranking: 排行
   subscribed_series: 追番
   live: 直播
+  partition_for_you: 分区探索
+  partition_realtime: 新稿件
 
 ranking:
   all: 全部

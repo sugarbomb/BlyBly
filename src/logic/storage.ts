@@ -229,6 +229,13 @@ export const originalSettings: Settings = {
       ],
     },
     {
+      id: 'partition',
+      items: [
+        { page: HomeSubPage.PartitionForYou, visible: true },
+        { page: HomeSubPage.PartitionRealtime, visible: true },
+      ],
+    },
+    {
       id: 'subForYou',
       items: [
         { page: HomeSubPage.ForYou, visible: true },

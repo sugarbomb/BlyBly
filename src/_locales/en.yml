@@ -437,6 +437,8 @@ home:
   ranking: Ranking
   subscribed_series: Subscribed Series
   live: Live
+  partition_for_you: Partition For You
+  partition_realtime: Realtime
 
 ranking:
   all: All
