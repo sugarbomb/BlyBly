@@ -29,13 +29,26 @@ const API_PARTITION = {
     },
     params: {
       pn: 1,
-      ps: 14,
+      ps: 10,
       rid: 231,
     },
     afterHandle: AHS.J_D,
   },
 
-  // TODO: getPartitionForYou
+  // https://api.bilibili.com/x/web-interface/region/feed/rcmd
+  getPartitionForYouList: {
+    url: 'https://api.bilibili.com/x/web-interface/region/feed/rcmd',
+    _fetch: {
+      method: 'get',
+    },
+    params: {
+      request_cnt: 10,
+      from_region: 1005,
+      device: 'web',
+      plat: 30,
+    },
+    afterHandle: AHS.J_D,
+  },
 } satisfies APIMAP
 
 export default API_PARTITION

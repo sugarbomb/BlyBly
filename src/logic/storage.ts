@@ -280,3 +280,9 @@ export const partitionRealtimeState = useStorageLocal<PartitionRealtimeState>('p
   selectedPartitionIds: [],
   activePartitionId: null,
 }, { mergeDefaults: true })
+
+export const partitionForYouState = useStorageLocal<PartitionRealtimeState>('partitionForYouState', {
+  showPanel: true,
+  selectedPartitionIds: [],
+  activePartitionId: null,
+}, { mergeDefaults: true })

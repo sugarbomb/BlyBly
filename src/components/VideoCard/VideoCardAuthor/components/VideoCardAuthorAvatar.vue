@@ -19,6 +19,20 @@ const displayedAvatars = computed(() => {
   else
     return [props.author]
 })
+
+function resolveAvatarSrc(authorFace?: string): string {
+  const face = `${authorFace ?? ''}`.trim()
+  if (!face)
+    return ''
+  return `${removeHttpFromUrl(face)}@50w_50h_1c`
+}
+
+function resolveFallbackLabel(name?: string): string {
+  const label = `${name ?? ''}`.trim()
+  if (!label)
+    return 'UP'
+  return label.slice(0, 1).toUpperCase()
+}
 </script>
 
 <template>
@@ -49,11 +63,15 @@ const displayedAvatars = computed(() => {
     >
       <!-- Avatar -->
       <Picture
-        :src="`${removeHttpFromUrl(item.authorFace)}@50w_50h_1c`"
+        v-if="resolveAvatarSrc(item.authorFace)"
+        :src="resolveAvatarSrc(item.authorFace)"
         loading="lazy"
         w-inherit h-inherit
         rounded="1/2"
       />
+      <span v-else class="avatar-fallback">
+        {{ resolveFallbackLabel(item.name) }}
+      </span>
 
       <!-- Following Flag -->
       <div
@@ -95,5 +113,18 @@ const displayedAvatars = computed(() => {
 <style scoped lang="scss">
 .live {
   --uno: "p-2px box-border border-2 border-$bew-theme-color-60";
+}
+
+.avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75em;
+  font-weight: 700;
+  color: var(--bew-text-2);
+  background: var(--bew-fill-1);
 }
 </style>
