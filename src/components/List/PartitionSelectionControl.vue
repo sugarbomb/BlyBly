@@ -43,6 +43,7 @@ const normalizedPartitions = computed<PartitionItem[]>(() => {
 
   props.partitions.forEach((partition, index) => {
     const name = `${partition?.name ?? ''}`.trim()
+    const zoneId = `${partition?.zoneId ?? ''}`.trim()
     if (!name)
       return
 
@@ -52,8 +53,8 @@ const normalizedPartitions = computed<PartitionItem[]>(() => {
       icon: `${partition.icon ?? ''}`.trim() || undefined,
       color: `${partition.color ?? ''}`.trim() || undefined,
       href: `${partition.href ?? ''}`.trim() || undefined,
-      zoneId: partition.zoneId ?? '',
-      disabled: !!partition.disabled,
+      zoneId,
+      disabled: !!partition.disabled || !zoneId,
     })
   })
 
@@ -61,7 +62,7 @@ const normalizedPartitions = computed<PartitionItem[]>(() => {
 })
 
 const selectedIds = computed(() => {
-  const validIds = new Set(normalizedPartitions.value.map(item => item.id))
+  const validIds = new Set(normalizedPartitions.value.filter(item => !item.disabled).map(item => item.id))
   return props.modelValue.filter(id => validIds.has(id))
 })
 
@@ -74,7 +75,7 @@ const selectedPartitions = computed(() => {
 })
 
 watch(normalizedPartitions, (nextPartitions) => {
-  const validIds = new Set(nextPartitions.map(item => item.id))
+  const validIds = new Set(nextPartitions.filter(item => !item.disabled).map(item => item.id))
   const nextSelectedIds = props.modelValue.filter(id => validIds.has(id))
   if (nextSelectedIds.length === props.modelValue.length)
     return
