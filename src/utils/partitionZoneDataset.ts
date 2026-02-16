@@ -57,8 +57,8 @@ function resolveAssetURL(path: string): string {
  * 3. `href` 填对应链接
  */
 export const PARTITION_ZONE_MANUAL_ITEMS: PartitionZoneManualItem[] = [
-  { iconFile: 'ai', zoneId: '', name: '测试', href: '' },
-  { iconFile: 'animal', zoneId: '', name: '', href: '' },
+
+  { iconFile: 'animal', zoneId: '1', name: '动画', href: '' },
   { iconFile: 'car', zoneId: '', name: '', href: '' },
   { iconFile: 'cinephile', zoneId: '', name: '', href: '' },
   { iconFile: 'dance', zoneId: '', name: '', href: '' },
@@ -87,6 +87,7 @@ export const PARTITION_ZONE_MANUAL_ITEMS: PartitionZoneManualItem[] = [
   { iconFile: 'tech', zoneId: '', name: '', href: '' },
   { iconFile: 'travel', zoneId: '', name: '', href: '' },
   { iconFile: 'vlog', zoneId: '', name: '', href: '' },
+  { iconFile: 'ai', zoneId: '12', name: '测试', href: '' },
 ]
 
 export const PARTITION_ZONE_DATASET: PartitionZoneDatasetItem[] = PARTITION_ZONE_MANUAL_ITEMS.map(item => ({

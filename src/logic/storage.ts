@@ -268,3 +268,15 @@ export const gridLayout = useStorageLocal<GridLayout>('gridLayout', {
 export const sidePanel = useStorageLocal<{ home: boolean }>('sidePanel', {
   home: true,
 }, { mergeDefaults: true })
+
+export interface PartitionRealtimeState {
+  showPanel: boolean
+  selectedPartitionIds: Array<string | number>
+  activePartitionId: string | number | null
+}
+
+export const partitionRealtimeState = useStorageLocal<PartitionRealtimeState>('partitionRealtimeState', {
+  showPanel: true,
+  selectedPartitionIds: [],
+  activePartitionId: null,
+}, { mergeDefaults: true })

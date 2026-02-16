@@ -34,7 +34,7 @@ const panelStatusLabel = computed(() => {
 })
 
 const resolvedStatusIcon = computed(() => {
-  return props.statusIcon || 'i-mingcute:layout-grid-line'
+  return props.statusIcon || 'i-mingcute:question-line'
 })
 
 function handleIndicatorToggle() {
@@ -104,7 +104,7 @@ function handleSwitchPartition() {
               alt=""
               class="status-icon"
             >
-            <div v-else i-mingcute:layout-grid-line text="lg" />
+            <div v-else i-mingcute:question-line text="lg" />
           </Button>
         </Tooltip>
 
@@ -170,7 +170,7 @@ function handleSwitchPartition() {
             alt=""
             class="status-icon"
           >
-          <div v-else i-mingcute:layout-grid-line text="lg" />
+          <div v-else i-mingcute:question-line text="lg" />
         </Button>
       </Tooltip>
 
@@ -226,7 +226,7 @@ function handleSwitchPartition() {
           alt=""
           class="status-icon"
         >
-        <div v-else i-mingcute:layout-grid-line text="lg" />
+        <div v-else i-mingcute:question-line text="lg" />
       </Button>
     </Tooltip>
 
