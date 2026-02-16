@@ -90,7 +90,7 @@ export async function getManifest() {
     ],
     web_accessible_resources: [
       {
-        resources: ['dist/contentScripts/style.css', 'assets/*'],
+        resources: ['dist/contentScripts/style.css', 'assets/*', 'assets/zone_v2_icon/*'],
         matches: ['<all_urls>'],
         // matches: ['./assets/*'],
       },
