@@ -27,7 +27,7 @@ const props = withDefaults(defineProps<{
   visible: true,
   partitions: () => [],
   emptyText: '暂无可选分区',
-  confirmText: '确认这些选中',
+  confirmText: '选好咯',
 })
 
 const emit = defineEmits<{
@@ -184,7 +184,7 @@ defineExpose({
     </div>
 
     <div class="partition-actions">
-      <span class="selected-count">已选 {{ selectedPartitions.length }} 项</span>
+      <span class="selected-count" />
       <button
         type="button"
         class="confirm-btn"
