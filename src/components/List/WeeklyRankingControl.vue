@@ -11,11 +11,13 @@ const props = withDefaults(defineProps<{
   month?: number | string
   issue: number | string
   title: string
+  keywords?: string[]
   monthStatuses?: MonthWeekStatus[]
   activeWeekIndex?: number
   canPrev?: boolean
   canNext?: boolean
 }>(), {
+  keywords: () => [],
   monthStatuses: () => [],
   activeWeekIndex: -1,
   canPrev: true,
@@ -56,6 +58,19 @@ const normalizedMonth = computed(() => {
   return digitOnly.padStart(2, '0')
 })
 
+const normalizedKeywords = computed(() => {
+  const uniqueKeywords = new Set<string>()
+  for (const raw of props.keywords) {
+    const keyword = `${raw ?? ''}`.trim()
+    if (!keyword)
+      continue
+    uniqueKeywords.add(keyword)
+    if (uniqueKeywords.size >= 6)
+      break
+  }
+  return [...uniqueKeywords]
+})
+
 function handlePrevMonth() {
   if (!props.canPrev)
     return
@@ -71,6 +86,10 @@ function handleNextMonth() {
 }
 
 function handleSelectWeek(index: number) {
+  const status = normalizedMonthStatuses.value[index]
+  if (!status?.uploaded)
+    return
+
   emit('selectWeek', index)
 }
 </script>
@@ -87,6 +106,16 @@ function handleSelectWeek(index: number) {
       <h3 class="ranking-title">
         {{ title }}
       </h3>
+    </div>
+
+    <div v-if="normalizedKeywords.length" class="keywords-row" aria-label="推荐词条">
+      <span
+        v-for="keyword in normalizedKeywords"
+        :key="keyword"
+        class="keyword-chip"
+      >
+        {{ keyword }}
+      </span>
     </div>
 
     <div class="month-controls">
@@ -106,8 +135,11 @@ function handleSelectWeek(index: number) {
           class="month-status-item"
           :class="{
             uploaded: status.uploaded,
+            pending: !status.uploaded,
             active: activeWeekIndex === index,
           }"
+          :title="status.uploaded ? '' : '未更新'"
+          :aria-disabled="!status.uploaded"
           @click="handleSelectWeek(index)"
         >
           <span class="month-status-dot" />
@@ -137,6 +169,10 @@ function handleSelectWeek(index: number) {
   --weekly-issue-size: 2.25em;
   --weekly-issue-month-size: 0.875em;
   --weekly-title-size: 1em;
+  --weekly-chip-gap: 0.5rem;
+  --weekly-chip-padding-block: 0.2rem;
+  --weekly-chip-padding-inline: 0.5rem;
+  --weekly-chip-size: 0.75em;
 
   display: flex;
   flex-direction: column;
@@ -178,6 +214,26 @@ function handleSelectWeek(index: number) {
   gap: var(--weekly-control-gap);
 }
 
+.keywords-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--weekly-chip-gap);
+}
+
+.keyword-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: var(--weekly-chip-padding-block) var(--weekly-chip-padding-inline);
+  border-radius: var(--bew-radius);
+  font-size: var(--weekly-chip-size);
+  color: var(--bew-text-2);
+  background: var(--bew-fill-1);
+  white-space: nowrap;
+}
+
 .month-status-list {
   flex: 1;
   display: grid;
@@ -207,6 +263,11 @@ function handleSelectWeek(index: number) {
 
 .month-status-item.uploaded {
   color: var(--bew-theme-color);
+}
+
+.month-status-item.pending {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .month-status-item.active {
