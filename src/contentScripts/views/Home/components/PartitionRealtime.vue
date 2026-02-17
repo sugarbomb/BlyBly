@@ -76,6 +76,10 @@ const showPartitionPanel = computed<boolean>({
   get: () => partitionRealtimeState.value.showPanel,
   set: value => partitionRealtimeState.value.showPanel = value,
 })
+const previewEnabled = computed<boolean>({
+  get: () => partitionRealtimeState.value.previewEnabled,
+  set: value => partitionRealtimeState.value.previewEnabled = value,
+})
 const selectedPartitionIds = computed<Array<string | number>>({
   get: () => partitionRealtimeState.value.selectedPartitionIds,
   set: value => partitionRealtimeState.value.selectedPartitionIds = value,
@@ -101,7 +105,7 @@ const selectedPartitions = computed(() => {
 })
 
 const activePartition = computed(() => {
-  return selectedPartitions.value.find(item => item.id === activePartitionId.value) ?? null
+  return partitionOptions.value.find(item => item.id === activePartitionId.value) ?? null
 })
 
 const partitionStatus = computed<'idle' | 'selected'>(() => {
@@ -145,7 +149,9 @@ onActivated(() => {
   initPageAction()
 })
 
-watch(selectedPartitions, (nextSelected) => {
+watch(selectedPartitions, (nextSelected, prevSelected) => {
+  const previousLength = prevSelected?.length ?? 0
+
   if (!nextSelected.length) {
     activePartitionId.value = null
     videoList.value = []
@@ -153,14 +159,21 @@ watch(selectedPartitions, (nextSelected) => {
   }
 
   const hasActive = nextSelected.some(item => item.id === activePartitionId.value)
-  if (!hasActive)
-    activePartitionId.value = nextSelected[0].id
+  if (!hasActive) {
+    if (!activePartitionId.value || nextSelected.length > previousLength)
+      activePartitionId.value = nextSelected[0].id
+  }
 }, { immediate: true })
 
 watch(activePartitionId, (nextPartitionId, prevPartitionId) => {
   if (nextPartitionId === prevPartitionId)
     return
   initData()
+})
+
+watch(previewEnabled, (enabled) => {
+  if (enabled)
+    initData()
 })
 
 function initPageAction() {
@@ -285,8 +298,8 @@ function resolveActivePartitionRid(): number | null {
 function handleSelectPartition(payload: { partition: PartitionOption, selected: boolean, selectedIds: Array<string | number> }) {
   if (payload.selected)
     activePartitionId.value = payload.partition.id
-  else if (activePartitionId.value === payload.partition.id)
-    activePartitionId.value = payload.selectedIds[0] ?? null
+  else if (!payload.selectedIds.length)
+    activePartitionId.value = null
 }
 
 function handleSwitchPartition() {
@@ -309,6 +322,7 @@ function handleConfirmPartitions(partitions: PartitionOption[]) {
 defineExpose({
   initData,
   showPartitionPanel,
+  previewEnabled,
   selectedPartitionIds,
   selectedPartitions,
   activePartition,
@@ -336,6 +350,8 @@ defineExpose({
       <PartitionSelectionControl
         v-model="selectedPartitionIds"
         v-model:visible="showPartitionPanel"
+        v-model:preview-enabled="previewEnabled"
+        :browse-active-id="activePartitionId"
         :partitions="partitionOptions"
         @select-partition="handleSelectPartition"
         @confirm="handleConfirmPartitions"

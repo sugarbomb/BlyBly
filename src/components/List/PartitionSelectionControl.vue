@@ -19,20 +19,25 @@ interface PartitionSelectPayload {
 const props = withDefaults(defineProps<{
   modelValue?: Array<string | number>
   visible?: boolean
+  previewEnabled?: boolean
+  browseActiveId?: string | number | null
   partitions?: PartitionItem[]
   emptyText?: string
   confirmText?: string
 }>(), {
   modelValue: () => [],
   visible: true,
+  previewEnabled: true,
+  browseActiveId: null,
   partitions: () => [],
   emptyText: '暂无可选分区',
-  confirmText: '选好咯',
+  confirmText: '收起',
 })
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: Array<string | number>): void
   (e: 'update:visible', value: boolean): void
+  (e: 'update:previewEnabled', value: boolean): void
   (e: 'change', partitions: PartitionItem[]): void
   (e: 'selectPartition', payload: PartitionSelectPayload): void
   (e: 'confirm', partitions: PartitionItem[]): void
@@ -89,23 +94,34 @@ function handleSelect(partition: PartitionItem) {
   if (partition.disabled)
     return
 
-  const nextSelectedIdSet = new Set(selectedIdSet.value)
-  let selected = false
+  let nextSelectedIds: Array<string | number> = []
+  let nextSelectedPartitions: PartitionItem[] = []
+  let selected = true
 
-  if (nextSelectedIdSet.has(partition.id)) {
-    nextSelectedIdSet.delete(partition.id)
+  if (props.previewEnabled) {
+    // Browse mode: do not overwrite selected set.
+    nextSelectedIds = [...selectedIds.value]
+    nextSelectedPartitions = normalizedPartitions.value.filter(item => selectedIdSet.value.has(item.id))
   }
   else {
-    nextSelectedIdSet.add(partition.id)
-    selected = true
+    // Select mode: keep multi-select behavior.
+    const nextSelectedIdSet = new Set(selectedIdSet.value)
+
+    if (nextSelectedIdSet.has(partition.id)) {
+      nextSelectedIdSet.delete(partition.id)
+      selected = false
+    }
+    else {
+      nextSelectedIdSet.add(partition.id)
+    }
+
+    nextSelectedIds = normalizedPartitions.value
+      .map(item => item.id)
+      .filter(id => nextSelectedIdSet.has(id))
+
+    nextSelectedPartitions = normalizedPartitions.value
+      .filter(item => nextSelectedIdSet.has(item.id))
   }
-
-  const nextSelectedIds = normalizedPartitions.value
-    .map(item => item.id)
-    .filter(id => nextSelectedIdSet.has(id))
-
-  const nextSelectedPartitions = normalizedPartitions.value
-    .filter(item => nextSelectedIdSet.has(item.id))
 
   emit('update:modelValue', nextSelectedIds)
   emit('change', nextSelectedPartitions)
@@ -123,6 +139,10 @@ function handleConfirm() {
 
   emit('confirm', selectedPartitions.value)
   emit('update:visible', false)
+}
+
+function togglePreview() {
+  emit('update:previewEnabled', !props.previewEnabled)
 }
 
 function resolveFallbackLabel(name: string): string {
@@ -151,8 +171,9 @@ defineExpose({
         type="button"
         class="partition-item"
         :class="{
-          active: selectedIdSet.has(partition.id),
-          disabled: partition.disabled,
+          'active': selectedIdSet.has(partition.id) && !previewEnabled,
+          'browse-active': previewEnabled && partition.id === browseActiveId,
+          'disabled': partition.disabled,
         }"
         :title="partition.href || partition.name"
         :data-href="partition.href || undefined"
@@ -184,7 +205,19 @@ defineExpose({
     </div>
 
     <div class="partition-actions">
-      <span class="selected-count" />
+      <button
+        type="button"
+        class="preview-switch-row"
+        :aria-pressed="previewEnabled"
+        @click="togglePreview"
+      >
+        <span class="preview-switch-label">
+          {{ previewEnabled ? '浏览' : '择选' }}
+        </span>
+        <span class="preview-switch" :class="{ on: previewEnabled }" aria-hidden="true">
+          <span class="preview-switch-thumb" />
+        </span>
+      </button>
       <button
         type="button"
         class="confirm-btn"
@@ -233,6 +266,13 @@ defineExpose({
 .partition-item.active {
   color: var(--bew-text-auto);
   background: var(--bew-theme-color);
+}
+
+.partition-item.browse-active {
+  color: var(--bew-text-1);
+  background: var(--bew-fill-1);
+  border: 1px solid var(--bew-theme-color);
+  box-shadow: 0 0 0 1px var(--bew-theme-color-40) inset;
 }
 
 .partition-item.disabled {
@@ -302,9 +342,50 @@ defineExpose({
   gap: 0.5rem;
 }
 
-.selected-count {
+.preview-switch-row {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--bew-text-2);
-  font-size: 0.75em;
+  cursor: pointer;
+}
+
+.preview-switch-label {
+  font-size: 0.8em;
+  font-weight: 600;
+}
+
+.preview-switch {
+  width: 2.15rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: var(--bew-fill-2);
+  border: 1px solid var(--bew-border-color);
+  position: relative;
+  transition: background-color 200ms;
+}
+
+.preview-switch.on {
+  background: var(--bew-theme-color);
+}
+
+.preview-switch-thumb {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 999px;
+  background: #fff;
+  position: absolute;
+  top: 50%;
+  left: 0.15rem;
+  transform: translateY(-50%);
+  transition: transform 200ms;
+}
+
+.preview-switch.on .preview-switch-thumb {
+  transform: translate(0.85rem, -50%);
 }
 
 .confirm-btn {

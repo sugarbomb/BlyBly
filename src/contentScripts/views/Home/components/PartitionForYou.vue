@@ -75,14 +75,21 @@ interface VideoElement {
 }
 
 const PAGE_SIZE = 15
+const DISPLAY_ID_MIN = 1
+const DISPLAY_ID_MAX = 5
 
 const { handlePageRefresh } = useBewlyApp()
 const isLoading = ref<boolean>(false)
 const videoList = ref<VideoElement[]>([])
 const requestToken = ref<number>(0)
+const displayId = ref<number>(DISPLAY_ID_MIN)
 const showPartitionPanel = computed<boolean>({
   get: () => partitionForYouState.value.showPanel,
   set: value => partitionForYouState.value.showPanel = value,
+})
+const previewEnabled = computed<boolean>({
+  get: () => partitionForYouState.value.previewEnabled,
+  set: value => partitionForYouState.value.previewEnabled = value,
 })
 const selectedPartitionIds = computed<Array<string | number>>({
   get: () => partitionForYouState.value.selectedPartitionIds,
@@ -109,7 +116,7 @@ const selectedPartitions = computed(() => {
 })
 
 const activePartition = computed(() => {
-  return selectedPartitions.value.find(item => item.id === activePartitionId.value) ?? null
+  return partitionOptions.value.find(item => item.id === activePartitionId.value) ?? null
 })
 
 const partitionStatus = computed<'idle' | 'selected'>(() => {
@@ -153,7 +160,9 @@ onActivated(() => {
   initPageAction()
 })
 
-watch(selectedPartitions, (nextSelected) => {
+watch(selectedPartitions, (nextSelected, prevSelected) => {
+  const previousLength = prevSelected?.length ?? 0
+
   if (!nextSelected.length) {
     activePartitionId.value = null
     videoList.value = []
@@ -161,14 +170,22 @@ watch(selectedPartitions, (nextSelected) => {
   }
 
   const hasActive = nextSelected.some(item => item.id === activePartitionId.value)
-  if (!hasActive)
-    activePartitionId.value = nextSelected[0].id
+  if (!hasActive) {
+    if (!activePartitionId.value || nextSelected.length > previousLength)
+      activePartitionId.value = nextSelected[0].id
+  }
 }, { immediate: true })
 
 watch(activePartitionId, (nextPartitionId, prevPartitionId) => {
   if (nextPartitionId === prevPartitionId)
     return
+  displayId.value = DISPLAY_ID_MIN
   initData()
+})
+
+watch(previewEnabled, (enabled) => {
+  if (enabled)
+    initData()
 })
 
 function initPageAction() {
@@ -200,6 +217,7 @@ async function initData() {
 
     const response = await api.partition.getPartitionForYouList({
       from_region: fromRegion,
+      display_id: displayId.value,
     }) as PartitionForYouResult
 
     if (currentToken !== requestToken.value)
@@ -211,6 +229,7 @@ async function initData() {
         uniqueId: resolveUniqueId(item, index),
         item,
       }))
+      displayId.value = getNextDisplayId(displayId.value)
     }
     else {
       videoList.value = []
@@ -302,8 +321,14 @@ function resolveActivePartitionId(): number | null {
 function handleSelectPartition(payload: { partition: PartitionOption, selected: boolean, selectedIds: Array<string | number> }) {
   if (payload.selected)
     activePartitionId.value = payload.partition.id
-  else if (activePartitionId.value === payload.partition.id)
-    activePartitionId.value = payload.selectedIds[0] ?? null
+  else if (!payload.selectedIds.length)
+    activePartitionId.value = null
+}
+
+function getNextDisplayId(current: number): number {
+  if (current >= DISPLAY_ID_MAX)
+    return DISPLAY_ID_MIN
+  return current + 1
 }
 
 function handleSwitchPartition() {
@@ -326,6 +351,7 @@ function handleConfirmPartitions(partitions: PartitionOption[]) {
 defineExpose({
   initData,
   showPartitionPanel,
+  previewEnabled,
   selectedPartitionIds,
   selectedPartitions,
   activePartition,
@@ -353,6 +379,8 @@ defineExpose({
       <PartitionSelectionControl
         v-model="selectedPartitionIds"
         v-model:visible="showPartitionPanel"
+        v-model:preview-enabled="previewEnabled"
+        :browse-active-id="activePartitionId"
         :partitions="partitionOptions"
         @select-partition="handleSelectPartition"
         @confirm="handleConfirmPartitions"

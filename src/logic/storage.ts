@@ -271,18 +271,21 @@ export const sidePanel = useStorageLocal<{ home: boolean }>('sidePanel', {
 
 export interface PartitionRealtimeState {
   showPanel: boolean
+  previewEnabled: boolean
   selectedPartitionIds: Array<string | number>
   activePartitionId: string | number | null
 }
 
 export const partitionRealtimeState = useStorageLocal<PartitionRealtimeState>('partitionRealtimeState', {
   showPanel: true,
+  previewEnabled: true,
   selectedPartitionIds: [],
   activePartitionId: null,
 }, { mergeDefaults: true })
 
 export const partitionForYouState = useStorageLocal<PartitionRealtimeState>('partitionForYouState', {
   showPanel: true,
+  previewEnabled: true,
   selectedPartitionIds: [],
   activePartitionId: null,
 }, { mergeDefaults: true })

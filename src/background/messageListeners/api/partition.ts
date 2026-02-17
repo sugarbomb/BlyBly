@@ -42,7 +42,8 @@ const API_PARTITION = {
       method: 'get',
     },
     params: {
-      request_cnt: 10,
+      display_id: 1,
+      request_cnt: 15,
       from_region: 1005,
       device: 'web',
       plat: 30,
