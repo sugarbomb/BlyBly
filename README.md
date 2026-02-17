@@ -12,8 +12,8 @@
 #### 快捷添加方式
 > <img width="1212" height="324" alt="image" src="https://github.com/user-attachments/assets/4c97cbf5-3cc0-43ab-b46c-2188b7dae27f" />
 
-### 更新速览
-
+### 其它功能预览
+- [新周必，新分区浏览页 展示 v0.4.0 ](docs/features/v0.4.0周必，分区页.md)
 - [新推荐页 展示 v0.2.0 ](docs/features/v0.2.0新版本推荐页.md)
 
 ### 安装
@@ -23,7 +23,14 @@
 
 2. 开发者模式打开
 <img width="800" height="600" alt="PixPin_2026-02-03_08-32-56" src="https://github.com/user-attachments/assets/cf4a5339-57cc-4657-be10-c5d3c2686db9" />
-<img width="800" height="412" alt="PixPin_2026-02-03_10-20-22" src="https://github.com/user-attachments/assets/06e6ce1c-a12c-4b86-bd3f-3a5148d1de82" />
+<img width="800" height="400" alt="PixPin_2026-02-03_10-20-22" src="https://github.com/user-attachments/assets/06e6ce1c-a12c-4b86-bd3f-3a5148d1de82" />
+
+### 升级
+
+1. 文件解压
+2. 覆盖旧文件夹内的文件，选择全部替换
+3. 刷新插件
+<img width="500" height="299" alt="image" src="https://github.com/user-attachments/assets/32a796f9-84fa-49a0-9d87-0d756c8bf875" />
 
 ## 本项目为学习交流目的， 所有赞助以及链接均保存自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly)  侵删。
 
