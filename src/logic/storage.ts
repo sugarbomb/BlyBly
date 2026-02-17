@@ -278,14 +278,14 @@ export interface PartitionRealtimeState {
 
 export const partitionRealtimeState = useStorageLocal<PartitionRealtimeState>('partitionRealtimeState', {
   showPanel: true,
-  previewEnabled: true,
+  previewEnabled: false,
   selectedPartitionIds: [],
   activePartitionId: null,
 }, { mergeDefaults: true })
 
 export const partitionForYouState = useStorageLocal<PartitionRealtimeState>('partitionForYouState', {
   showPanel: true,
-  previewEnabled: true,
+  previewEnabled: false,
   selectedPartitionIds: [],
   activePartitionId: null,
 }, { mergeDefaults: true })

@@ -27,7 +27,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   modelValue: () => [],
   visible: true,
-  previewEnabled: true,
+  previewEnabled: false,
   browseActiveId: null,
   partitions: () => [],
   emptyText: '暂无可选分区',
@@ -212,7 +212,7 @@ defineExpose({
         @click="togglePreview"
       >
         <span class="preview-switch-label">
-          {{ previewEnabled ? '浏览' : '择选' }}
+          {{ previewEnabled ? '浏览' : '拣选' }}
         </span>
         <span class="preview-switch" :class="{ on: previewEnabled }" aria-hidden="true">
           <span class="preview-switch-thumb" />
