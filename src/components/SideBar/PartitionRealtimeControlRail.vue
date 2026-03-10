@@ -65,20 +65,6 @@ function handleSwitchPartition() {
         box-border border="1 $bew-border-color"
         flex="~ col items-center gap-2"
       >
-        <Tooltip :content="$t('common.operation.refresh')" placement="left">
-          <Button
-            type="secondary"
-            :disabled="props.loading"
-            :loading="props.loading"
-            round
-            center
-            class="rail-btn0"
-            @click="emit('refresh')"
-          >
-            <div i-mingcute:refresh-2-line text="lg" />
-          </Button>
-        </Tooltip>
-
         <Tooltip :content="`${panelStatusLabel}（点击开关面板）`" placement="left">
           <Button
             type="secondary"
@@ -113,6 +99,20 @@ function handleSwitchPartition() {
           :disabled="props.loading || props.switchDisabled"
           @switch="handleSwitchPartition"
         />
+
+        <Tooltip :content="$t('common.operation.refresh')" placement="left">
+          <Button
+            type="secondary"
+            :disabled="props.loading"
+            :loading="props.loading"
+            round
+            center
+            class="rail-btn0"
+            @click="emit('refresh')"
+          >
+            <div i-mingcute:refresh-2-line text="lg" />
+          </Button>
+        </Tooltip>
       </div>
     </div>
   </aside>

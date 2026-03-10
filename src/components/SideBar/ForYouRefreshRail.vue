@@ -67,20 +67,6 @@ function handleToggle() {
         box-border border="1 $bew-border-color"
         flex="~ col items-center gap-2"
       >
-        <Tooltip :content="$t('common.operation.refresh')" placement="left">
-          <Button
-            type="secondary"
-            :disabled="props.loading"
-            :loading="props.loading"
-            round
-            center
-            class="rail-btn0"
-            @click="emit('refresh')"
-          >
-            <div i-mingcute:refresh-2-line text="lg" />
-          </Button>
-        </Tooltip>
-
         <!-- Current mode indicator (non-clickable) -->
         <Tooltip :content="`当前模式: ${currentModeLabel}`" placement="left">
           <div
@@ -103,6 +89,20 @@ function handleToggle() {
             @click="handleToggle"
           >
             <div i-mingcute:transfer-3-line text="lg" />
+          </Button>
+        </Tooltip>
+
+        <Tooltip :content="$t('common.operation.refresh')" placement="left">
+          <Button
+            type="secondary"
+            :disabled="props.loading"
+            :loading="props.loading"
+            round
+            center
+            class="rail-btn0"
+            @click="emit('refresh')"
+          >
+            <div i-mingcute:refresh-2-line text="lg" />
           </Button>
         </Tooltip>
       </div>
