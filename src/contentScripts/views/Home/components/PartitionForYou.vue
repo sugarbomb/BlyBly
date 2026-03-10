@@ -3,6 +3,7 @@ import PartitionSelectionControl from '~/components/List/PartitionSelectionContr
 import PartitionRealtimeControlRail from '~/components/SideBar/PartitionRealtimeControlRail.vue'
 import type { Video } from '~/components/VideoCard/types'
 import { useBewlyApp } from '~/composables/useAppProvider'
+import { useFilterAdvance } from '~/composables/useFilterAdvance'
 import type { GridLayoutType } from '~/logic'
 import { partitionForYouState } from '~/logic'
 import api from '~/utils/api'
@@ -79,6 +80,7 @@ const DISPLAY_ID_MIN = 1
 const DISPLAY_ID_MAX = 5
 
 const { handlePageRefresh } = useBewlyApp()
+const { options: forYouFilterOptions } = useFilterAdvance('foryou-filter')
 const isLoading = ref<boolean>(false)
 const videoList = ref<VideoElement[]>([])
 const requestToken = ref<number>(0)
@@ -150,6 +152,31 @@ const gridClass = computed((): string => {
     return 'grid-two-columns'
   return 'grid-one-column'
 })
+
+function shouldFilterByForYou(item: { title?: string, owner?: { name?: string, mid?: number | string } }): boolean {
+  if (!forYouFilterOptions.value.enabled || forYouFilterOptions.value.rules.length === 0)
+    return false
+
+  const title = item.title ?? ''
+  const ownerName = item.owner?.name ?? ''
+  const ownerMid = item.owner?.mid
+
+  return forYouFilterOptions.value.rules
+    .filter(r => r.enabled)
+    .some((rule) => {
+      if (rule.type === 'title' && title)
+        return title.toLowerCase().includes(rule.value.toLowerCase())
+      if (rule.type === 'username' && ownerName)
+        return ownerName.toLowerCase().includes(rule.value.toLowerCase())
+      if (rule.type === 'uid' && ownerMid !== undefined && ownerMid !== null)
+        return String(ownerMid) === rule.value
+      return false
+    })
+}
+
+function resolveArchiveOwner(item: PartitionForYouArchive) {
+  return item.author ?? item.owner ?? {}
+}
 
 onMounted(() => {
   initPageAction()
@@ -224,7 +251,16 @@ async function initData() {
       return
 
     if (response?.code === 0) {
-      const archives = extractArchives(response)
+      const archives = extractArchives(response).filter((item) => {
+        const owner = resolveArchiveOwner(item)
+        return !shouldFilterByForYou({
+          title: item.title ?? '',
+          owner: {
+            name: owner?.name ?? '',
+            mid: owner?.mid,
+          },
+        })
+      })
       videoList.value = archives.map((item, index) => ({
         uniqueId: resolveUniqueId(item, index),
         item,

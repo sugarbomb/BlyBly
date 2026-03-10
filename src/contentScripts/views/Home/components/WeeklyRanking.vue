@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import WeeklyRankingControl from '~/components/List/WeeklyRankingControl.vue'
 import { useBewlyApp } from '~/composables/useAppProvider'
+import { useFilterAdvance } from '~/composables/useFilterAdvance'
 import type { GridLayoutType } from '~/logic'
 import api from '~/utils/api'
 
@@ -66,6 +67,7 @@ const emit = defineEmits<{
 
 const PAGE_SIZE = 4
 const { handlePageRefresh } = useBewlyApp()
+const { filterVideos, options: filterOptions } = useFilterAdvance('ranking-filter')
 const monthIndex = ref<number>(0)
 const activeWeekIndex = ref<number>(0)
 const isLoading = ref<boolean>(false)
@@ -195,11 +197,27 @@ const currentTitle = computed(() => {
   return selectedSeries.value?.subject ?? '周榜标题'
 })
 
+const filteredWeeklyVideoCards = computed(() => {
+  if (!filterOptions.value.enabled || filterOptions.value.rules.length === 0)
+    return weeklyVideoCards.value
+
+  const adapterList = weeklyVideoCards.value.map(video => ({
+    title: video.title,
+    owner: {
+      name: video.author?.name ?? '',
+      mid: video.author?.mid,
+    },
+  }))
+  const allowedAdapters = filterVideos(adapterList as any[])
+  const allowedSet = new Set(allowedAdapters)
+  return weeklyVideoCards.value.filter((_, index) => allowedSet.has(adapterList[index]))
+})
+
 const recommendedTerms = computed(() => {
   const terms: string[] = []
   const seen = new Set<string>()
 
-  for (const video of weeklyVideoCards.value) {
+  for (const video of filteredWeeklyVideoCards.value) {
     const candidates = splitReasonText(video.tag ?? '')
     for (const candidate of candidates) {
       if (seen.has(candidate))
@@ -469,7 +487,7 @@ defineExpose({ initData })
 
       <template v-if="!isDetailLoading">
         <VideoCard
-          v-for="(video, index) in weeklyVideoCards"
+          v-for="(video, index) in filteredWeeklyVideoCards"
           :key="video.bvid || `${video.id}-${index}`"
           :video="{
             id: video.id,

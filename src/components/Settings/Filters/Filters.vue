@@ -10,7 +10,7 @@ import FilterTemplate from './FilterTemplate.vue'
       <SettingsItem title="" desc="">
         <template #bottom>
           <FilterTemplate
-            title="热门页"
+            title="全站热门-周选集"
             description=" "
             storage-key="trending-filter"
             placeholder="输入要过滤的内容"
@@ -44,7 +44,7 @@ import FilterTemplate from './FilterTemplate.vue'
       <SettingsItem title="" desc="">
         <template #bottom>
           <FilterTemplate
-            title="随便看看"
+            title="随便看看-分区-新稿件"
             description=" "
             storage-key="foryou-filter"
             placeholder="输入要过滤的内容"
