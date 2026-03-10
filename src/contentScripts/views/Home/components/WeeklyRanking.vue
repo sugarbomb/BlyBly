@@ -86,17 +86,17 @@ onActivated(() => {
 })
 
 function parseSeriesTime(name: string): { key: string, monthLabel: string } {
-  const fullMatch = name.match(/^(\d{4}).*?(\d{2})\.\d{2}\s*-\s*\d{2}\.\d{2}/)
+  const fullMatch = name.match(/^(\d{4}).*?(\d{2})\.\d{2}\s*-\s*(\d{2})\.\d{2}/)
   if (fullMatch) {
-    const [, year, month] = fullMatch
+    const [, year, , endMonth] = fullMatch
     return {
-      key: `${year}-${month}`,
-      monthLabel: month,
+      key: `${year}-${endMonth}`,
+      monthLabel: endMonth,
     }
   }
 
-  const monthOnlyMatch = name.match(/(\d{2})\.\d{2}\s*-\s*\d{2}\.\d{2}/)
-  const month = monthOnlyMatch?.[1] ?? '00'
+  const monthOnlyMatch = name.match(/(\d{2})\.\d{2}\s*-\s*(\d{2})\.\d{2}/)
+  const month = monthOnlyMatch?.[2] ?? monthOnlyMatch?.[1] ?? '00'
   return {
     key: `unknown-${month}-${name}`,
     monthLabel: month,
@@ -141,11 +141,21 @@ const monthPages = computed<MonthlySeriesPage[]>(() => {
       pages.push({ key: timeInfo.key, monthLabel: timeInfo.monthLabel, items: [item] })
   }
 
-  return pages.map(page => ({
+  const normalizedPages = pages.map(page => ({
     key: page.key,
     monthLabel: page.monthLabel,
     items: fillFutureItems(page.items, page.monthLabel),
   }))
+
+  return normalizedPages.sort((a, b) => {
+    const aKnown = !a.key.startsWith('unknown-')
+    const bKnown = !b.key.startsWith('unknown-')
+    if (aKnown && !bKnown)
+      return -1
+    if (!aKnown && bKnown)
+      return 1
+    return b.key.localeCompare(a.key)
+  })
 })
 
 const pageCount = computed(() => {
@@ -265,6 +275,18 @@ function resolveWeekIndex(targetMonthIndex: number, preferredIssue: number, dire
   return (candidates[0] ?? uploadedEntries[0]).index
 }
 
+function resolveLatestIndex(targetMonthIndex: number): number {
+  const items = monthPages.value[targetMonthIndex]?.items ?? []
+  if (!items.length)
+    return 0
+
+  for (let i = items.length - 1; i >= 0; i -= 1) {
+    if (items[i].status === 2)
+      return i
+  }
+  return items.length - 1
+}
+
 watch(selectedSeries, (item) => {
   void syncWeeklyVideosBySeries(item)
 }, { immediate: true })
@@ -307,8 +329,11 @@ function initPageAction() {
 async function getWeeklySeriesList() {
   try {
     const response: WeeklySeriesListResult = await api.weeklyRanking.getWeeklyRankingSeriesList()
-    if (response.code === 0)
+    if (response.code === 0) {
       weeklySeriesList.value = response.data?.list ?? []
+      monthIndex.value = 0
+      activeWeekIndex.value = resolveLatestIndex(0)
+    }
   }
   catch {
     weeklySeriesList.value = []
@@ -397,8 +422,16 @@ function normalizeWeeklyVideoItem(item: any, index: number): WeeklyVideoCardItem
 }
 
 function splitReasonText(text: string): string[] {
-  return text
-    .split(/[，。！？、；,.!?/\s]+/g)
+  const cleaned = text.trim()
+  if (!cleaned)
+    return []
+
+  // Keep short sentences intact to avoid awkward splits.
+  if (cleaned.length <= 20)
+    return [cleaned]
+
+  return cleaned
+    .split(/[|/\\\s]+/g)
     .map(item => item.trim())
     .filter(item => item.length >= 2 && item.length <= 14)
 }
@@ -412,10 +445,11 @@ defineExpose({ initData })
       <div
         class="weekly-control-card"
         style="backdrop-filter: var(--bew-filter-glass-1)"
-        bg="$bew-elevated"
+        bg="$bew-content-alt" dark:bg="$bew-elevated"
         rounded="$bew-radius"
         p-4
         box-border border="1 $bew-border-color"
+        shadow="[var(--bew-shadow-edge-glow-1),var(--bew-shadow-2)]"
         text-center w-full
       >
         <WeeklyRankingControl

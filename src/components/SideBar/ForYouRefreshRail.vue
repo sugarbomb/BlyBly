@@ -62,8 +62,8 @@ function handleToggle() {
     <div flex="~ col items-center">
       <div
         style="backdrop-filter: var(--bew-filter-glass-1)"
-        bg="$bew-elevated" p-2 rounded="$bew-radius"
-        shadow="[var(--bew-shadow-1),var(--bew-shadow-edge-glow-1)]"
+        bg="$bew-content-alt" dark:bg="$bew-elevated" p-2 rounded="$bew-radius"
+        shadow="[var(--bew-shadow-edge-glow-1),var(--bew-shadow-2)]"
         box-border border="1 $bew-border-color"
         flex="~ col items-center gap-2"
       >
@@ -74,7 +74,7 @@ function handleToggle() {
             :loading="props.loading"
             round
             center
-            class="rail-btn"
+            class="rail-btn0"
             @click="emit('refresh')"
           >
             <div i-mingcute:refresh-2-line text="lg" />
@@ -118,8 +118,8 @@ function handleToggle() {
   >
     <div
       style="backdrop-filter: var(--bew-filter-glass-1)"
-      bg="$bew-elevated" p-2 rounded="$bew-radius"
-      shadow="[var(--bew-shadow-1),var(--bew-shadow-edge-glow-1)]"
+      bg="$bew-content-alt" dark:bg="$bew-elevated" p-2 rounded="$bew-radius"
+      shadow="[var(--bew-shadow-edge-glow-1),var(--bew-shadow-2)]"
       box-border border="1 $bew-border-color"
       flex="~ col items-center gap-2"
     >
@@ -130,7 +130,7 @@ function handleToggle() {
           :disabled="props.loading"
           round
           center
-          class="rail-btn"
+          class="rail-btn0"
           @click="emit('refresh')"
         >
           <div i-mingcute:refresh-2-line text="lg" />
@@ -169,6 +169,17 @@ function handleToggle() {
 .rail-btn {
   --b-button-width: 40px;
   --b-button-height: 40px;
+  --b-button-padding: 0px;
+  --b-button-border-width: 1px;
+  --b-button-color: var(--bew-elevated);
+  --b-button-color-hover: var(--bew-elevated-hover);
+  --b-button-shadow: var(--bew-shadow-1);
+  --b-button-shadow-hover: var(--bew-shadow-2);
+  --b-button-shadow-active: var(--bew-shadow-1);
+}
+.rail-btn0 {
+  --b-button-width: 40px;
+  --b-button-height: 100px;
   --b-button-padding: 0px;
   --b-button-border-width: 1px;
   --b-button-color: var(--bew-elevated);

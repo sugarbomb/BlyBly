@@ -220,6 +220,9 @@ function handleSelectWeek(index: number) {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--weekly-chip-gap);
+  line-height: var(--weekly-keywords-line-height);
+  max-height: calc(var(--weekly-keywords-line-height) * var(--weekly-keywords-max-lines) * 1em);
+  overflow: hidden;
 }
 
 .keyword-chip {

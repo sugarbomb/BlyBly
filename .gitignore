@@ -8,6 +8,7 @@
 *.pem
 *.xpi
 *.zip
+*.todo
 dist
 dist-ssr
 extension/

@@ -60,8 +60,8 @@ function handleSwitchPartition() {
     <div flex="~ col items-center">
       <div
         style="backdrop-filter: var(--bew-filter-glass-1)"
-        bg="$bew-elevated" p-2 rounded="$bew-radius"
-        shadow="[var(--bew-shadow-1),var(--bew-shadow-edge-glow-1)]"
+        bg="$bew-content-alt" dark:bg="$bew-elevated" p-2 rounded="$bew-radius"
+        shadow="[var(--bew-shadow-edge-glow-1),var(--bew-shadow-2)]"
         box-border border="1 $bew-border-color"
         flex="~ col items-center gap-2"
       >
@@ -72,7 +72,7 @@ function handleSwitchPartition() {
             :loading="props.loading"
             round
             center
-            class="rail-btn"
+            class="rail-btn0"
             @click="emit('refresh')"
           >
             <div i-mingcute:refresh-2-line text="lg" />
@@ -85,7 +85,7 @@ function handleSwitchPartition() {
             :disabled="props.loading"
             round
             center
-            class="rail-btn mode-indicator"
+            class="rail-btn1 mode-indicator"
             @click="handleIndicatorToggle"
           >
             <svg v-if="resolvedStatusIcon.startsWith('#')" aria-hidden="true" class="status-icon">
@@ -126,8 +126,8 @@ function handleSwitchPartition() {
   >
     <div
       style="backdrop-filter: var(--bew-filter-glass-1)"
-      bg="$bew-elevated" p-2 rounded="$bew-radius"
-      shadow="[var(--bew-shadow-1),var(--bew-shadow-edge-glow-1)]"
+      bg="$bew-content-alt" dark:bg="$bew-elevated" p-2 rounded="$bew-radius"
+      shadow="[var(--bew-shadow-edge-glow-1),var(--bew-shadow-2)]"
       box-border border="1 $bew-border-color"
       flex="~ col items-center gap-2"
     >
@@ -138,7 +138,7 @@ function handleSwitchPartition() {
           :disabled="props.loading"
           round
           center
-          class="rail-btn"
+          class="rail-btn0"
           @click="emit('refresh')"
         >
           <div i-mingcute:refresh-2-line text="lg" />
@@ -151,7 +151,7 @@ function handleSwitchPartition() {
           :disabled="props.loading"
           round
           center
-          class="rail-btn mode-indicator"
+          class="rail-btn1 mode-indicator"
           @click="handleIndicatorToggle"
         >
           <svg v-if="resolvedStatusIcon.startsWith('#')" aria-hidden="true" class="status-icon">
@@ -239,7 +239,18 @@ function handleSwitchPartition() {
 </template>
 
 <style scoped lang="scss">
-.rail-btn {
+.rail-btn0 {
+  --b-button-width: 40px;
+  --b-button-height: 100px;
+  --b-button-padding: 0px;
+  --b-button-border-width: 1px;
+  --b-button-color: var(--bew-elevated);
+  --b-button-color-hover: var(--bew-elevated-hover);
+  --b-button-shadow: var(--bew-shadow-1);
+  --b-button-shadow-hover: var(--bew-shadow-2);
+  --b-button-shadow-active: var(--bew-shadow-1);
+}
+.rail-btn1 {
   --b-button-width: 40px;
   --b-button-height: 40px;
   --b-button-padding: 0px;
@@ -250,7 +261,6 @@ function handleSwitchPartition() {
   --b-button-shadow-hover: var(--bew-shadow-2);
   --b-button-shadow-active: var(--bew-shadow-1);
 }
-
 .status-icon {
   width: 1.1rem;
   height: 1.1rem;
