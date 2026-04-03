@@ -38,13 +38,18 @@ const { addRule } = useFilterAdvance()
 
 function getFilterStorageKey() {
   // 通过pageType判断当前页面
-  if (pageType === 'trending') {
+  if (pageType === 'trending' || pageType === 'weeklyRanking') {
     return 'trending-filter'
   }
   if (pageType === 'ranking') {
     return 'ranking-filter'
   }
-  if (pageType === 'rcmd' || pageType === 'appRcmd') {
+  if (
+    pageType === 'rcmd'
+    || pageType === 'appRcmd'
+    || pageType === 'partitionForYou'
+    || pageType === 'partitionRealtime'
+  ) {
     return 'foryou-filter'
   }
   // 如果无法判断页面类型，返回undefined使用默认存储

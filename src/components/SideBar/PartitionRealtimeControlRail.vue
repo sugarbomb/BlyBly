@@ -241,7 +241,7 @@ function handleSwitchPartition() {
 <style scoped lang="scss">
 .rail-btn0 {
   --b-button-width: 40px;
-  --b-button-height: 100px;
+  --b-button-height: 90px;
   --b-button-padding: 0px;
   --b-button-border-width: 1px;
   --b-button-color: var(--bew-elevated);

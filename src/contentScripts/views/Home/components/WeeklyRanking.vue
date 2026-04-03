@@ -67,7 +67,9 @@ const emit = defineEmits<{
 
 const PAGE_SIZE = 4
 const { handlePageRefresh } = useBewlyApp()
-const { filterVideos, options: filterOptions } = useFilterAdvance('ranking-filter')
+const { filterVideos, options: filterOptions } = useFilterAdvance('trending-filter')
+
+provide('pageType', 'weeklyRanking')
 const monthIndex = ref<number>(0)
 const activeWeekIndex = ref<number>(0)
 const isLoading = ref<boolean>(false)
