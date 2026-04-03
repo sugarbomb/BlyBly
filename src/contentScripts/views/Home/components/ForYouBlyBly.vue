@@ -198,7 +198,7 @@ async function getData() {
 }
 
 function initPageAction() {
-  // Disable auto-loading on scroll-to-bottom for this page.
+  // Manual refresh page: disable scroll-to-bottom auto-loading for this tab.
   handleReachBottom.value = undefined
 
   handlePageRefresh.value = async () => {

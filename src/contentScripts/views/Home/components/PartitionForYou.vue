@@ -79,7 +79,7 @@ const PAGE_SIZE = 15
 const DISPLAY_ID_MIN = 1
 const DISPLAY_ID_MAX = 5
 
-const { handlePageRefresh } = useBewlyApp()
+const { handleReachBottom, handlePageRefresh } = useBewlyApp()
 const { options: forYouFilterOptions } = useFilterAdvance('foryou-filter')
 const isLoading = ref<boolean>(false)
 const videoList = ref<VideoElement[]>([])
@@ -216,6 +216,9 @@ watch(previewEnabled, (enabled) => {
 })
 
 function initPageAction() {
+  // Manual refresh page: disable scroll-to-bottom auto-loading for this tab.
+  handleReachBottom.value = undefined
+
   handlePageRefresh.value = async () => {
     await initData()
   }
