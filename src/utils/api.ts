@@ -1,13 +1,33 @@
 import type { API_COLLECTION } from '~/background/messageListeners/api'
+import type { Message } from '~/background/utils'
 
 type CamelCase<S extends string> = S extends `${infer P1}_${infer P2}${infer P3}`
   ? `${Lowercase<P1>}${Uppercase<P2>}${CamelCase<P3>}`
   : Lowercase<S>
 
+type MessagePayload<T> = T extends (message: infer M, ...args: any[]) => any
+  ? M extends Message
+    ? Omit<M, 'contentScriptQuery'>
+    : never
+  : never
+
+type APICall<T> = T extends (...args: any[]) => any
+  ? (options?: Partial<MessagePayload<T>>) => Promise<any>
+  : T extends {
+    _fetch: {
+      method: infer M
+      body?: infer B
+    }
+    params?: infer P
+  }
+    ? Lowercase<M & string> extends 'get'
+      ? (options?: Partial<P>) => Promise<any>
+      : (options?: Partial<P & B>) => Promise<any>
+    : never
+
 type APIFunction<T = typeof API_COLLECTION> = {
   [K in keyof T as CamelCase<string & K>]: {
-    // @ts-expect-error allow params
-    [P in keyof T[K]]: T[K][P] extends Function ? T[K][P] : Lowercase<T[K][P]['_fetch']['method']> extends 'get' ? (options?: Partial<T[K][P]['params']>) => Promise<any> : (options?: Partial<T[K][P]['params'] & T[K][P]['_fetch']['body']>) => Promise<any>
+    [P in keyof T[K]]: APICall<T[K][P]>
   }
 }
 

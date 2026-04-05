@@ -13,6 +13,9 @@ const props = withDefaults(defineProps<{
   type: 'rcmd',
   moreBtn: true,
 })
+const emit = defineEmits<{
+  (e: 'click', value: MouseEvent): void
+}>()
 </script>
 
 <template>
@@ -24,6 +27,7 @@ const props = withDefaults(defineProps<{
       :horizontal="props.horizontal"
       :show-preview="props.showPreview"
       :more-btn="props.moreBtn"
+      @click="emit('click', $event)"
     />
   </div>
 </template>
