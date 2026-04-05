@@ -236,8 +236,6 @@ async function initData() {
     return
   }
 
-  resetDisplayIdCycle()
-
   emit('beforeLoading')
   isLoading.value = true
 
