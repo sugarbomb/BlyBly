@@ -77,7 +77,8 @@ interface VideoElement {
 
 const PAGE_SIZE = 15
 const DISPLAY_ID_MIN = 1
-const DISPLAY_ID_MAX = 5
+const DISPLAY_ID_MAX_MIN = 3
+const DISPLAY_ID_MAX_MAX = 10
 
 const { handleReachBottom, handlePageRefresh } = useBewlyApp()
 const { options: forYouFilterOptions } = useFilterAdvance('foryou-filter')
@@ -85,6 +86,7 @@ const isLoading = ref<boolean>(false)
 const videoList = ref<VideoElement[]>([])
 const requestToken = ref<number>(0)
 const displayId = ref<number>(DISPLAY_ID_MIN)
+const displayIdCycleMax = ref<number>(getRandomDisplayIdCycleMax())
 const showPartitionPanel = computed<boolean>({
   get: () => partitionForYouState.value.showPanel,
   set: value => partitionForYouState.value.showPanel = value,
@@ -206,7 +208,7 @@ watch(selectedPartitions, (nextSelected, prevSelected) => {
 watch(activePartitionId, (nextPartitionId, prevPartitionId) => {
   if (nextPartitionId === prevPartitionId)
     return
-  displayId.value = DISPLAY_ID_MIN
+  resetDisplayIdCycle()
   initData()
 })
 
@@ -233,6 +235,8 @@ async function initData() {
     videoList.value = []
     return
   }
+
+  resetDisplayIdCycle()
 
   emit('beforeLoading')
   isLoading.value = true
@@ -306,6 +310,15 @@ function resolveUniqueId(item: PartitionForYouArchive, index: number): string {
   return `partition-foryou-video-${index}`
 }
 
+function getRandomDisplayIdCycleMax(): number {
+  return Math.floor(Math.random() * (DISPLAY_ID_MAX_MAX - DISPLAY_ID_MAX_MIN + 1)) + DISPLAY_ID_MAX_MIN
+}
+
+function resetDisplayIdCycle() {
+  displayId.value = DISPLAY_ID_MIN
+  displayIdCycleMax.value = getRandomDisplayIdCycleMax()
+}
+
 function toNumber(value: unknown): number {
   const parsed = Number(value)
   if (!Number.isFinite(parsed))
@@ -365,8 +378,10 @@ function handleSelectPartition(payload: { partition: PartitionOption, selected: 
 }
 
 function getNextDisplayId(current: number): number {
-  if (current >= DISPLAY_ID_MAX)
+  if (current >= displayIdCycleMax.value) {
+    displayIdCycleMax.value = getRandomDisplayIdCycleMax()
     return DISPLAY_ID_MIN
+  }
   return current + 1
 }
 

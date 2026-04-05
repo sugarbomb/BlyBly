@@ -11,6 +11,7 @@
 *.todo
 dist
 dist-ssr
+temp
 extension/
 extension-firefox/
 extension-safari/
