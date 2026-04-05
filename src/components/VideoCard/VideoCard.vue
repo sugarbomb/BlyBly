@@ -27,6 +27,9 @@ const props = withDefaults(defineProps<Props>(), {
   type: 'common',
   moreBtn: true,
 })
+const emit = defineEmits<{
+  (e: 'click', value: MouseEvent): void
+}>()
 
 interface Props {
   skeleton?: boolean
@@ -139,7 +142,8 @@ function toggleWatchLater() {
 }
 
 function handleMouseEnter() {
-  props.video && setActivatedCover(`${removeHttpFromUrl(props.video.cover)}@672w_378h_1c_!web-home-common-cover`)
+  if (props.video)
+    setActivatedCover(`${removeHttpFromUrl(props.video.cover)}@672w_378h_1c_!web-home-common-cover`)
 
   // fix #789
   contentVisibility.value = 'visible'
@@ -171,6 +175,10 @@ function handleClick(event: MouseEvent) {
     event.preventDefault()
     openIframeDrawer(videoUrl.value)
   }
+}
+
+function handleCardClick(event: MouseEvent) {
+  emit('click', event)
 }
 
 function handleMoreBtnClick(event: MouseEvent) {
@@ -251,6 +259,7 @@ provide('getVideoType', () => props.type!)
         class="video-card group"
         w="full"
         rounded="$bew-radius"
+        @click="handleCardClick"
       >
         <ALink
           :style="{ display: horizontal ? 'flex' : 'block', gap: horizontal ? '1.5rem' : '0' }"

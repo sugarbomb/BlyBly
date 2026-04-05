@@ -1,5 +1,223 @@
-import type { APIMAP } from '../../utils'
+import browser from 'webextension-polyfill'
+
+import { md5Hex } from '~/utils/md5'
+import { DEFAULT_TOP_FEED_PATH, TOP_FEED_DEFAULT_STATIC_PARAMS } from '~/utils/topFeedSession'
+
+import type { APIMAP, Message } from '../../utils'
 import { AHS } from '../../utils'
+
+const TOP_FEED_URL = `https://api.bilibili.com${DEFAULT_TOP_FEED_PATH}`
+const WBI_NAV_URL = 'https://api.bilibili.com/x/web-interface/nav'
+const WBI_PARAM_FILTER_REGEX = /[!'()*]/g
+const TOP_FEED_PARAM_ORDER = [
+  'web_location',
+  'y_num',
+  'fresh_type',
+  'feed_version',
+  'fresh_idx_1h',
+  'fetch_row',
+  'fresh_idx',
+  'brush',
+  'device',
+  'homepage_ver',
+  'ps',
+  'last_y_num',
+  'screen',
+  'seo_info',
+  'tt_exp',
+  'last_showlist',
+  'last_clicklist',
+  'uniq_id',
+] as const
+const WBI_MIXIN_KEY_ENC_TAB = [
+  46,
+  47,
+  18,
+  2,
+  53,
+  8,
+  23,
+  32,
+  15,
+  50,
+  10,
+  31,
+  58,
+  3,
+  45,
+  35,
+  27,
+  43,
+  5,
+  49,
+  33,
+  9,
+  42,
+  19,
+  29,
+  28,
+  14,
+  39,
+  12,
+  38,
+  41,
+  13,
+  37,
+  48,
+  7,
+  16,
+  24,
+  55,
+  40,
+  61,
+  26,
+  17,
+  0,
+  1,
+  60,
+  51,
+  30,
+  4,
+  22,
+  25,
+  54,
+  21,
+  56,
+  59,
+  6,
+  63,
+  57,
+  62,
+  11,
+  36,
+  20,
+  34,
+  44,
+  52,
+] as const
+
+function extractWbiKey(url: string): string {
+  const filename = url.slice(url.lastIndexOf('/') + 1)
+  return filename.slice(0, filename.lastIndexOf('.'))
+}
+
+function getWbiMixinKey(imgKey: string, subKey: string): string {
+  const raw = imgKey + subKey
+  return WBI_MIXIN_KEY_ENC_TAB.map(index => raw[index]).join('').slice(0, 32)
+}
+
+function sanitizeWbiValue(value: unknown): string {
+  return String(value).replace(WBI_PARAM_FILTER_REGEX, '')
+}
+
+function buildTopFeedParams(message: Message): Record<string, string> {
+  const { contentScriptQuery, ...rest } = message
+  const params = { ...TOP_FEED_DEFAULT_STATIC_PARAMS } as Record<string, string>
+
+  Object.entries(rest).forEach(([key, value]) => {
+    if (value === undefined || value === null)
+      return
+    params[key] = String(value)
+  })
+
+  return params
+}
+
+async function getFirefoxCookieHeader(sender?: browser.Runtime.MessageSender): Promise<string | undefined> {
+  // eslint-disable-next-line node/prefer-global/process
+  if (!process.env.FIREFOX || !sender?.tab?.cookieStoreId)
+    return undefined
+
+  const cookies = await browser.cookies.getAll({ storeId: sender.tab.cookieStoreId })
+  if (!cookies.length)
+    return undefined
+
+  return cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ')
+}
+
+async function fetchWbiKeys(requestInit: RequestInit) {
+  const response = await fetch(WBI_NAV_URL, requestInit)
+  const payload = await response.json()
+  const wbiImg = payload?.data?.wbi_img
+
+  if (!wbiImg?.img_url || !wbiImg?.sub_url)
+    throw new Error('Unable to read wbi_img keys from /x/web-interface/nav')
+
+  return {
+    imgKey: extractWbiKey(wbiImg.img_url),
+    subKey: extractWbiKey(wbiImg.sub_url),
+  }
+}
+
+function signWbiParams(params: Record<string, string>, imgKey: string, subKey: string): URLSearchParams {
+  const sanitizedParams: Record<string, string> = {}
+  const wts = String(Math.floor(Date.now() / 1000))
+
+  Object.entries({ ...params, wts }).forEach(([key, value]) => {
+    if (value === undefined || value === null)
+      return
+    sanitizedParams[key] = sanitizeWbiValue(value)
+  })
+
+  const sortedQuery = new URLSearchParams(sanitizedParams)
+  sortedQuery.sort()
+
+  const mixinKey = getWbiMixinKey(imgKey, subKey)
+  const wRid = md5Hex(sortedQuery.toString() + mixinKey)
+  const orderedQuery = new URLSearchParams()
+
+  TOP_FEED_PARAM_ORDER.forEach((key) => {
+    if (sanitizedParams[key] !== undefined)
+      orderedQuery.set(key, sanitizedParams[key])
+  })
+
+  Object.keys(sanitizedParams)
+    .filter(key => !TOP_FEED_PARAM_ORDER.includes(key as typeof TOP_FEED_PARAM_ORDER[number]) && key !== 'wts')
+    .sort()
+    .forEach((key) => {
+      orderedQuery.set(key, sanitizedParams[key])
+    })
+
+  orderedQuery.set('w_rid', wRid)
+  orderedQuery.set('wts', wts)
+
+  return orderedQuery
+}
+
+async function requestTopFeed(message: Message, sender: browser.Runtime.MessageSender | undefined, withCookie: boolean) {
+  const params = buildTopFeedParams(message)
+  const headers: Record<string, string> = {}
+
+  if (withCookie) {
+    const firefoxCookieHeader = await getFirefoxCookieHeader(sender)
+    if (firefoxCookieHeader)
+      headers['firefox-multi-account-cookie'] = firefoxCookieHeader
+  }
+
+  const requestInit: RequestInit = {
+    method: 'GET',
+    // eslint-disable-next-line node/prefer-global/process
+    credentials: withCookie && !process.env.FIREFOX ? 'include' : 'omit',
+    headers,
+    referrer: 'https://www.bilibili.com/',
+  }
+
+  const { imgKey, subKey } = await fetchWbiKeys(requestInit)
+  const signedQuery = signWbiParams(params, imgKey, subKey)
+  const requestURL = new URL(TOP_FEED_URL)
+  requestURL.search = signedQuery.toString()
+
+  const response = await fetch(requestURL.toString(), requestInit)
+  return response.json()
+}
+
+async function getRecommendVideosGuest(message: Message) {
+  return requestTopFeed(message, undefined, false)
+}
+
+async function getRecommendVideosWeb(message: Message, sender?: browser.Runtime.MessageSender) {
+  return requestTopFeed(message, sender, true)
+}
 
 const API_VIDEO = {
   getRecommendVideos: {
@@ -20,42 +238,9 @@ const API_VIDEO = {
     afterHandle: AHS.J_D,
   },
   // Guest-mode feed: never attach cookies.
-  getRecommendVideosGuest: {
-    url: 'https://api.bilibili.com/x/web-interface/wbi/index/top/feed/rcmd',
-    _fetch: {
-      method: 'get',
-      credentials: 'omit',
-    },
-    useCookie: false,
-    params: {
-      fresh_idx: 0,
-      feed_version: 'V2',
-      fresh_type: 4,
-      ps: 30,
-      plat: 1,
-    },
-    afterHandle: AHS.J_D,
-  },
+  getRecommendVideosGuest,
   // Web-login feed: allow cookie attachment (Firefox multi-account mode will inject cookies).
-  getRecommendVideosWeb: {
-    url: 'https://api.bilibili.com/x/web-interface/wbi/index/top/feed/rcmd',
-    _fetch: {
-      method: 'get',
-      // Firefox multi-account uses manual cookie header injection, so keep browser credentials disabled there
-      // to avoid potentially sending duplicate cookies.
-      // eslint-disable-next-line node/prefer-global/process
-      credentials: process.env.FIREFOX ? 'omit' : 'include',
-    },
-    useCookie: true,
-    params: {
-      fresh_idx: 0,
-      feed_version: 'V2',
-      fresh_type: 4,
-      ps: 30,
-      plat: 1,
-    },
-    afterHandle: AHS.J_D,
-  },
+  getRecommendVideosWeb,
   getAppRecommendVideos: {
     url: 'https://app.bilibili.com/x/v2/feed/index',
     _fetch: {

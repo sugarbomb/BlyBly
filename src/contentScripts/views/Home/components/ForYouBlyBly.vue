@@ -11,10 +11,11 @@ import { LanguageType } from '~/enums/appEnums'
 import type { GridLayoutType } from '~/logic'
 import { accessKey, settings } from '~/logic'
 import type { AppForYouResult, Item as AppVideoItem } from '~/models/video/appForYou'
-import type { forYouResult, Item as VideoItem } from '~/models/video/forYou'
+import type { forYouResult } from '~/models/video/forYou'
 import api from '~/utils/api'
 import { TVAppKey } from '~/utils/authProvider'
 import { getUserID } from '~/utils/main'
+import { createTopFeedSession } from '~/utils/topFeedSession'
 import { isVerticalVideo } from '~/utils/uriParse'
 
 const props = defineProps<{
@@ -29,12 +30,63 @@ const emit = defineEmits<{
 // https://github.com/starknt/BewlyBewly/blob/fad999c2e482095dc3840bb291af53d15ff44130/src/contentScripts/views/Home/components/ForYou.vue#L16
 interface VideoElement {
   uniqueId: string
-  item?: VideoItem
+  item?: WebLikeVideoItem
 }
 
 interface AppVideoElement {
   uniqueId: string
   item?: AppVideoItem
+}
+
+interface WebLikeVideoItem {
+  id?: number | string
+  bvid?: string
+  goto?: string
+  cid?: number | string
+  uri?: string
+  pic?: string
+  title?: string
+  duration?: number | string
+  pubdate?: number | string
+  is_followed?: number
+  owner?: {
+    mid?: number | string
+    name?: string
+    face?: string
+  } | null
+  stat?: {
+    view?: number | string
+    vv?: number | string
+    danmaku?: number | string
+  } | null
+  business_info?: {
+    is_ad?: boolean
+    creative_id?: number | string
+    card_type?: number
+    pic?: string
+    title?: string
+    desc?: string
+    adver_name?: string
+    archive?: {
+      aid?: number | string
+      cid?: number | string
+      bvid?: string
+      pic?: string
+      title?: string
+      duration?: number | string
+      pubdate?: number | string
+      owner?: {
+        mid?: number | string
+        name?: string
+        face?: string
+      } | null
+      stat?: {
+        view?: number | string
+        vv?: number | string
+        danmaku?: number | string
+      } | null
+    } | null
+  } | null
 }
 
 const gridClass = computed((): string => {
@@ -49,21 +101,25 @@ const videoList = ref<VideoElement[]>([])
 const appVideoList = ref<AppVideoElement[]>([])
 const isLoading = ref<boolean>(false)
 const needToLoginFirst = ref<boolean>(false)
-const refreshIdx = ref<number>(1)
 const noMoreContent = ref<boolean>(false)
 const pendingInit = ref<boolean>(false)
-const { handleReachBottom, handlePageRefresh, haveScrollbar } = useBewlyApp()
-const { width } = useWindowSize()
+const { handleReachBottom, handlePageRefresh } = useBewlyApp()
+const { width, height } = useWindowSize()
 
 type ForYouPlatformMode = 'web' | 'app' | 'guest'
-const platformMode = ref<ForYouPlatformMode>('guest')
+const initialPlatformMode: ForYouPlatformMode = !getUserID()
+  ? 'guest'
+  : settings.value.recommendationMode === 'app'
+    ? 'app'
+    : 'web'
+const platformMode = ref<ForYouPlatformMode>(initialPlatformMode)
 const isAppMode = computed(() => platformMode.value === 'app')
 const isWebMode = computed(() => platformMode.value === 'web')
 const isWebLikeMode = computed(() => platformMode.value === 'web' || platformMode.value === 'guest')
 
 const showAccessKeyAuthorizeDialog = ref<boolean>(false)
 
-const pageSize = computed<number>(() => {
+const gridColumnCount = computed<number>(() => {
   const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n))
 
   let columns = 1
@@ -89,9 +145,18 @@ const pageSize = computed<number>(() => {
     columns = 1
   }
 
-  // Aim for ~2 rows; 5->10, 4->8, 3->6, 2->4...
-  return clamp(columns * 2, 4, 10)
+  return clamp(columns, 1, 5)
 })
+
+const pageSize = computed<number>(() => {
+  const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n))
+
+  // Aim for ~2 rows; 5->10, 4->8, 3->6, 2->4...
+  return clamp(gridColumnCount.value * 2, 4, 10)
+})
+// Home web recommendation uses a per-tab session-like state machine.
+// It must be created after pageSize is available, otherwise setup will fail before the first request.
+let topFeedSession = createWebLikeTopFeedSession()
 
 // 推荐页过滤器
 const { options: forYouFilterOptions } = useFilterAdvance('foryou-filter')
@@ -117,18 +182,11 @@ function shouldFilterByForYou(item: any): boolean {
   })
 }
 
-onMounted(() => {
-  const isLoggedIn = !!getUserID()
-  if (!isLoggedIn) {
-    platformMode.value = 'guest'
-  }
-  else if (settings.value.recommendationMode === 'app') {
-    platformMode.value = 'app'
-  }
-  else {
-    platformMode.value = 'web'
-  }
+function isWebLikePlatformMode(mode: ForYouPlatformMode): boolean {
+  return mode === 'web' || mode === 'guest'
+}
 
+onMounted(() => {
   initData()
   initPageAction()
 })
@@ -137,7 +195,7 @@ onActivated(() => {
   initPageAction()
 })
 
-watch(platformMode, async (newMode) => {
+watch(platformMode, async (newMode, oldMode) => {
   needToLoginFirst.value = false
   noMoreContent.value = false
 
@@ -147,7 +205,18 @@ watch(platformMode, async (newMode) => {
     settings.value.recommendationMode = 'web'
   // guest mode doesn't change settings
 
-  await initData()
+  const switchedSource = newMode !== oldMode
+  const reuseWebLikeSession = isWebLikePlatformMode(newMode)
+
+  if (switchedSource && reuseWebLikeSession) {
+    // Switching source should not inherit the previous source's click feedback chain.
+    // Keep the current session counters, but clear last_clicklist before the next request.
+    topFeedSession.clearClickFeedback()
+  }
+
+  await initData({
+    resetWebLikeSession: !reuseWebLikeSession,
+  })
 })
 
 watch(() => accessKey.value, async (newAccessKey) => {
@@ -158,15 +227,19 @@ watch(() => accessKey.value, async (newAccessKey) => {
   await initData()
 })
 
-async function initData() {
+async function initData(options: { resetWebLikeSession?: boolean } = {}) {
   if (isLoading.value) {
     pendingInit.value = true
     return
   }
 
+  const resetWebLikeSession = options.resetWebLikeSession ?? true
+
   noMoreContent.value = false
   videoList.value.length = 0
   appVideoList.value.length = 0
+  if (resetWebLikeSession)
+    topFeedSession = createWebLikeTopFeedSession()
   await getData()
 }
 
@@ -198,12 +271,23 @@ async function getData() {
 }
 
 function initPageAction() {
-  // Manual refresh page: disable scroll-to-bottom auto-loading for this tab.
+  // Manual refresh page: this tab owns refresh through the side rail only.
+  // Keep bottom auto-loading disabled so we never inherit a previous tab's pagination callback.
   handleReachBottom.value = undefined
 
   handlePageRefresh.value = async () => {
-    await initData()
+    await refreshCurrentFeed()
   }
+}
+
+async function refreshCurrentFeed() {
+  // Manual refresh should advance the current web-like session instead of creating a brand-new one.
+  // That keeps uniq_id stable inside the tab and lets fresh_idx/last_showlist continue like the homepage.
+  if (isWebLikeMode.value)
+    topFeedSession.recordBrush()
+  await initData({
+    resetWebLikeSession: !isWebLikeMode.value,
+  })
 }
 
 async function getRecommendVideosGuest() {
@@ -218,17 +302,17 @@ async function getRecommendVideosGuest() {
       videoList.value.push(...pendingVideos)
     }
 
-    const response: forYouResult = await api.video.getRecommendVideosGuest({
-      fresh_idx: refreshIdx.value++,
-      ps: pageSize.value,
-    })
+    const response: forYouResult = await api.video.getRecommendVideosGuest(buildWebLikeRequestParams())
 
     if (!response.data) {
       noMoreContent.value = true
       return
     }
     if (response.code === 0) {
-      const resData = response.data.item.filter(item => !shouldFilterByForYou(item))
+      topFeedSession.applyResponse(response, { phase: 'current' })
+      const resData = (response.data.item as WebLikeVideoItem[])
+        .filter(item => !isForYouAdItem(item))
+        .filter(item => !shouldFilterByForYou(item))
       if (!videoList.value.length) {
         videoList.value = resData.map(item => ({ uniqueId: `${item.id}`, item }))
       }
@@ -254,12 +338,6 @@ async function getRecommendVideosGuest() {
   finally {
     const filledItems = videoList.value.filter(video => video.item)
     videoList.value = filledItems
-    if (!noMoreContent.value && filledItems.length < pageSize.value) {
-      await nextTick()
-      if (!await haveScrollbar() || filledItems.length < 1) {
-        await getRecommendVideosGuest()
-      }
-    }
   }
 }
 
@@ -275,17 +353,17 @@ async function getRecommendVideosWeb() {
       videoList.value.push(...pendingVideos)
     }
 
-    const response: forYouResult = await api.video.getRecommendVideosWeb({
-      fresh_idx: refreshIdx.value++,
-      ps: pageSize.value,
-    })
+    const response: forYouResult = await api.video.getRecommendVideosWeb(buildWebLikeRequestParams())
 
     if (!response.data) {
       noMoreContent.value = true
       return
     }
     if (response.code === 0) {
-      const resData = response.data.item.filter(item => !shouldFilterByForYou(item))
+      topFeedSession.applyResponse(response, { phase: 'current' })
+      const resData = (response.data.item as WebLikeVideoItem[])
+        .filter(item => !isForYouAdItem(item))
+        .filter(item => !shouldFilterByForYou(item))
       if (!videoList.value.length) {
         videoList.value = resData.map(item => ({ uniqueId: `${item.id}`, item }))
       }
@@ -314,12 +392,6 @@ async function getRecommendVideosWeb() {
   finally {
     const filledItems = videoList.value.filter(video => video.item)
     videoList.value = filledItems
-    if (!needToLoginFirst.value && !noMoreContent.value && filledItems.length < pageSize.value) {
-      await nextTick()
-      if (!await haveScrollbar() || filledItems.length < 1) {
-        await getRecommendVideosWeb()
-      }
-    }
   }
 }
 
@@ -387,13 +459,86 @@ async function getAppRecommendVideos() {
   finally {
     const filledItems = appVideoList.value.filter(video => video.item)
     appVideoList.value = filledItems
-    if (!needToLoginFirst.value && !noMoreContent.value && filledItems.length < pageSize.value) {
-      await nextTick()
-      if (!await haveScrollbar() || filledItems.length < 1) {
-        await getAppRecommendVideos()
-      }
-    }
   }
+}
+
+function createWebLikeTopFeedSession() {
+  // Reset the session whenever this tab reloads so request params continue from a fresh homepage-like state.
+  return createTopFeedSession({
+    ps: pageSize.value,
+    screen: [normalizeScreenSize(width.value), normalizeScreenSize(height.value)],
+  })
+}
+
+function buildWebLikeRequestParams(): Record<string, string> {
+  return topFeedSession.getCurrentParams({
+    web_location: '1430650',
+    y_num: `${gridColumnCount.value}`,
+    fresh_type: '3',
+    feed_version: 'V8',
+    fetch_row: '1',
+    device: 'win',
+    homepage_ver: '1',
+    ps: `${pageSize.value}`,
+    last_y_num: `${gridColumnCount.value}`,
+    screen: `${normalizeScreenSize(width.value)}-${normalizeScreenSize(height.value)}`,
+    seo_info: '',
+    tt_exp: '',
+  })
+}
+
+function handleWebLikeVideoClick(item?: WebLikeVideoItem) {
+  if (!item || !isWebLikeMode.value)
+    return
+
+  // Feed the next request with the last interacted card, and only advance y_num/last_y_num by real clicks.
+  topFeedSession.recordClick(item)
+}
+
+function isForYouAdItem(item?: WebLikeVideoItem): boolean {
+  const businessInfo = item?.business_info
+  return Boolean(
+    item?.goto === 'ad'
+    || businessInfo?.is_ad
+    || businessInfo?.creative_id
+    || businessInfo?.card_type === 82,
+  )
+}
+
+function getWebLikeCardVideo(item?: WebLikeVideoItem) {
+  if (!item)
+    return undefined
+
+  const businessInfo = item.business_info
+  const archive = businessInfo?.archive
+  const owner = item.owner ?? archive?.owner
+  const stat = item.stat ?? archive?.stat
+  const title = isForYouAdItem(item)
+    ? `🚀广告 ${businessInfo?.title || archive?.title || item.title || ''}`
+    : item.title
+
+  return {
+    id: Number(item.id || archive?.aid || archive?.cid || 0),
+    duration: item.duration || archive?.duration || 0,
+    title,
+    cover: item.pic || businessInfo?.pic || archive?.pic || '',
+    author: {
+      name: owner?.name || businessInfo?.adver_name || businessInfo?.desc || '',
+      authorFace: owner?.face || '',
+      followed: !!item.is_followed,
+      mid: owner?.mid || undefined,
+    },
+    view: Number(stat?.view || stat?.vv || 0),
+    danmaku: Number(stat?.danmaku || 0),
+    publishedTimestamp: Number(item.pubdate || archive?.pubdate || 0),
+    bvid: `${item.bvid || archive?.bvid || ''}` || undefined,
+    cid: Number(item.cid || archive?.cid || 0) || undefined,
+  }
+}
+
+function normalizeScreenSize(value: number): number {
+  const size = Math.round(value)
+  return size > 0 ? size : 1
 }
 
 function jumpToLoginPage() {
@@ -441,26 +586,11 @@ defineExpose({ initData })
               :key="video.uniqueId"
               :skeleton="!video.item"
               type="rcmd"
-              :video="video.item ? {
-                id: video.item.id,
-                duration: video.item.duration,
-                title: video.item.title,
-                cover: video.item.pic,
-                author: {
-                  name: video.item.owner.name,
-                  authorFace: video.item.owner.face,
-                  followed: !!video.item.is_followed,
-                  mid: video.item.owner.mid,
-                },
-                view: video.item.stat.view,
-                danmaku: video.item.stat.danmaku,
-                publishedTimestamp: video.item.pubdate,
-                bvid: video.item.bvid,
-                cid: video.item.cid,
-              } : undefined"
+              :video="getWebLikeCardVideo(video.item)"
               :show-preview="true"
               :horizontal="gridLayout !== 'adaptive'"
               :more-btn="true"
+              @click="handleWebLikeVideoClick(video.item)"
             />
           </template>
 
@@ -500,7 +630,7 @@ defineExpose({ initData })
       </div>
 
       <div hidden xl:block>
-        <ForYouRefreshRail v-model="platformMode" :loading="isLoading" @refresh="initData" />
+        <ForYouRefreshRail v-model="platformMode" :loading="isLoading" @refresh="refreshCurrentFeed" />
       </div>
     </div>
 
