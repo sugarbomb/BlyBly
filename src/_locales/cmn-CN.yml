@@ -58,25 +58,31 @@ settings:
   title: 设置
 
   # Settings menu
-  menu_general: 常规
+  menu_general: 通用
   menu_desktop_and_dock: 桌面和 Dock 栏
-  menu_appearance: 外观
-  menu_bewly_pages: BewlyBewly 页面
-  menu_search_page: 搜索页
+  menu_appearance: 主题样式
+  menu_bewly_pages: Bewly 增强
+  menu_search_page: 搜索
   menu_filters: 内容过滤
-  menu_home: 首页
-  menu_compatibility: 兼容性
+  menu_home: 推荐
+  menu_navigation_interaction: 导航与交互
+  menu_recommendation_components: 推荐按钮
+  menu_compatibility: 其它
   menu_about: 关于
 
   # Settings group
   group_common: 通用
   group_languages_and_fonts: 语言和字体
-  group_link_opening_behavior: 链接打开行为
+  group_touch_screen: 触屏
+  group_layout_switcher: 布局切换器
+  group_scrolling: 滚动
+  group_ads: 广告
+  group_link_opening_behavior: 打开方式
   group_video_card: 视频卡片
   group_performance: 毛玻璃和性能
   group_topbar: 顶栏
   group_dock: Dock 栏
-  group_sidebar: 侧边栏
+  group_sidebar: 侧边栏按钮
   group_sidebar_desc: 位于主页以外的页面右侧或左侧，通常有亮/暗模式切换按钮和设置按钮。
   group_color: 颜色
   group_wallpaper: 背景图片
@@ -88,7 +94,8 @@ settings:
   group_recommendation_filters: 「随便看看」过滤
   group_following: 订阅关注
   group_search_page_mode: 搜索页模式
-  group_home_tabs: 首页标签栏
+  group_home_tabs: 标签栏
+  group_refresh_button: 刷新按钮
 
   # Settings buttons
   btn:
@@ -267,6 +274,17 @@ settings:
   home_tabs_adjustment: 标签栏调整
   home_tabs_adjustment_desc: 第一个激活的标签项是默认界面
   always_show_tabs_on_home_page: 总是显示首页标签栏
+  partition_control_rail_position: 位置
+  partition_control_rail_position_desc: 在屏幕中摆放位置。
+  partition_control_rail_height: 高度
+  partition_control_rail_height_desc: 在屏幕中的垂直位置。
+  partition_control_rail_height_opt:
+    default: 默认
+    highest: 高
+    higher: 中高
+    middle: 中
+    lower: 中低
+    lowest: 低
 
   # Compatibility
   # Common

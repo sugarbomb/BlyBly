@@ -58,25 +58,31 @@ settings:
   title: Settings
 
   # Settings menu
-  menu_general: General
+  menu_general: Common
   menu_desktop_and_dock: Desktop & Dock
-  menu_appearance: Appearance
-  menu_bewly_pages: BewlyBewly Pages
-  menu_search_page: Search Page
+  menu_appearance: Theme Style
+  menu_bewly_pages: Bewly Enhancements
+  menu_search_page: Search
   menu_filters: Content filters
-  menu_home: Home
-  menu_compatibility: Compatibility
+  menu_home: Recommendation
+  menu_navigation_interaction: Navigation & Interaction
+  menu_recommendation_components: Recommendation Button
+  menu_compatibility: Other
   menu_about: About
 
   # Settings group
   group_common: Common
   group_languages_and_fonts: Languages & Fonts
-  group_link_opening_behavior: Link Opening Behavior
+  group_touch_screen: Touch Screen
+  group_layout_switcher: Layout Switcher
+  group_scrolling: Scrolling
+  group_ads: Ads
+  group_link_opening_behavior: Opening
   group_video_card: Video Card
   group_performance: Frosted Glass & Performance
   group_topbar: Top Bar
   group_dock: Dock
-  group_sidebar: Sidebar
+  group_sidebar: Sidebar Button
   group_sidebar_desc: Located on the right or left side of pages other than the homepage, typically includes a light/dark mode toggle button and settings button.
   group_color: Color
   group_wallpaper: Wallpaper
@@ -90,7 +96,8 @@ settings:
     Do not set the restricted value too large, as this may increase loading time!
   group_following: Following
   group_search_page_mode: Search Page Mode
-  group_home_tabs: Home Tabs
+  group_home_tabs: Tabs
+  group_refresh_button: Refresh Button
 
   # Settings buttons
   btn:
@@ -272,6 +279,17 @@ settings:
   home_tabs_adjustment: Tabs adjustment
   home_tabs_adjustment_desc: The first activated tab is the default page.
   always_show_tabs_on_home_page: Always show tabs on the home page
+  partition_control_rail_position: Position
+  partition_control_rail_position_desc: Position on screen.
+  partition_control_rail_height: Height
+  partition_control_rail_height_desc: Vertical position on screen.
+  partition_control_rail_height_opt:
+    default: Default
+    highest: High
+    higher: Mid-high
+    middle: Middle
+    lower: Mid-low
+    lowest: Low
 
   # Compatibility
   # Common

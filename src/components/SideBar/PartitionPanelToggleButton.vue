@@ -5,9 +5,11 @@ import Tooltip from '~/components/Tooltip.vue'
 const props = withDefaults(defineProps<{
   disabled?: boolean
   label?: string
+  placement?: 'left' | 'right' | 'top' | 'bottom' | 'bottom-left' | 'bottom-right'
 }>(), {
   disabled: false,
   label: '切换分区',
+  placement: 'left',
 })
 
 const emit = defineEmits<{
@@ -22,7 +24,7 @@ function handleToggle() {
 </script>
 
 <template>
-  <Tooltip :content="props.label" placement="left">
+  <Tooltip :content="props.label" :placement="props.placement">
     <Button
       type="secondary"
       round

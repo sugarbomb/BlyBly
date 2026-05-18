@@ -6,22 +6,50 @@ import { BewlyPage } from '../types'
 
 const { t } = useI18n()
 
-const activePage = ref<BewlyPage>(BewlyPage.Home)
+const activePage = ref<BewlyPage>(BewlyPage.Search)
 
 const pages = [
-  {
-    value: BewlyPage.Home,
-    title: t('settings.menu_home'),
-    icon: 'i-mingcute:home-5-line',
-    iconActivated: 'i-mingcute:home-5-fill',
-    component: defineAsyncComponent(() => import('./Home/Home.vue')),
-  },
   {
     value: BewlyPage.Search,
     title: t('settings.menu_search_page'),
     icon: 'i-mingcute:search-2-line',
     iconActivated: 'i-mingcute:search-2-fill',
     component: defineAsyncComponent(() => import('./SearchPage/SearchPage.vue')),
+  },
+  {
+    value: BewlyPage.Recommendation,
+    title: t('settings.menu_home'),
+    icon: 'i-mingcute:home-5-line',
+    iconActivated: 'i-mingcute:home-5-fill',
+    component: defineAsyncComponent(() => import('./Home/Home.vue')),
+  },
+  {
+    value: BewlyPage.TouchScreen,
+    title: t('settings.group_touch_screen'),
+    icon: 'i-mingcute:finger-tap-line',
+    iconActivated: 'i-mingcute:finger-tap-fill',
+    component: defineAsyncComponent(() => import('./TouchScreen.vue')),
+  },
+  {
+    value: BewlyPage.LinkOpening,
+    title: t('settings.group_link_opening_behavior'),
+    icon: 'i-mingcute:link-line',
+    iconActivated: 'i-mingcute:link-line',
+    component: defineAsyncComponent(() => import('./LinkOpening.vue')),
+  },
+  {
+    value: BewlyPage.Ads,
+    title: t('settings.group_ads'),
+    icon: 'i-mingcute:shield-line',
+    iconActivated: 'i-mingcute:shield-fill',
+    component: defineAsyncComponent(() => import('./Ads.vue')),
+  },
+  {
+    value: BewlyPage.VideoCard,
+    title: t('settings.group_video_card'),
+    icon: 'i-mingcute:video-line',
+    iconActivated: 'i-mingcute:video-fill',
+    component: defineAsyncComponent(() => import('./VideoCard.vue')),
   },
 ]
 </script>

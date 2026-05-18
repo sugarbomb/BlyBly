@@ -14,11 +14,11 @@ const { t } = useI18n()
 
 const settingsMenu = {
   [MenuType.General]: defineAsyncComponent(() => import('./General/General.vue')),
-  [MenuType.DesktopAndDock]: defineAsyncComponent(() => import('./DesktopAndDock/DesktopAndDock.vue')),
   [MenuType.Appearance]: defineAsyncComponent(() => import('./Appearance/Appearance.vue')),
+  [MenuType.NavigationInteraction]: defineAsyncComponent(() => import('./NavigationInteraction/NavigationInteraction.vue')),
   [MenuType.BewlyPages]: defineAsyncComponent(() => import('./BewlyPages/BewlyPages.vue')),
-  [MenuType.Compatibility]: defineAsyncComponent(() => import('./Compatibility/Compatibility.vue')),
   [MenuType.Filters]: defineAsyncComponent(() => import('./Filters/Filters.vue')),
+  [MenuType.Compatibility]: defineAsyncComponent(() => import('./Compatibility/Compatibility.vue')),
   // [MenuType.BilibiliSettings]: defineAsyncComponent(() => import('./BilibiliSettings/BilibiliSettings.vue')),
   [MenuType.About]: defineAsyncComponent(() => import('./About/About.vue')),
 }
@@ -57,28 +57,22 @@ const settingsMenuItems = computed((): MenuItem[] => {
       title: t('settings.menu_general'),
     },
     {
-      value: MenuType.DesktopAndDock,
-      icon: 'i-mingcute:imac-line',
-      iconActivated: 'i-mingcute:imac-fill',
-      title: t('settings.menu_desktop_and_dock'),
-    },
-    {
       value: MenuType.Appearance,
       title: t('settings.menu_appearance'),
       icon: 'i-mingcute:paint-brush-line',
       iconActivated: 'i-mingcute:paint-brush-fill',
     },
     {
+      value: MenuType.NavigationInteraction,
+      icon: 'i-mingcute:navigation-line',
+      iconActivated: 'i-mingcute:navigation-fill',
+      title: t('settings.menu_navigation_interaction'),
+    },
+    {
       value: MenuType.BewlyPages,
       icon: 'i-mingcute:table-2-line',
       iconActivated: 'i-mingcute:table-2-fill',
       title: t('settings.menu_bewly_pages'),
-    },
-    {
-      value: MenuType.Compatibility,
-      icon: 'i-mingcute:polygon-line',
-      iconActivated: 'i-mingcute:polygon-fill',
-      title: t('settings.menu_compatibility'),
     },
     // {
     //   value: MenuType.BilibiliSettings,
@@ -91,6 +85,12 @@ const settingsMenuItems = computed((): MenuItem[] => {
       icon: 'i-mingcute:filter-line',
       iconActivated: 'i-mingcute:filter-fill',
       title: t('settings.menu_filters'),
+    },
+    {
+      value: MenuType.Compatibility,
+      icon: 'i-mingcute:polygon-line',
+      iconActivated: 'i-mingcute:polygon-fill',
+      title: t('settings.menu_compatibility'),
     },
     {
       value: MenuType.About,

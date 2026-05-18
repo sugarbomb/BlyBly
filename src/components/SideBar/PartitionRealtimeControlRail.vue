@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 import Button from '~/components/Button.vue'
 import Tooltip from '~/components/Tooltip.vue'
+import { settings } from '~/logic'
 
 import PartitionPanelToggleButton from './PartitionPanelToggleButton.vue'
 
@@ -37,6 +38,30 @@ const resolvedStatusIcon = computed(() => {
   return props.statusIcon || 'i-mingcute:question-line'
 })
 
+const railPositionRatio = computed(() => {
+  const ratios: Record<number, number> = {
+    0: 25,
+    1: 100 / 3,
+    2: 40,
+    3: 50,
+    4: 200 / 3,
+    5: 80,
+  }
+
+  return ratios[settings.value.partitionControlRailHeight] ?? ratios[0]
+})
+
+const railContentStyle = computed(() => {
+  return {
+    top: `${railPositionRatio.value}%`,
+    transform: `translateY(-${railPositionRatio.value}%)`,
+  }
+})
+
+const sidebarTooltipPlacement = computed<'left' | 'right'>(() => {
+  return settings.value.partitionControlRailPosition === 'left' ? 'right' : 'left'
+})
+
 function handleIndicatorToggle() {
   if (props.loading)
     return
@@ -53,11 +78,12 @@ function handleSwitchPartition() {
 <template>
   <aside
     v-if="props.variant === 'sidebar'"
-    pos="sticky top-150px"
-    h="[calc(100vh-140px)]"
+    pos="fixed top-0"
+    h-100vh
+    z-10
     w-56px shrink-0
   >
-    <div flex="~ col items-center">
+    <div pos="absolute left-0" w-full flex="~ col items-center" :style="railContentStyle">
       <div
         style="backdrop-filter: var(--bew-filter-glass-1)"
         bg="$bew-content-alt" dark:bg="$bew-elevated" p-2 rounded="$bew-radius"
@@ -65,7 +91,7 @@ function handleSwitchPartition() {
         box-border border="1 $bew-border-color"
         flex="~ col items-center gap-2"
       >
-        <Tooltip :content="`${panelStatusLabel}（点击开关面板）`" placement="left">
+        <Tooltip :content="`${panelStatusLabel}（点击开关面板）`" :placement="sidebarTooltipPlacement">
           <Button
             type="secondary"
             :disabled="props.loading"
@@ -96,11 +122,12 @@ function handleSwitchPartition() {
 
         <PartitionPanelToggleButton
           label="切换已选分区"
+          :placement="sidebarTooltipPlacement"
           :disabled="props.loading || props.switchDisabled"
           @switch="handleSwitchPartition"
         />
 
-        <Tooltip :content="$t('common.operation.refresh')" placement="left">
+        <Tooltip :content="$t('common.operation.refresh')" :placement="sidebarTooltipPlacement">
           <Button
             type="secondary"
             :disabled="props.loading"
@@ -232,6 +259,7 @@ function handleSwitchPartition() {
 
     <PartitionPanelToggleButton
       label="切换已选分区"
+      placement="bottom"
       :disabled="props.loading || props.switchDisabled"
       @switch="handleSwitchPartition"
     />

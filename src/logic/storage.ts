@@ -108,6 +108,8 @@ export interface Settings {
   alwaysShowTabsOnHomePage: boolean
   useSearchPageModeOnHomePage: boolean
   searchPageModeWallpaperFixed: boolean
+  partitionControlRailPosition: 'left' | 'right'
+  partitionControlRailHeight: 0 | 1 | 2 | 3 | 4 | 5
 
   adaptToOtherPageStyles: boolean
   showTopBar: boolean
@@ -246,6 +248,8 @@ export const originalSettings: Settings = {
   alwaysShowTabsOnHomePage: false,
   useSearchPageModeOnHomePage: false,
   searchPageModeWallpaperFixed: false,
+  partitionControlRailPosition: 'right',
+  partitionControlRailHeight: 0,
 
   adaptToOtherPageStyles: true,
   showTopBar: true,

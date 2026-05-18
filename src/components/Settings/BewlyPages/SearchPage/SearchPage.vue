@@ -20,6 +20,17 @@ function changeSearchBarFocusCharacter(url: string) {
 
 <template>
   <div>
+    <SettingsItemGroup :title="$t('settings.group_search_page_mode')">
+      <SettingsItem :title="$t('settings.use_search_page_mode')">
+        <Radio v-model="settings.useSearchPageModeOnHomePage" />
+      </SettingsItem>
+      <template v-if="settings.useSearchPageModeOnHomePage">
+        <SettingsItem :title="$t('settings.search_page_mode_wallpaper_fixed')">
+          <Radio v-model="settings.searchPageModeWallpaperFixed" />
+        </SettingsItem>
+      </template>
+    </SettingsItemGroup>
+
     <SettingsItemGroup :title="$t('settings.group_logo')">
       <SettingsItem :title="$t('settings.logo_color')">
         <div w-full flex rounded="$bew-radius" bg="$bew-fill-1" p-1>

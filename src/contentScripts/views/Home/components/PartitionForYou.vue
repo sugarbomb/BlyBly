@@ -4,8 +4,7 @@ import PartitionRealtimeControlRail from '~/components/SideBar/PartitionRealtime
 import type { Video } from '~/components/VideoCard/types'
 import { useBewlyApp } from '~/composables/useAppProvider'
 import { useFilterAdvance } from '~/composables/useFilterAdvance'
-import type { GridLayoutType } from '~/logic'
-import { partitionForYouState } from '~/logic'
+import { type GridLayoutType, partitionForYouState, settings } from '~/logic'
 import api from '~/utils/api'
 import { PARTITION_ZONE_DATASET_V2 } from '~/utils/partitionZoneDatasetv2'
 
@@ -153,6 +152,12 @@ const gridClass = computed((): string => {
   if (props.gridLayout === 'twoColumns')
     return 'grid-two-columns'
   return 'grid-one-column'
+})
+
+const controlRailLayoutStyle = computed(() => {
+  return {
+    flexDirection: settings.value.partitionControlRailPosition === 'left' ? 'row-reverse' as const : 'row' as const,
+  }
 })
 
 function shouldFilterByForYou(item: { title?: string, owner?: { name?: string, mid?: number | string } }): boolean {
@@ -412,7 +417,7 @@ defineExpose({
 </script>
 
 <template>
-  <div flex="~ gap-20px" w-full>
+  <div flex="~ gap-20px" w-full :style="controlRailLayoutStyle">
     <main w-full min-w-0 flex="~ col">
       <div block lg:hidden m="b-3">
         <PartitionRealtimeControlRail
@@ -456,7 +461,7 @@ defineExpose({
       </div>
     </main>
 
-    <div hidden lg:block>
+    <div hidden lg:block w-56px shrink-0>
       <PartitionRealtimeControlRail
         v-model="showPartitionPanel"
         :status-icon="railStatusIcon"

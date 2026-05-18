@@ -39,6 +39,18 @@ function changeThemeColor(color: string) {
       </SettingsItem>
     </SettingsItemGroup>
 
+    <SettingsItemGroup :title="$t('settings.group_scrolling')">
+      <SettingsItem :title="$t('settings.enable_horizontal_scrolling')" :desc="$t('settings.enable_horizontal_scrolling_desc')">
+        <Radio v-model="settings.enableHorizontalScrolling" />
+      </SettingsItem>
+    </SettingsItemGroup>
+
+    <SettingsItemGroup :title="$t('settings.group_following')">
+      <SettingsItem :title="$t('settings.following_tab_show_livestreaming_videos')">
+        <Radio v-model="settings.followingTabShowLivestreamingVideos" />
+      </SettingsItem>
+    </SettingsItemGroup>
+
     <SettingsItemGroup title="Bilibili Evolved">
       <SettingsItem :title="$t('settings.follow_bilibili_evolved_color')" :desc="$t('settings.follow_bilibili_evolved_color_desc')">
         <div

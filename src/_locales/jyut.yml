@@ -58,24 +58,30 @@ settings:
   title: 設定
 
   # Settings menu
-  menu_general: 一般
+  menu_general: 通用
   menu_desktop_and_dock: 桌面同 Dock
-  menu_appearance: 版面
-  menu_bewly_pages: BewlyBewly 頁面
-  menu_home: 主頁
-  menu_search_page: 搵嘢頁
-  menu_compatibility: 相容性
+  menu_appearance: 主題樣式
+  menu_bewly_pages: Bewly 增強
+  menu_home: 推介
+  menu_search_page: 搵嘢
+  menu_navigation_interaction: 導航同互動
+  menu_recommendation_components: 推介掣
+  menu_compatibility: 其他
   menu_about: 關於
 
   # Settings group
   group_common: 通用
   group_languages_and_fonts: 語言同字型
-  group_link_opening_behavior: 連結開啓行爲
+  group_touch_screen: 觸控
+  group_layout_switcher: 佈局切換器
+  group_scrolling: 捲動
+  group_ads: 廣告
+  group_link_opening_behavior: 開啓方式
   group_video_card: 影片卡片
   group_performance: 毛玻璃同效能
   group_topbar: 頂部欄
   group_dock: Dock
-  group_sidebar: 側邊欄
+  group_sidebar: 側邊欄掣
   group_sidebar_desc: 喺主頁以外嘅頁面嘅右邊或左邊，通常有淺/深色模式切換掣同設定掣。
   group_color: 顏色
   group_wallpaper: 背景圖片
@@ -87,7 +93,8 @@ settings:
     限制嘅數值唔好設太大，唔係嘅話會影響載入時間！
   group_following: 跟緊啲人
   group_search_page_mode: 搵嘢頁模式
-  group_home_tabs: 主頁分頁欄
+  group_home_tabs: 分頁欄
+  group_refresh_button: 重新整理掣
 
   # Settings buttons
   btn:
@@ -265,6 +272,17 @@ settings:
   home_tabs_adjustment: 分頁欄調整
   home_tabs_adjustment_desc: 第一個啓用嘅分頁項目會係開始頁面。
   always_show_tabs_on_home_page: 永遠顯示主頁分頁欄
+  partition_control_rail_position: 位置
+  partition_control_rail_position_desc: 喺螢幕入面擺放位置。
+  partition_control_rail_height: 高度
+  partition_control_rail_height_desc: 喺螢幕入面嘅垂直位置。
+  partition_control_rail_height_opt:
+    default: 預設
+    highest: 高
+    higher: 中高
+    middle: 中
+    lower: 中低
+    lowest: 低
 
   # Compatibility
   # Common

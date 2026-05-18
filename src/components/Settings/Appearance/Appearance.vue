@@ -121,7 +121,28 @@ function changeWallpaper(url: string) {
       </SettingsItem>
     </SettingsItemGroup>
 
+    <SettingsItemGroup :title="$t('settings.group_layout_switcher')">
+      <SettingsItem :title="$t('settings.enable_grid_layout_switcher')">
+        <Radio v-model="settings.enableGridLayoutSwitcher" />
+      </SettingsItem>
+    </SettingsItemGroup>
+
     <ChangeWallpaper type="global" />
+
+    <SettingsItemGroup :title="$t('settings.group_performance')">
+      <SettingsItem :title="$t('settings.disable_frosted_glass')">
+        <Radio v-model="settings.disableFrostedGlass" />
+      </SettingsItem>
+      <SettingsItem
+        v-if="!settings.disableFrostedGlass"
+        :title="$t('settings.reduce_frosted_glass_blur')"
+      >
+        <Radio v-model="settings.reduceFrostedGlassBlur" />
+      </SettingsItem>
+      <SettingsItem :title="$t('settings.disable_shadow')">
+        <Radio v-model="settings.disableShadow" />
+      </SettingsItem>
+    </SettingsItemGroup>
 
     <SettingsItemGroup>
       <SettingsItem :title="$t('settings.customize_css')">
