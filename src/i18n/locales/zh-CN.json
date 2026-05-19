@@ -3,17 +3,16 @@
     "title": "设置",
     "menu_general": "通用",
     "menu_desktop_and_dock": "桌面与Dock",
-    "menu_appearance": "外观",
+    "menu_appearance": "主题与样式",
     "menu_bewly_pages": "BewlyBewly页面",
     "menu_compatibility": "兼容性",
-    "menu_content_filter": "内容过滤",
-    "menu_about": "关于",
+    "menu_content_filter": "内容屏蔽",
     "menu_ranking_filter": "排行榜过滤",
-    
+
     "contentFilter": {
-      "title": "内容过滤",
-      "trending": "热门内容过滤",
-      "trendingDesc": "设置热门板块的内容过滤规则",
+      "title": "内容屏蔽",
+      "trending": "热门内容屏蔽",
+      "trendingDesc": "设置热门板块的内容屏蔽规则",
       "blockRules": {
         "title": "屏蔽规则",
         "addRule": "添加规则",
@@ -26,9 +25,9 @@
         "disable": "禁用"
       }
     },
-    
+
     "rankingFilter": {
-      "title": "排行榜内容过滤",
+      "title": "排行榜内容屏蔽",
       "enable": "启用排行榜过滤",
       "enableDesc": "开启后将根据规则过滤排行榜内容",
       "filterMode": "过滤模式",
@@ -52,4 +51,4 @@
       }
     }
   }
-} 
+}

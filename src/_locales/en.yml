@@ -58,20 +58,20 @@ settings:
   title: Settings
 
   # Settings menu
-  menu_general: Common
+  menu_general: General
   menu_desktop_and_dock: Desktop & Dock
-  menu_appearance: Theme Style
-  menu_bewly_pages: Bewly Enhancements
+  menu_appearance: Theme & Style
+  menu_bewly_pages: Bly Enhancements
   menu_search_page: Search
-  menu_filters: Content filters
+  menu_filters: Content Blocking
   menu_home: Recommendation
   menu_navigation_interaction: Navigation & Interaction
   menu_recommendation_components: Recommendation Button
   menu_compatibility: Other
-  menu_about: About
 
   # Settings group
-  group_common: Common
+  group_common: General
+  group_compatibility: Compatibility
   group_languages_and_fonts: Languages & Fonts
   group_touch_screen: Touch Screen
   group_layout_switcher: Layout Switcher
@@ -291,7 +291,7 @@ settings:
     lower: Mid-low
     lowest: Low
 
-  # Compatibility
+  # Other
   # Common
   topbar_visibility: BewlyBewly's top bar visibility
   topbar_visibility_desc: If you are using Bilibili Evolved's top bar, you can turn BewlyBewly's top bar off here.
@@ -304,7 +304,7 @@ settings:
   follow_bilibili_evolved_color: Follow the Bilibili Evolved theme color
   follow_bilibili_evolved_color_desc: After changing the theme color in Bilibili Evolved, you will need to re-select this option in order to update the theme color.
 
-  # About
+  # Links and settings management
   links: Links
   sponsor: Sponsor
   sponsor_desc: If you like this project and would like to see it glow, please consider sponsoring it. Your support is the driving force behind the project's development.

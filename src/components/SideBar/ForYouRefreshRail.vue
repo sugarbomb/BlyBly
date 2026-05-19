@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 import Button from '~/components/Button.vue'
 import Tooltip from '~/components/Tooltip.vue'
+import { settings } from '~/logic'
 
 import type { ForYouPlatformMode } from './ForYouPlatformToggleButton.vue'
 
@@ -45,6 +46,30 @@ const currentModeLabel = computed<string>(() => {
   return '网页'
 })
 
+const railPositionRatio = computed(() => {
+  const ratios: Record<number, number> = {
+    0: 25,
+    1: 100 / 3,
+    2: 40,
+    3: 50,
+    4: 200 / 3,
+    5: 80,
+  }
+
+  return ratios[settings.value.partitionControlRailHeight] ?? ratios[0]
+})
+
+const railContentStyle = computed(() => {
+  return {
+    top: `${railPositionRatio.value}%`,
+    transform: `translateY(-${railPositionRatio.value}%)`,
+  }
+})
+
+const sidebarTooltipPlacement = computed<'left' | 'right'>(() => {
+  return settings.value.partitionControlRailPosition === 'left' ? 'right' : 'left'
+})
+
 function handleToggle() {
   if (props.loading)
     return
@@ -55,11 +80,12 @@ function handleToggle() {
 <template>
   <aside
     v-if="props.variant === 'sidebar'"
-    pos="sticky top-150px"
-    h="[calc(100vh-140px)]"
+    pos="fixed top-0"
+    h-100vh
+    z-10
     w-56px shrink-0
   >
-    <div flex="~ col items-center">
+    <div pos="absolute left-0" w-full flex="~ col items-center" :style="railContentStyle">
       <div
         style="backdrop-filter: var(--bew-filter-glass-1)"
         bg="$bew-content-alt" dark:bg="$bew-elevated" p-2 rounded="$bew-radius"
@@ -68,7 +94,7 @@ function handleToggle() {
         flex="~ col items-center gap-2"
       >
         <!-- Current mode indicator (non-clickable) -->
-        <Tooltip :content="`当前模式: ${currentModeLabel}`" placement="left">
+        <Tooltip :content="`当前模式: ${currentModeLabel}`" :placement="sidebarTooltipPlacement">
           <div
             class="rail-btn mode-indicator"
             round
@@ -79,7 +105,7 @@ function handleToggle() {
         </Tooltip>
 
         <!-- Toggle button -->
-        <Tooltip content="切换" placement="left">
+        <Tooltip content="切换" :placement="sidebarTooltipPlacement">
           <Button
             type="secondary"
             :disabled="props.loading"
@@ -92,7 +118,7 @@ function handleToggle() {
           </Button>
         </Tooltip>
 
-        <Tooltip :content="$t('common.operation.refresh')" placement="left">
+        <Tooltip :content="$t('common.operation.refresh')" :placement="sidebarTooltipPlacement">
           <Button
             type="secondary"
             :disabled="props.loading"

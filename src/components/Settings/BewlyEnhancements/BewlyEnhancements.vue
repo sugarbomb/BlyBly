@@ -30,26 +30,19 @@ const pages = [
     iconActivated: 'i-mingcute:finger-tap-fill',
     component: defineAsyncComponent(() => import('./TouchScreen.vue')),
   },
+  // {
+  //   value: BewlyPage.Ads,
+  //   title: t('settings.group_ads'),
+  //   icon: 'i-mingcute:shield-line',
+  //   iconActivated: 'i-mingcute:shield-fill',
+  //   component: defineAsyncComponent(() => import('./Ads.vue')),
+  // },
   {
-    value: BewlyPage.LinkOpening,
-    title: t('settings.group_link_opening_behavior'),
-    icon: 'i-mingcute:link-line',
-    iconActivated: 'i-mingcute:link-line',
-    component: defineAsyncComponent(() => import('./LinkOpening.vue')),
-  },
-  {
-    value: BewlyPage.Ads,
-    title: t('settings.group_ads'),
-    icon: 'i-mingcute:shield-line',
-    iconActivated: 'i-mingcute:shield-fill',
-    component: defineAsyncComponent(() => import('./Ads.vue')),
-  },
-  {
-    value: BewlyPage.VideoCard,
-    title: t('settings.group_video_card'),
-    icon: 'i-mingcute:video-line',
-    iconActivated: 'i-mingcute:video-fill',
-    component: defineAsyncComponent(() => import('./VideoCard.vue')),
+    value: BewlyPage.Filters,
+    title: t('settings.menu_filters'),
+    icon: 'i-mingcute:filter-line',
+    iconActivated: 'i-mingcute:filter-fill',
+    component: defineAsyncComponent(() => import('../Filters/Filters.vue')),
   },
 ]
 </script>

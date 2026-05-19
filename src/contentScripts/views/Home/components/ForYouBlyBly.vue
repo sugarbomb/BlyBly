@@ -97,6 +97,12 @@ const gridClass = computed((): string => {
   return 'grid-one-column'
 })
 
+const controlRailLayoutStyle = computed(() => {
+  return {
+    flexDirection: settings.value.partitionControlRailPosition === 'left' ? 'row-reverse' as const : 'row' as const,
+  }
+})
+
 const videoList = ref<VideoElement[]>([])
 const appVideoList = ref<AppVideoElement[]>([])
 const isLoading = ref<boolean>(false)
@@ -550,7 +556,7 @@ defineExpose({ initData })
 
 <template>
   <div>
-    <div flex="~ gap-40px" w-full>
+    <div flex="~ gap-40px" w-full :style="controlRailLayoutStyle">
       <div v-if="isAppMode && !accessKey" flex="~ col" flex-1>
         <div flex justify-center>
           <Empty mt-6 :description="$t('settings.authorize_app_desc')">
@@ -629,7 +635,7 @@ defineExpose({ initData })
         </main>
       </div>
 
-      <div hidden xl:block>
+      <div hidden xl:block w-56px shrink-0>
         <ForYouRefreshRail v-model="platformMode" :loading="isLoading" @refresh="refreshCurrentFeed" />
       </div>
     </div>

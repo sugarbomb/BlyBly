@@ -112,6 +112,12 @@ function changeSearchBarFocusCharacter(url: string) {
     </SettingsItemGroup>
 
     <ChangeWallpaper type="searchPage" />
+
+    <SettingsItemGroup :title="$t('settings.group_ads')">
+      <SettingsItem :title="$t('settings.block_top_search_page_ads')" :desc="$t('settings.block_top_search_page_ads_desc')">
+        <Radio v-model="settings.blockTopSearchPageAds" />
+      </SettingsItem>
+    </SettingsItemGroup>
   </div>
 </template>
 

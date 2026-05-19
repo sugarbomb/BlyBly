@@ -60,18 +60,18 @@ settings:
   # Settings menu
   menu_general: 通用
   menu_desktop_and_dock: 桌面和 Dock 栏
-  menu_appearance: 主题样式
-  menu_bewly_pages: Bewly 增强
+  menu_appearance: 主题与样式
+  menu_bewly_pages: Bly 增强
   menu_search_page: 搜索
-  menu_filters: 内容过滤
+  menu_filters: 内容屏蔽
   menu_home: 推荐
   menu_navigation_interaction: 导航与交互
-  menu_recommendation_components: 推荐按钮
+  menu_recommendation_components: 看看按钮
   menu_compatibility: 其它
-  menu_about: 关于
 
   # Settings group
   group_common: 通用
+  group_compatibility: 兼容
   group_languages_and_fonts: 语言和字体
   group_touch_screen: 触屏
   group_layout_switcher: 布局切换器
@@ -82,7 +82,7 @@ settings:
   group_performance: 毛玻璃和性能
   group_topbar: 顶栏
   group_dock: Dock 栏
-  group_sidebar: 侧边栏按钮
+  group_sidebar: 侧边按钮
   group_sidebar_desc: 位于主页以外的页面右侧或左侧，通常有亮/暗模式切换按钮和设置按钮。
   group_color: 颜色
   group_wallpaper: 背景图片
@@ -286,7 +286,7 @@ settings:
     lower: 中低
     lowest: 低
 
-  # Compatibility
+  # Other
   # Common
   topbar_visibility: 顶栏可见性
   topbar_visibility_desc: 如果您正在使用 Bilibili Evolved 的顶栏，您可以在这里关闭 BewlyBewly 的顶栏。
@@ -299,7 +299,7 @@ settings:
   follow_bilibili_evolved_color: 使用 Bilibili Evolved 主题色
   follow_bilibili_evolved_color_desc: 每次选完 Bilibili Evolved 主题色时，记得重新选中这一选项以更新配置。
 
-  # About
+  # Links and settings management
   links: 链接
   sponsor: 赞助
   sponsor_desc: 喜欢这个项目并希望看到它蓬勃发展吗？请考虑赞助它！您的支持是这个项目发展的动力。
@@ -323,9 +323,9 @@ settings:
   filters:
     title: 过滤
     contentFilter:
-      title: 内容过滤
+      title: 内容屏蔽
       description: 设置对内容的屏蔽和过滤规则
-      trending: 热门内容过滤
+      trending: 热门内容屏蔽
       trendingDesc: 设置对热门内容的屏蔽规则
 
     contentBlock:

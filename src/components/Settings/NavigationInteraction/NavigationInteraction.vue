@@ -7,6 +7,8 @@ enum NavigationInteractionPage {
   Dock = 'Dock',
   SidebarButton = 'SidebarButton',
   HomeTabs = 'HomeTabs',
+  LinkOpening = 'LinkOpening',
+  VideoCard = 'VideoCard',
   RecommendationRefreshButton = 'RecommendationRefreshButton',
 }
 
@@ -49,6 +51,20 @@ const pages = [
     icon: 'i-mingcute:layout-6-line',
     iconActivated: 'i-mingcute:layout-6-fill',
     component: defineAsyncComponent(() => import('./RecommendationRefreshButton.vue')),
+  },
+  {
+    value: NavigationInteractionPage.LinkOpening,
+    title: t('settings.group_link_opening_behavior'),
+    icon: 'i-mingcute:link-line',
+    iconActivated: 'i-mingcute:link-line',
+    component: defineAsyncComponent(() => import('../BewlyEnhancements/LinkOpening.vue')),
+  },
+  {
+    value: NavigationInteractionPage.VideoCard,
+    title: t('settings.group_video_card'),
+    icon: 'i-mingcute:video-line',
+    iconActivated: 'i-mingcute:video-fill',
+    component: defineAsyncComponent(() => import('../BewlyEnhancements/VideoCard.vue')),
   },
 ]
 </script>

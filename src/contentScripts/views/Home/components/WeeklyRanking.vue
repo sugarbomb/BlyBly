@@ -182,8 +182,43 @@ const currentMonthStatuses = computed(() => {
   }))
 })
 
+const weeklySeriesOptions = computed(() => {
+  return weeklySeriesList.value.map(item => ({
+    number: item.number,
+    title: item.subject,
+    name: item.name,
+    status: item.status,
+  }))
+})
+
 const currentMonth = computed(() => {
   return monthPages.value[monthIndex.value]?.monthLabel ?? ''
+})
+
+const uploadedSeriesEntries = computed(() => {
+  return monthPages.value
+    .flatMap((page, pageIndex) => {
+      return page.items.map((item, weekIndex) => ({
+        item,
+        pageIndex,
+        weekIndex,
+      }))
+    })
+    .filter(entry => entry.item.status === 2)
+    .sort((a, b) => a.item.number - b.item.number)
+})
+
+const currentUploadedSeriesEntryIndex = computed(() => {
+  return uploadedSeriesEntries.value.findIndex(entry => entry.item.number === selectedSeries.value?.number)
+})
+
+const canSelectOlderSeries = computed(() => {
+  return currentUploadedSeriesEntryIndex.value > 0
+})
+
+const canSelectNewerSeries = computed(() => {
+  const currentIndex = currentUploadedSeriesEntryIndex.value
+  return currentIndex >= 0 && currentIndex < uploadedSeriesEntries.value.length - 1
 })
 
 watch(pageCount, (total) => {
@@ -242,24 +277,28 @@ const gridClass = computed((): string => {
   return 'grid-one-column'
 })
 
-function handlePrevMonth() {
-  if (monthIndex.value >= pageCount.value - 1)
+function handleOlderMonth() {
+  if (!canSelectOlderSeries.value)
     return
 
-  const nextMonthIndex = monthIndex.value + 1
-  const preferredIssue = currentIssue.value - 1
-  activeWeekIndex.value = resolveWeekIndex(nextMonthIndex, preferredIssue, 'older')
-  monthIndex.value = nextMonthIndex
+  const targetEntry = uploadedSeriesEntries.value[currentUploadedSeriesEntryIndex.value - 1]
+  if (!targetEntry)
+    return
+
+  monthIndex.value = targetEntry.pageIndex
+  activeWeekIndex.value = targetEntry.weekIndex
 }
 
-function handleNextMonth() {
-  if (monthIndex.value <= 0)
+function handleNewerMonth() {
+  if (!canSelectNewerSeries.value)
     return
 
-  const nextMonthIndex = monthIndex.value - 1
-  const preferredIssue = currentIssue.value + 1
-  activeWeekIndex.value = resolveWeekIndex(nextMonthIndex, preferredIssue, 'newer')
-  monthIndex.value = nextMonthIndex
+  const targetEntry = uploadedSeriesEntries.value[currentUploadedSeriesEntryIndex.value + 1]
+  if (!targetEntry)
+    return
+
+  monthIndex.value = targetEntry.pageIndex
+  activeWeekIndex.value = targetEntry.weekIndex
 }
 
 function handleSelectWeek(index: number) {
@@ -270,29 +309,16 @@ function handleSelectWeek(index: number) {
   activeWeekIndex.value = index
 }
 
-function resolveWeekIndex(targetMonthIndex: number, preferredIssue: number, direction: 'older' | 'newer'): number {
-  const items = monthPages.value[targetMonthIndex]?.items ?? []
-  if (!items.length)
-    return 0
+function handleSelectSeries(number: number) {
+  for (let pageIndex = 0; pageIndex < monthPages.value.length; pageIndex += 1) {
+    const weekIndex = monthPages.value[pageIndex].items.findIndex(item => item.status === 2 && item.number === number)
+    if (weekIndex < 0)
+      continue
 
-  const exactIndex = items.findIndex(item => item.status === 2 && item.number === preferredIssue)
-  if (exactIndex >= 0)
-    return exactIndex
-
-  const uploadedEntries = items
-    .map((item, index) => ({ item, index }))
-    .filter(entry => entry.item.status === 2)
-
-  if (!uploadedEntries.length)
-    return 0
-
-  if (direction === 'older') {
-    const candidates = uploadedEntries.filter(entry => entry.item.number <= preferredIssue)
-    return (candidates[candidates.length - 1] ?? uploadedEntries[uploadedEntries.length - 1]).index
+    monthIndex.value = pageIndex
+    activeWeekIndex.value = weekIndex
+    return
   }
-
-  const candidates = uploadedEntries.filter(entry => entry.item.number >= preferredIssue)
-  return (candidates[0] ?? uploadedEntries[0]).index
 }
 
 function resolveLatestIndex(targetMonthIndex: number): number {
@@ -478,12 +504,14 @@ defineExpose({ initData })
           :title="currentTitle"
           :keywords="recommendedTerms"
           :month-statuses="currentMonthStatuses"
+          :series-options="weeklySeriesOptions"
           :active-week-index="activeWeekIndex"
-          :can-prev="monthIndex < pageCount - 1"
-          :can-next="monthIndex > 0"
-          @prev-month="handlePrevMonth"
-          @next-month="handleNextMonth"
+          :can-prev="canSelectOlderSeries"
+          :can-next="canSelectNewerSeries"
+          @older-month="handleOlderMonth"
+          @newer-month="handleNewerMonth"
           @select-week="handleSelectWeek"
+          @select-series="handleSelectSeries"
         />
       </div>
 
@@ -537,5 +565,17 @@ defineExpose({ initData })
 
 .grid-one-column {
   --uno: "grid cols-1 gap-4";
+}
+
+.weekly-control-card {
+  position: relative;
+  z-index: 2;
+  isolation: isolate;
+  overflow: visible;
+}
+
+.weekly-control-card > :deep(.weekly-ranking-control) {
+  position: relative;
+  z-index: 1;
 }
 </style>

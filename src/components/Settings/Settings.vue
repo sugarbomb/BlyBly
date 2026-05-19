@@ -16,11 +16,9 @@ const settingsMenu = {
   [MenuType.General]: defineAsyncComponent(() => import('./General/General.vue')),
   [MenuType.Appearance]: defineAsyncComponent(() => import('./Appearance/Appearance.vue')),
   [MenuType.NavigationInteraction]: defineAsyncComponent(() => import('./NavigationInteraction/NavigationInteraction.vue')),
-  [MenuType.BewlyPages]: defineAsyncComponent(() => import('./BewlyPages/BewlyPages.vue')),
-  [MenuType.Filters]: defineAsyncComponent(() => import('./Filters/Filters.vue')),
-  [MenuType.Compatibility]: defineAsyncComponent(() => import('./Compatibility/Compatibility.vue')),
+  [MenuType.BewlyEnhancements]: defineAsyncComponent(() => import('./BewlyEnhancements/BewlyEnhancements.vue')),
+  [MenuType.Other]: defineAsyncComponent(() => import('./Other/Other.vue')),
   // [MenuType.BilibiliSettings]: defineAsyncComponent(() => import('./BilibiliSettings/BilibiliSettings.vue')),
-  [MenuType.About]: defineAsyncComponent(() => import('./About/About.vue')),
 }
 const activatedMenuItem = ref<MenuType>(MenuType.General)
 const title = ref<string>(t('settings.title'))
@@ -69,7 +67,7 @@ const settingsMenuItems = computed((): MenuItem[] => {
       title: t('settings.menu_navigation_interaction'),
     },
     {
-      value: MenuType.BewlyPages,
+      value: MenuType.BewlyEnhancements,
       icon: 'i-mingcute:table-2-line',
       iconActivated: 'i-mingcute:table-2-fill',
       title: t('settings.menu_bewly_pages'),
@@ -81,22 +79,10 @@ const settingsMenuItems = computed((): MenuItem[] => {
     //   title: 'Bilibili',
     // },
     {
-      value: MenuType.Filters,
-      icon: 'i-mingcute:filter-line',
-      iconActivated: 'i-mingcute:filter-fill',
-      title: t('settings.menu_filters'),
-    },
-    {
-      value: MenuType.Compatibility,
+      value: MenuType.Other,
       icon: 'i-mingcute:polygon-line',
       iconActivated: 'i-mingcute:polygon-fill',
       title: t('settings.menu_compatibility'),
-    },
-    {
-      value: MenuType.About,
-      icon: 'i-mingcute:information-line',
-      iconActivated: 'i-mingcute:information-fill',
-      title: t('settings.menu_about'),
     },
   ]
 })

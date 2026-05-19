@@ -149,9 +149,7 @@ function handleToggleHomeTab(tab: any) {
                 <div
                   v-if="group.items?.length"
                   relative
-                  style="backdrop-filter: var(--bew-filter-glass-1)"
-                  bg="$bew-elevated" p-2 rounded="$bew-radius"
-                  box-border border="1 $bew-border-color"
+                  bg="$bew-fill-1" p="x-2 y-0" rounded="$bew-radius"
                 >
                   <div
                     class="group-handle"
@@ -173,15 +171,17 @@ function handleToggleHomeTab(tab: any) {
                   >
                     <template #item="{ element }">
                       <div
-                        flex="~ gap-2 items-center" p="x-4 y-2" bg="$bew-fill-1" rounded="$bew-radius" cursor-all-scroll
+                        flex="~ gap-2 justify-between items-center wrap" p="x-4 y-2" rounded="$bew-radius" cursor-all-scroll
                         duration-300
                         :style="{
-                          background: element.visible ? 'var(--bew-theme-color-20)' : 'var(--bew-fill-1)',
+                          background: element.visible ? 'var(--bew-theme-color-20)' : 'transparent',
                           color: element.visible ? 'var(--bew-theme-color)' : 'var(--bew-text-1)',
                         }"
                         @click="handleToggleHomeTab(element)"
                       >
-                        {{ $t(mainStore.homeTabs.find(tab => tab.page === element.page)?.i18nKey ?? '') }}
+                        <div min-w-0 text-ellipsis>
+                          {{ $t(mainStore.homeTabs.find(tab => tab.page === element.page)?.i18nKey ?? '') }}
+                        </div>
                       </div>
                     </template>
                   </draggable>

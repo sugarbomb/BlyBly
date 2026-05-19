@@ -1,21 +1,18 @@
 export enum MenuType {
   General = 'general',
   Appearance = 'appearance',
-  BewlyPages = 'bewlyPages',
+  BewlyEnhancements = 'bewlyEnhancements',
   NavigationInteraction = 'navigationInteraction',
-  Compatibility = 'compatibility',
-  Filters = 'filters',
+  Other = 'other',
   BilibiliSettings = 'BilibiliSettings',
-  About = 'about',
 }
 
 export enum BewlyPage {
   Search = 'Search',
   Recommendation = 'Recommendation',
   TouchScreen = 'TouchScreen',
-  LinkOpening = 'LinkOpening',
   Ads = 'Ads',
-  VideoCard = 'VideoCard',
+  Filters = 'Filters',
 }
 
 export interface MenuItem {

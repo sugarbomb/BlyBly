@@ -60,17 +60,18 @@ settings:
   # Settings menu
   menu_general: 通用
   menu_desktop_and_dock: 桌面與 Dock
-  menu_appearance: 主題樣式
-  menu_bewly_pages: Bewly 增強
+  menu_appearance: 主題與樣式
+  menu_bewly_pages: Bly 增強
   menu_home: 推薦
   menu_search_page: 搜尋
+  menu_filters: 內容封鎖
   menu_navigation_interaction: 導航與互動
   menu_recommendation_components: 推薦按鈕
-  menu_about: 關於
   menu_compatibility: 其他
 
   # Settings group
   group_common: 常用
+  group_compatibility: 相容
   group_languages_and_fonts: 語言與字型
   group_touch_screen: 觸控
   group_layout_switcher: 佈局切換器
@@ -286,7 +287,7 @@ settings:
     lower: 中低
     lowest: 低
 
-  # Compatibility
+  # Other
   # Common
   topbar_visibility: 頂欄可視性
   topbar_visibility_desc: 如果你正在使用 Bilibili Evolved 的頂欄，你可以在這裏關閉 BewlyBewly 的頂欄。
@@ -299,7 +300,7 @@ settings:
   follow_bilibili_evolved_color: 使用 Bilibili Evolved 主題色
   follow_bilibili_evolved_color_desc: 每次變更 Bilibili Evolved 主題色後，記得重新選取此選項以更新配置。
 
-  # About
+  # Links and settings management
   links: 連結
   sponsor: 贊助
   sponsor_desc: 喜歡這份專案並希望看到它蓬勃發展嗎？請考慮贊助它！您的支持是此專案發展的動力。

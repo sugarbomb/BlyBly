@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 
 import { settings } from '~/logic'
+import { isHomePage } from '~/utils/main'
 
 import SettingsItem from '../components/SettingsItem.vue'
 import SettingsItemGroup from '../components/SettingsItemGroup.vue'
@@ -49,10 +50,27 @@ const fontPreferenceOptions = computed(() => {
 watch(() => settings.value.language, (newValue) => {
   locale.value = newValue
 })
+
+watch(() => settings.value.useOriginalBilibiliHomepage, () => {
+  if (isHomePage())
+    location.reload()
+})
 </script>
 
 <template>
   <div>
+    <SettingsItemGroup :title="$t('settings.group_common')">
+      <SettingsItem :title="$t('settings.use_original_bilibili_topbar')">
+        <Radio v-model="settings.useOriginalBilibiliTopBar" />
+      </SettingsItem>
+      <SettingsItem :title="$t('settings.use_original_bilibili_homepage')">
+        <template #desc>
+          <span color="$bew-error-color" v-text="$t('settings.use_original_bilibili_homepage_desc')" />
+        </template>
+        <Radio v-model="settings.useOriginalBilibiliHomepage" />
+      </SettingsItem>
+    </SettingsItemGroup>
+
     <SettingsItemGroup :title="$t('settings.group_languages_and_fonts')">
       <SettingsItem :title="$t('settings.select_language')">
         <Select

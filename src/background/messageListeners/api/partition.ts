@@ -210,7 +210,7 @@ const API_PARTITION = {
     useCookie: false,
     params: {
       pn: 1,
-      ps: 10,
+      ps: 20,
       rid: 231,
     },
     afterHandle: AHS.J_D,
