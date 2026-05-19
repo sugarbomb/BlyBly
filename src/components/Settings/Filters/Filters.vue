@@ -424,14 +424,15 @@ function handleConvertLegacyFilters() {
 .manual-toolbar,
 .add-toolbar,
 .filter-list-layout {
+  position: relative;
   border: 1px solid var(--bew-border-color);
   border-radius: var(--bew-radius);
   background: var(--bew-fill-alt);
-  backdrop-filter: var(--bew-filter-glass-1);
   box-shadow: var(--bew-shadow-edge-glow-1), var(--bew-shadow-1);
 }
 
 .legacy-converter {
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -442,6 +443,7 @@ function handleConvertLegacyFilters() {
 }
 
 .filter-toolbar {
+  z-index: 4;
   display: grid;
   grid-template-columns: minmax(150px, 1fr) auto max-content;
   align-items: center;
@@ -551,6 +553,7 @@ function handleConvertLegacyFilters() {
 }
 
 .manual-toolbar {
+  z-index: 3;
   display: grid;
   grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
   align-items: center;
@@ -559,6 +562,7 @@ function handleConvertLegacyFilters() {
 }
 
 .add-toolbar {
+  z-index: 2;
   display: grid;
   grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
   align-items: center;
@@ -572,6 +576,7 @@ function handleConvertLegacyFilters() {
 }
 
 .filter-list-layout {
+  z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 52px;
 }
