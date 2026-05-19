@@ -1,20 +1,19 @@
 # BlyBly
 
-### 功能
-
-#### 阻挡 热门、排行榜、个性推荐 板块中不感兴趣的内容
-
-<img width="972" height="74" alt="image" src="https://github.com/user-attachments/assets/ecf1cea6-9352-4e9b-a6dc-498827241a06" />
+#### 阻挡不感兴趣的内容
 
 #### 设置屏蔽规则，打开过滤，心情美美哒😊 ✨
-<img width="1227" height="489" alt="image" src="https://github.com/user-attachments/assets/7e40936a-43f0-4aef-a783-d0a03cdbeece" />
 
-#### 快捷添加方式
+<img width="1231" height="684" alt="image" src="https://github.com/user-attachments/assets/9ce0a326-0d85-498c-9c80-dab2dad7ba7d" />
+
+#### 支持快捷添加
 > <img width="1212" height="324" alt="image" src="https://github.com/user-attachments/assets/4c97cbf5-3cc0-43ab-b46c-2188b7dae27f" />
 
-### 其它功能预览
+### 其它功能
+
 - [新周必，新分区浏览页 展示 v0.4.0 ](docs/features/v0.4.0周必，分区页.md)
 - [新推荐页 展示 v0.2.0 ](docs/features/v0.2.0新版本推荐页.md)
+
 
 ### 安装
 #### 插件适用chrome/Edge等Chromium系浏览器，需要手动加载文件夹
