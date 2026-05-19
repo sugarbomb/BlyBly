@@ -34,6 +34,13 @@ export interface Settings {
 
   enableVideoCtrlBarOnVideoCard: boolean
   hoverVideoCardDelayed: boolean
+  videoCardContextMenuGroups: {
+    blockUserAssistant: boolean
+    blockVideoAssistant: boolean
+    openWays: boolean
+    copyAssistant: boolean
+    cover: boolean
+  }
 
   // Desktop & Dock
   useOldTopBar: boolean
@@ -144,6 +151,13 @@ export const originalSettings: Settings = {
   enableVideoPreview: true,
   enableVideoCtrlBarOnVideoCard: false,
   hoverVideoCardDelayed: false,
+  videoCardContextMenuGroups: {
+    blockUserAssistant: false,
+    blockVideoAssistant: false,
+    openWays: true,
+    copyAssistant: true,
+    cover: true,
+  },
 
   // Desktop & Dock
   useOldTopBar: false,

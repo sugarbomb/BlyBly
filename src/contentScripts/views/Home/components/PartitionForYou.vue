@@ -3,7 +3,7 @@ import PartitionSelectionControl from '~/components/List/PartitionSelectionContr
 import PartitionRealtimeControlRail from '~/components/SideBar/PartitionRealtimeControlRail.vue'
 import type { Video } from '~/components/VideoCard/types'
 import { useBewlyApp } from '~/composables/useAppProvider'
-import { useFilterAdvance } from '~/composables/useFilterAdvance'
+import { FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
 import { type GridLayoutType, partitionForYouState, settings } from '~/logic'
 import api from '~/utils/api'
 import { PARTITION_ZONE_DATASET_V2 } from '~/utils/partitionZoneDatasetv2'
@@ -80,7 +80,7 @@ const DISPLAY_ID_MAX_MIN = 3
 const DISPLAY_ID_MAX_MAX = 10
 
 const { handleReachBottom, handlePageRefresh } = useBewlyApp()
-const { options: forYouFilterOptions } = useFilterAdvance('foryou-filter')
+const { shouldFilterItem } = useFilterAdvance(FilterScope.PartitionForYou)
 const isLoading = ref<boolean>(false)
 const videoList = ref<VideoElement[]>([])
 const requestToken = ref<number>(0)
@@ -160,25 +160,8 @@ const controlRailLayoutStyle = computed(() => {
   }
 })
 
-function shouldFilterByForYou(item: { title?: string, owner?: { name?: string, mid?: number | string } }): boolean {
-  if (!forYouFilterOptions.value.enabled || forYouFilterOptions.value.rules.length === 0)
-    return false
-
-  const title = item.title ?? ''
-  const ownerName = item.owner?.name ?? ''
-  const ownerMid = item.owner?.mid
-
-  return forYouFilterOptions.value.rules
-    .filter(r => r.enabled)
-    .some((rule) => {
-      if (rule.type === 'title' && title)
-        return title.toLowerCase().includes(rule.value.toLowerCase())
-      if (rule.type === 'username' && ownerName)
-        return ownerName.toLowerCase().includes(rule.value.toLowerCase())
-      if (rule.type === 'uid' && ownerMid !== undefined && ownerMid !== null)
-        return String(ownerMid) === rule.value
-      return false
-    })
+function shouldFilterByForYou(item: { aid?: number | string, bvid?: string, title?: string, owner?: { name?: string, mid?: number | string } }): boolean {
+  return shouldFilterItem(item)
 }
 
 function resolveArchiveOwner(item: PartitionForYouArchive) {
@@ -264,6 +247,8 @@ async function initData() {
       const archives = extractArchives(response).filter((item) => {
         const owner = resolveArchiveOwner(item)
         return !shouldFilterByForYou({
+          aid: item.aid,
+          bvid: item.bvid,
           title: item.title ?? '',
           owner: {
             name: owner?.name ?? '',

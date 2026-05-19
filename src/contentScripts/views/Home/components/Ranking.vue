@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n'
 
 import { useBewlyApp } from '~/composables/useAppProvider'
-import { useFilterAdvance } from '~/composables/useFilterAdvance'
+import { FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
 import type { GridLayoutType } from '~/logic'
 import { settings } from '~/logic'
 import type { List as RankingVideoItem, RankingResult } from '~/models/video/ranking'
@@ -23,7 +23,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const { handleBackToTop, handlePageRefresh } = useBewlyApp()
-const { filterVideos, filterPgcList, options: filterOptions } = useFilterAdvance('ranking-filter')
+const { filterVideos, filterPgcList, options: filterOptions } = useFilterAdvance(FilterScope.Ranking)
 
 // 提供页面类型给子组件
 provide('pageType', 'ranking')

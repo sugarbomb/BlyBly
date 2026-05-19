@@ -6,7 +6,7 @@ import AccessKeyAuthorizeDialog from '~/components/AccessKeyAuthorizeDialog.vue'
 import ForYouRefreshRail from '~/components/SideBar/ForYouRefreshRail.vue'
 import ForYouVideoCard from '~/components/VideoCard/ForYouVideoCard.vue'
 import { useBewlyApp } from '~/composables/useAppProvider'
-import { useFilterAdvance } from '~/composables/useFilterAdvance'
+import { FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
 import { LanguageType } from '~/enums/appEnums'
 import type { GridLayoutType } from '~/logic'
 import { accessKey, settings } from '~/logic'
@@ -165,27 +165,13 @@ const pageSize = computed<number>(() => {
 let topFeedSession = createWebLikeTopFeedSession()
 
 // 推荐页过滤器
-const { options: forYouFilterOptions } = useFilterAdvance('foryou-filter')
+const { shouldFilterItem } = useFilterAdvance(FilterScope.ForYou)
 
-// Context menu uses `pageType` to determine which filter storage to use.
-// For both rcmd/appRcmd we map to the same key (`foryou-filter`), so a constant is fine here.
+// Context menu uses `pageType` to determine which filter scope to use.
 provide('pageType', 'rcmd')
 
 function shouldFilterByForYou(item: any): boolean {
-  if (!forYouFilterOptions.value.enabled || forYouFilterOptions.value.rules.length === 0)
-    return false
-  return forYouFilterOptions.value.rules.filter(r => r.enabled).some((rule) => {
-    if (rule.type === 'title' && item.title) {
-      return item.title.toLowerCase().includes(rule.value.toLowerCase())
-    }
-    else if (rule.type === 'username' && item.owner?.name) {
-      return item.owner.name.toLowerCase().includes(rule.value.toLowerCase())
-    }
-    else if (rule.type === 'uid' && item.owner?.mid) {
-      return String(item.owner.mid) === rule.value
-    }
-    return false
-  })
+  return shouldFilterItem(item)
 }
 
 function isWebLikePlatformMode(mode: ForYouPlatformMode): boolean {

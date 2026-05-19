@@ -3,6 +3,7 @@ import { settings } from '~/logic'
 
 import SettingsItem from '../components/SettingsItem.vue'
 import SettingsItemGroup from '../components/SettingsItemGroup.vue'
+import VideoCardContextMenuSettings from '../NavigationInteraction/VideoCardContextMenuSettings.vue'
 </script>
 
 <template>
@@ -20,5 +21,6 @@ import SettingsItemGroup from '../components/SettingsItemGroup.vue'
         </SettingsItem>
       </template>
     </SettingsItemGroup>
+    <VideoCardContextMenuSettings />
   </div>
 </template>

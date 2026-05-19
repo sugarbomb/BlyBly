@@ -3,7 +3,8 @@ import type { CSSProperties } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import { useBewlyApp } from '~/composables/useAppProvider'
-import { useFilterAdvance } from '~/composables/useFilterAdvance'
+import { FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
+import { settings } from '~/logic'
 import { Type as ThreePointV2Type } from '~/models/video/appForYou'
 import { openLinkToNewTab } from '~/utils/main'
 import { openLinkInBackground } from '~/utils/tabs'
@@ -36,22 +37,21 @@ const showPipWindow = ref<boolean>(false)
 const { openIframeDrawer } = useBewlyApp()
 const { addRule } = useFilterAdvance()
 
-function getFilterStorageKey() {
+function getFilterScope() {
   // 通过pageType判断当前页面
-  if (pageType === 'trending' || pageType === 'weeklyRanking') {
-    return 'trending-filter'
-  }
-  if (pageType === 'ranking') {
-    return 'ranking-filter'
-  }
-  if (
-    pageType === 'rcmd'
-    || pageType === 'appRcmd'
-    || pageType === 'partitionForYou'
-    || pageType === 'partitionRealtime'
-  ) {
-    return 'foryou-filter'
-  }
+  if (pageType === 'trending')
+    return FilterScope.Trending
+  if (pageType === 'weeklyRanking')
+    return FilterScope.Weekly
+  if (pageType === 'ranking')
+    return FilterScope.Ranking
+  if (pageType === 'partitionForYou')
+    return FilterScope.PartitionForYou
+  if (pageType === 'partitionRealtime')
+    return FilterScope.PartitionRealtime
+  if (pageType === 'rcmd' || pageType === 'appRcmd')
+    return FilterScope.ForYou
+
   // 如果无法判断页面类型，返回undefined使用默认存储
   return undefined
 }
@@ -71,34 +71,106 @@ enum VideoOption {
   CopyAVNumber,
 }
 
-const commonOptions = computed((): { command: VideoOption, name: string, icon: string, color?: string }[][] => {
-  let result = [
-    [
-      { command: VideoOption.OpenInNewTab, name: t('video_card.operation.open_in_new_tab'), icon: 'i-solar:square-top-down-bold-duotone' },
-      { command: VideoOption.OpenInBackground, name: t('video_card.operation.open_in_background'), icon: 'i-solar:square-top-down-bold-duotone' },
-      { command: VideoOption.OpenInNewWindow, name: t('video_card.operation.open_in_new_window'), icon: 'i-solar:maximize-square-3-bold-duotone' },
-      { command: VideoOption.OpenInCurrentTab, name: t('video_card.operation.open_in_current_tab'), icon: 'i-solar:square-top-down-bold-duotone' },
-      { command: VideoOption.OpenInDrawer, name: t('video_card.operation.open_in_drawer'), icon: 'i-solar:archive-up-minimlistic-bold-duotone' },
-    ],
+interface MenuOption {
+  key: string | number
+  name: string
+  icon: string
+  color?: string
+  action: () => void
+}
 
-    [
-      { command: VideoOption.CopyVideoLink, name: t('video_card.operation.copy_video_link'), icon: 'i-solar:copy-bold-duotone' },
-      { command: VideoOption.CopyBVNumber, name: t('video_card.operation.copy_bv_number'), icon: 'i-solar:copy-bold-duotone' },
-      { command: VideoOption.CopyAVNumber, name: t('video_card.operation.copy_av_number'), icon: 'i-solar:copy-bold-duotone' },
-    ],
+const menuGroups = computed((): MenuOption[][] => {
+  const groups: MenuOption[][] = []
 
-    [
-      { command: VideoOption.ViewTheOriginalCover, name: t('video_card.operation.view_the_original_cover'), icon: 'i-solar:gallery-minimalistic-bold-duotone' },
-    ],
-  ]
+  if (settings.value.videoCardContextMenuGroups.blockUserAssistant) {
+    const blockUserGroup: MenuOption[] = []
+    if (!Array.isArray(props.video?.author) && props.video?.author?.mid) {
+      blockUserGroup.push(
+        { key: 'block-user', name: '屏蔽此UP主', icon: 'i-solar:user-block-bold-duotone', action: handleBlockUser },
+        { key: 'block-user-7', name: '临时屏蔽此UP主 7天', icon: 'i-solar:user-block-bold-duotone', action: () => handleTemporaryBlockUser(7) },
+        { key: 'block-user-15', name: '临时屏蔽此UP主 15天', icon: 'i-solar:user-block-bold-duotone', action: () => handleTemporaryBlockUser(15) },
+      )
+    }
+    if (blockUserGroup.length > 0)
+      groups.push(blockUserGroup)
+  }
+
+  if (settings.value.videoCardContextMenuGroups.blockVideoAssistant) {
+    const blockVideoGroup: MenuOption[] = []
+    if (props.video?.id) {
+      blockVideoGroup.push(
+        { key: 'block-video-7', name: '临时屏蔽此视频 7天', icon: 'i-solar:video-frame-cut-bold-duotone', action: () => handleTemporaryBlockVideo(7) },
+        { key: 'block-video-15', name: '临时屏蔽此视频 15天', icon: 'i-solar:video-frame-cut-bold-duotone', action: () => handleTemporaryBlockVideo(15) },
+      )
+    }
+    if (blockVideoGroup.length > 0)
+      groups.push(blockVideoGroup)
+  }
+
+  if (settings.value.videoCardContextMenuGroups.blockUserAssistant || settings.value.videoCardContextMenuGroups.blockVideoAssistant) {
+    const dislikeGroup: MenuOption[] = []
+
+    if (getVideoType() === 'appRcmd') {
+      for (const option of props.video.threePointV2 ?? []) {
+        if (option.type === ThreePointV2Type.WatchLater || option.type === ThreePointV2Type.Feedback)
+          continue
+
+        dislikeGroup.push({
+          key: `app-${option.type}`,
+          name: option.type === ThreePointV2Type.Dislike ? t('video_card.operation.not_interested') : option.title,
+          icon: 'i-solar:confounded-circle-bold-duotone',
+          action: () => handleAppMoreCommand(option.type),
+        })
+      }
+    }
+    else if (getVideoType() === 'rcmd') {
+      for (const option of videoOptions) {
+        dislikeGroup.push({
+          key: `web-${option.id}`,
+          name: option.name,
+          icon: 'i-solar:confounded-circle-bold-duotone',
+          action: () => handleMoreCommand(option.id),
+        })
+      }
+    }
+
+    if (dislikeGroup.length > 0)
+      groups.push(dislikeGroup)
+  }
+
+  if (settings.value.videoCardContextMenuGroups.openWays) {
+    groups.push([
+      { key: VideoOption.OpenInNewTab, name: t('video_card.operation.open_in_new_tab'), icon: 'i-solar:square-top-down-bold-duotone', action: () => handleCommonCommand(VideoOption.OpenInNewTab) },
+      { key: VideoOption.OpenInBackground, name: t('video_card.operation.open_in_background'), icon: 'i-solar:square-top-down-bold-duotone', action: () => handleCommonCommand(VideoOption.OpenInBackground) },
+      { key: VideoOption.OpenInNewWindow, name: t('video_card.operation.open_in_new_window'), icon: 'i-solar:maximize-square-3-bold-duotone', action: () => handleCommonCommand(VideoOption.OpenInNewWindow) },
+      { key: VideoOption.OpenInCurrentTab, name: t('video_card.operation.open_in_current_tab'), icon: 'i-solar:square-top-down-bold-duotone', action: () => handleCommonCommand(VideoOption.OpenInCurrentTab) },
+      { key: VideoOption.OpenInDrawer, name: t('video_card.operation.open_in_drawer'), icon: 'i-solar:archive-up-minimlistic-bold-duotone', action: () => handleCommonCommand(VideoOption.OpenInDrawer) },
+    ])
+  }
+
+  if (settings.value.videoCardContextMenuGroups.copyAssistant) {
+    groups.push([
+      { key: VideoOption.CopyVideoLink, name: t('video_card.operation.copy_video_link'), icon: 'i-solar:copy-bold-duotone', action: () => handleCommonCommand(VideoOption.CopyVideoLink) },
+      { key: VideoOption.CopyBVNumber, name: t('video_card.operation.copy_bv_number'), icon: 'i-solar:copy-bold-duotone', action: () => handleCommonCommand(VideoOption.CopyBVNumber) },
+      { key: VideoOption.CopyAVNumber, name: t('video_card.operation.copy_av_number'), icon: 'i-solar:copy-bold-duotone', action: () => handleCommonCommand(VideoOption.CopyAVNumber) },
+    ])
+  }
+
+  if (settings.value.videoCardContextMenuGroups.cover) {
+    groups.push([
+      { key: VideoOption.ViewTheOriginalCover, name: t('video_card.operation.view_the_original_cover'), icon: 'i-solar:gallery-minimalistic-bold-duotone', action: () => handleCommonCommand(VideoOption.ViewTheOriginalCover) },
+    ])
+  }
+
+  let result = groups
   if (getVideoType() === 'bangumi' || getVideoType() === 'live') {
     result = result.map((group) => {
       return group.filter((opt) => {
-        return opt.command !== VideoOption.CopyBVNumber && opt.command !== VideoOption.CopyAVNumber && opt.command !== VideoOption.ViewThisUserChannel
+        return opt.key !== VideoOption.CopyBVNumber && opt.key !== VideoOption.CopyAVNumber && opt.key !== VideoOption.ViewThisUserChannel
       })
     })
   }
-  return result
+  return result.filter(group => group.length > 0)
 })
 
 onMounted(() => {
@@ -186,6 +258,28 @@ function handleRemoved(selectedOpt?: { dislikeReasonId: number }) {
 }
 
 function handleBlockUser() {
+  addUserBlockRule()
+  handleClose()
+}
+
+function handleTemporaryBlockUser(days: 7 | 15) {
+  addUserBlockRule(days)
+  handleClose()
+}
+
+function handleTemporaryBlockVideo(days: 7 | 15) {
+  const title = props.video?.title?.trim()
+  const bvid = props.video?.bvid?.trim()
+  const aid = props.video?.aid || props.video?.id
+  const value = bvid || (aid ? `av${aid}` : title)
+
+  if (value)
+    useFilterAdvance(FilterScope.ExpiringGlobal).addRule({ type: 'keyword', value, enabled: true, duration: days })
+
+  handleClose()
+}
+
+function addUserBlockRule(duration?: 7 | 15) {
   let mid: number | undefined
   if (props.video?.author) {
     if (Array.isArray(props.video.author)) {
@@ -197,15 +291,19 @@ function handleBlockUser() {
     }
   }
   if (mid) {
-    const storageKey = getFilterStorageKey()
-    if (storageKey) {
-      useFilterAdvance(storageKey).addRule({ type: 'uid', value: String(mid), enabled: true })
+    if (duration) {
+      useFilterAdvance(FilterScope.ExpiringGlobal).addRule({ type: 'uid', value: String(mid), enabled: true, duration })
+      return
+    }
+
+    const filterScope = getFilterScope()
+    if (filterScope) {
+      useFilterAdvance(filterScope).addRule({ type: 'uid', value: String(mid), enabled: true })
     }
     else {
       addRule({ type: 'uid', value: String(mid), enabled: true })
     }
   }
-  handleClose()
 }
 </script>
 
@@ -222,54 +320,18 @@ function handleBlockUser() {
         z-10
       >
         <ul flex="~ col gap-1">
-          <!-- 屏蔽UP主菜单项 -->
-          <li
-            v-if="!Array.isArray(props.video?.author) && props.video?.author?.mid"
-            class="context-menu-item"
-            @click="handleBlockUser"
-          >
-            <i class="item-icon" i-solar:user-block-bold-duotone />
-            屏蔽此UP主
-          </li>
-          <!-- 原有菜单项 -->
-          <template v-if="getVideoType() === 'appRcmd'">
-            <template v-for="option in video.threePointV2" :key="option.type">
-              <li
-                v-if="option.type !== ThreePointV2Type.WatchLater && option.type !== ThreePointV2Type.Feedback"
-                class="context-menu-item"
-                @click="handleAppMoreCommand(option.type)"
-              >
-                <i class="item-icon" i-solar:confounded-circle-bold-duotone />
-                <span v-if="option.type === ThreePointV2Type.Dislike">{{ $t('video_card.operation.not_interested') }}</span>
-                <span v-else>{{ option.title }}</span>
-              </li>
-            </template>
-          </template>
-          <template v-else-if="getVideoType() === 'rcmd'">
-            <li
-              v-for="option in videoOptions" :key="option.id"
-              class="context-menu-item"
-              @click="handleMoreCommand(option.id)"
-            >
-              <i class="item-icon" i-solar:confounded-circle-bold-duotone />
-              {{ option.name }}
-            </li>
-          </template>
-
-          <div v-if="getVideoType() === 'rcmd'" class="divider" />
-
-          <template v-for="(optionGroup, index) in commonOptions" :key="index">
+          <template v-for="(optionGroup, index) in menuGroups" :key="index">
             <li
               v-for="option in optionGroup"
-              :key="option.command"
+              :key="option.key"
               class="context-menu-item"
-              @click="handleCommonCommand(option.command)"
+              @click="option.action"
             >
               <i class="item-icon" :class="option.icon" />
               {{ option.name }}
             </li>
 
-            <div v-if="index !== commonOptions.length - 1" class="divider" />
+            <div v-if="index !== menuGroups.length - 1" class="divider" />
           </template>
         </ul>
       </div>

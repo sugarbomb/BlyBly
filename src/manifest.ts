@@ -31,9 +31,9 @@ export async function getManifest() {
       : { service_worker: './dist/background/index.js' },
 
     icons: {
-      16: './assets/bly-vtuber-style-logos.png',
-      48: './assets/bly-vtuber-style-logos.png',
-      128: './assets/bly-vtuber-style-logos.png',
+      16: './assets/bly-vtuber-style-logos1.png',
+      48: './assets/bly-vtuber-style-logos1.png',
+      128: './assets/bly-vtuber-style-logos1.png',
     },
     permissions: [
       'storage',

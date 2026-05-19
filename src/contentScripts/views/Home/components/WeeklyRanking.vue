@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import WeeklyRankingControl from '~/components/List/WeeklyRankingControl.vue'
 import { useBewlyApp } from '~/composables/useAppProvider'
-import { useFilterAdvance } from '~/composables/useFilterAdvance'
+import { FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
 import type { GridLayoutType } from '~/logic'
 import api from '~/utils/api'
 
@@ -67,7 +67,7 @@ const emit = defineEmits<{
 
 const PAGE_SIZE = 4
 const { handlePageRefresh } = useBewlyApp()
-const { filterVideos, options: filterOptions } = useFilterAdvance('trending-filter')
+const { filterVideos, options: filterOptions } = useFilterAdvance(FilterScope.Weekly)
 
 provide('pageType', 'weeklyRanking')
 const monthIndex = ref<number>(0)
@@ -239,6 +239,8 @@ const filteredWeeklyVideoCards = computed(() => {
     return weeklyVideoCards.value
 
   const adapterList = weeklyVideoCards.value.map(video => ({
+    id: video.id,
+    bvid: video.bvid,
     title: video.title,
     owner: {
       name: video.author?.name ?? '',

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { settings } from '~/logic'
 import { isHomePage } from '~/utils/main'
 
+import { version } from '../../../../package.json'
 import SettingsItem from '../components/SettingsItem.vue'
 import SettingsItemGroup from '../components/SettingsItemGroup.vue'
 
@@ -59,6 +60,12 @@ watch(() => settings.value.useOriginalBilibiliHomepage, () => {
 
 <template>
   <div>
+    <SettingsItemGroup :title="`功能速览 · v${version}`">
+      <SettingsItem title="刷新按钮设置" desc="查看 导航与交互 - 看看按钮 - 刷新按钮" />
+      <SettingsItem title="卡片菜单设置" desc="查看 导航与交互 - 视频卡片 - 卡片菜单" />
+      <SettingsItem title="新屏蔽列表导航" desc="查看 Bly 增强 - 内容屏蔽" />
+    </SettingsItemGroup>
+
     <SettingsItemGroup :title="$t('settings.group_common')">
       <SettingsItem :title="$t('settings.use_original_bilibili_topbar')">
         <Radio v-model="settings.useOriginalBilibiliTopBar" />

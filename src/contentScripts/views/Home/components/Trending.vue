@@ -2,7 +2,7 @@
 import type { Ref } from 'vue'
 
 import { useBewlyApp } from '~/composables/useAppProvider'
-import { useFilterAdvance } from '~/composables/useFilterAdvance'
+import { FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
 import type { GridLayoutType } from '~/logic'
 import type { List as VideoItem, TrendingResult } from '~/models/video/trending'
 import api from '~/utils/api'
@@ -36,7 +36,7 @@ const containerRef = ref<HTMLElement>() as Ref<HTMLElement>
 const pn = ref<number>(1)
 const noMoreContent = ref<boolean>(false)
 const { handleReachBottom, handlePageRefresh, haveScrollbar } = useBewlyApp()
-const { filterVideos } = useFilterAdvance('trending-filter')
+const { filterVideos } = useFilterAdvance(FilterScope.Trending)
 
 // 提供页面类型给子组件
 provide('pageType', 'trending')
