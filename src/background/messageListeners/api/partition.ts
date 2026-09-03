@@ -8,6 +8,14 @@ import { AHS } from '../../utils'
 const PARTITION_FOR_YOU_URL = 'https://api.bilibili.com/x/web-interface/region/feed/rcmd'
 const WBI_NAV_URL = 'https://api.bilibili.com/x/web-interface/nav'
 const WBI_PARAM_FILTER_REGEX = /[!'()*]/g
+const PARTITION_FOR_YOU_PARAM_ORDER = [
+  'display_id',
+  'request_cnt',
+  'from_region',
+  'device',
+  'plat',
+  'web_location',
+] as const
 const WBI_MIXIN_KEY_ENC_TAB = [
   46,
   47,
@@ -137,22 +145,38 @@ async function fetchWbiKeys(requestInit: RequestInit) {
 }
 
 function signWbiParams(params: Record<string, string>, imgKey: string, subKey: string): URLSearchParams {
-  const query = new URLSearchParams()
+  const sanitizedParams: Record<string, string> = {}
   const wts = String(Math.floor(Date.now() / 1000))
 
   Object.entries({ ...params, wts }).forEach(([key, value]) => {
     if (value === undefined || value === null)
       return
-    query.set(key, sanitizeWbiValue(value))
+    sanitizedParams[key] = sanitizeWbiValue(value)
   })
 
-  query.sort()
+  const sortedQuery = new URLSearchParams(sanitizedParams)
+  sortedQuery.sort()
 
   const mixinKey = getWbiMixinKey(imgKey, subKey)
-  const wRid = md5Hex(query.toString() + mixinKey)
-  query.set('w_rid', wRid)
+  const wRid = md5Hex(sortedQuery.toString() + mixinKey)
+  const orderedQuery = new URLSearchParams()
 
-  return query
+  PARTITION_FOR_YOU_PARAM_ORDER.forEach((key) => {
+    if (sanitizedParams[key] !== undefined)
+      orderedQuery.set(key, sanitizedParams[key])
+  })
+
+  Object.keys(sanitizedParams)
+    .filter(key => !PARTITION_FOR_YOU_PARAM_ORDER.includes(key as typeof PARTITION_FOR_YOU_PARAM_ORDER[number]) && key !== 'wts')
+    .sort()
+    .forEach((key) => {
+      orderedQuery.set(key, sanitizedParams[key])
+    })
+
+  orderedQuery.set('w_rid', wRid)
+  orderedQuery.set('wts', wts)
+
+  return orderedQuery
 }
 
 async function getPartitionForYouList(message: Message, sender?: browser.Runtime.MessageSender) {

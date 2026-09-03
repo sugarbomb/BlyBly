@@ -24,6 +24,7 @@ import VideoCardSkeleton from './VideoCardSkeleton.vue'
 
 const props = withDefaults(defineProps<Props>(), {
   showWatcherLater: true,
+  showCoverBottomRight: false,
   type: 'common',
   moreBtn: true,
 })
@@ -37,6 +38,7 @@ interface Props {
   /** rcmd: recommend video; appRcmd: app recommend video; bangumi: bangumi video; common: common video */
   type?: 'rcmd' | 'appRcmd' | 'bangumi' | 'common'
   showWatcherLater?: boolean
+  showCoverBottomRight?: boolean
   horizontal?: boolean
   showPreview?: boolean
   moreBtn?: boolean
@@ -419,6 +421,20 @@ provide('getVideoType', () => props.type!)
                   <Icon icon="line-md:confirm" />
                 </Tooltip>
               </button>
+
+              <div
+                v-if="showCoverBottomRight && $slots.coverBottomRight"
+                class="group-hover/cover:opacity-100"
+                pos="absolute bottom-0 right-0"
+                z="2"
+                p="0"
+                opacity-0
+                transform="scale-70 group-hover/cover:scale-100"
+                duration-300
+                @click.stop=""
+              >
+                <slot name="coverBottomRight" />
+              </div>
             </template>
           </div>
 

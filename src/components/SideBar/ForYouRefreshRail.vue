@@ -84,8 +84,9 @@ function handleToggle() {
     h-100vh
     z-10
     w-56px shrink-0
+    pointer-events-none
   >
-    <div pos="absolute left-0" w-full flex="~ col items-center" :style="railContentStyle">
+    <div pos="absolute left-0" w-full flex="~ col items-center" :style="railContentStyle" pointer-events-auto>
       <div
         style="backdrop-filter: var(--bew-filter-glass-1)"
         bg="$bew-content-alt" dark:bg="$bew-elevated" p-2 rounded="$bew-radius"
@@ -141,6 +142,7 @@ function handleToggle() {
     style="transform: translateY(-50%)"
     z-100
     flex="~ col"
+    pointer-events-none
   >
     <div
       style="backdrop-filter: var(--bew-filter-glass-1)"
@@ -148,6 +150,7 @@ function handleToggle() {
       shadow="[var(--bew-shadow-edge-glow-1),var(--bew-shadow-2)]"
       box-border border="1 $bew-border-color"
       flex="~ col items-center gap-2"
+      pointer-events-auto
     >
       <Tooltip :content="$t('common.operation.refresh')" placement="left">
         <Button
