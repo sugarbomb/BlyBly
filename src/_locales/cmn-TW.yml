@@ -96,6 +96,20 @@ settings:
   group_search_page_mode: 搜尋頁模式
   group_home_tabs: 標籤欄
   group_refresh_button: 重新整理按鈕
+  group_home_recommendation_interface: 首頁推薦介面
+  group_other: 其它
+  for_you_close_ads: 關閉廣告
+  for_you_ad_card_handling: 廣告卡片處理
+  for_you_ad_card_handling_opt:
+    remove: 移除
+    mask: 遮擋
+  for_you_auto_feedback_web: 自動處理回饋（Web）
+  for_you_auto_feedback_web_desc: 命中封鎖清單時，自動提交「不喜歡」回饋。
+  for_you_auto_feedback_web_exclude_temporary_blocks: 排除暫時封鎖
+  for_you_auto_feedback_web_exclude_temporary_blocks_desc: 開啟後，不會對暫時封鎖的作者或作品提交回饋。
+  for_you_mask_feedback: 已回饋
+  for_you_mask_advertisement: 廣告
+  for_you_mask_autoFeedback: 即將自動回饋
 
   # Settings buttons
   btn:

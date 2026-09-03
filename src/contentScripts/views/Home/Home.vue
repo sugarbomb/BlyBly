@@ -35,11 +35,12 @@ const pagesFollowLive = {
 // 3) subscribed/foryou
 const pagesSubForYou = {
   [HomeSubPage.ForYou]: defineAsyncComponent(() => import('./components/ForYouBlyBly.vue')),
+  [HomeSubPage.ForYouGuest]: defineAsyncComponent(() => import('./components/ForYouBlyBlyGuest.vue')),
+  [HomeSubPage.ForYouTV]: defineAsyncComponent(() => import('./components/ForYouBlyBlyTV.vue')),
 } as const
 
 const pagesPartition = {
   [HomeSubPage.PartitionForYou]: defineAsyncComponent(() => import('./components/PartitionForYou.vue')),
-  [HomeSubPage.PartitionRealtime]: defineAsyncComponent(() => import('./components/PartitionRealtime.vue')),
 } as const
 
 const pages = {
@@ -71,8 +72,8 @@ type GroupId = typeof GROUP_ORDER[number]
 
 const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.WeeklyRanking, HomeSubPage.Trending])
 const groupFollowLive = new Set<HomeSubPage>([HomeSubPage.Following, HomeSubPage.SubscribedSeries, HomeSubPage.Live])
-const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.ForYou])
-const groupPartition = new Set<HomeSubPage>([HomeSubPage.PartitionForYou, HomeSubPage.PartitionRealtime])
+const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.ForYou, HomeSubPage.ForYouGuest, HomeSubPage.ForYouTV])
+const groupPartition = new Set<HomeSubPage>([HomeSubPage.PartitionForYou])
 
 const GROUP_MATCHER: Record<GroupId, ReadonlySet<HomeSubPage>> = {
   rankTrending: groupRankTrending,

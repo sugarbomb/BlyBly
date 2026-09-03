@@ -32,6 +32,14 @@ export interface FilterRule {
   expiresAt?: string
 }
 
+export type FilterMatchTarget = 'author' | 'title' | 'videoId'
+
+export interface FilterMatch {
+  target: FilterMatchTarget
+  rule: FilterRule
+  temporary: boolean
+}
+
 export interface FilterOptions {
   enabled: boolean
   rules: FilterRule[]
@@ -1113,16 +1121,44 @@ export function useFilterAdvance(scopeOrKey: string | FilterScope = FilterScope.
     return activeRules.some(rule => rule.type !== 'uid' && matchesText(pgc.title, rule.value))
   }
 
-  const shouldFilterItem = (item: FilterableItem): boolean => {
+  const getFilterMatch = (item: FilterableItem): FilterMatch | undefined => {
     if (!options.value.enabled || options.value.rules.length === 0)
-      return false
+      return undefined
 
     const activeRules = options.value.rules.filter(rule => rule.enabled && isFilteringEnabled(rule.scope ?? scope))
 
     if (activeRules.length === 0)
-      return false
+      return undefined
 
-    return activeRules.some(rule => matchesRule(rule, item))
+    const createMatch = (target: FilterMatchTarget, rule: FilterRule): FilterMatch => ({
+      target,
+      rule,
+      temporary: rule.duration !== undefined && rule.expiresAt !== undefined,
+    })
+
+    // Author matches take precedence, so automatic recommendation feedback can use reason_id=4.
+    const authorRule = activeRules.find((rule) => {
+      if (rule.type === 'uid')
+        return item.owner?.mid !== undefined && item.owner?.mid !== null && `${item.owner.mid}` === rule.value
+
+      return matchesText(item.owner?.name, rule.value)
+    })
+    if (authorRule)
+      return createMatch('author', authorRule)
+
+    const titleRule = activeRules.find(rule => rule.type !== 'uid' && matchesText(item.title, rule.value))
+    if (titleRule)
+      return createMatch('title', titleRule)
+
+    const videoIdRule = activeRules.find(rule => rule.type !== 'uid' && matchesVideoIdentifier(item, rule.value))
+    if (videoIdRule)
+      return createMatch('videoId', videoIdRule)
+
+    return undefined
+  }
+
+  const shouldFilterItem = (item: FilterableItem): boolean => {
+    return Boolean(getFilterMatch(item))
   }
 
   const filterVideos = <T extends RankingVideoItem | TrendingVideoItem>(videos: T[]): T[] => {
@@ -1163,6 +1199,7 @@ export function useFilterAdvance(scopeOrKey: string | FilterScope = FilterScope.
     convertLegacyFilters,
     listRules: listRulesForScope,
     matchesRule,
+    getFilterMatch,
     shouldFilterItem,
     filterVideos,
     filterPgcList,

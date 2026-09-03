@@ -123,8 +123,10 @@ function handleSelect(partition: PartitionItem) {
       .filter(item => nextSelectedIdSet.has(item.id))
   }
 
-  emit('update:modelValue', nextSelectedIds)
-  emit('change', nextSelectedPartitions)
+  if (!props.previewEnabled) {
+    emit('update:modelValue', nextSelectedIds)
+    emit('change', nextSelectedPartitions)
+  }
   emit('selectPartition', {
     partition,
     selected,
@@ -141,8 +143,11 @@ function handleConfirm() {
   emit('update:visible', false)
 }
 
-function togglePreview() {
-  emit('update:previewEnabled', !props.previewEnabled)
+function setPreviewEnabled(enabled: boolean) {
+  if (props.previewEnabled === enabled)
+    return
+
+  emit('update:previewEnabled', enabled)
 }
 
 function resolveFallbackLabel(name: string): string {
@@ -205,19 +210,29 @@ defineExpose({
     </div>
 
     <div class="partition-actions">
-      <button
-        type="button"
-        class="preview-switch-row"
-        :aria-pressed="previewEnabled"
-        @click="togglePreview"
-      >
-        <span class="preview-switch-label">
-          {{ previewEnabled ? '浏览' : '拣选' }}
-        </span>
-        <span class="preview-switch" :class="{ on: previewEnabled }" aria-hidden="true">
-          <span class="preview-switch-thumb" />
-        </span>
-      </button>
+      <div class="preview-mode-control" role="group" aria-label="分区操作模式">
+        <button
+          type="button"
+          class="preview-mode-option"
+          :class="{ active: !previewEnabled }"
+          :aria-pressed="!previewEnabled"
+          @click="setPreviewEnabled(false)"
+        >
+          拣选
+        </button>
+        <button
+          type="button"
+          class="preview-mode-option"
+          :class="{ active: previewEnabled }"
+          :aria-pressed="previewEnabled"
+          @click="setPreviewEnabled(true)"
+        >
+          浏览
+        </button>
+      </div>
+      <span v-if="!selectedPartitions.length" class="partition-selection-hint">
+        请至少选择一个作为起始分区
+      </span>
       <button
         type="button"
         class="confirm-btn"
@@ -342,50 +357,40 @@ defineExpose({
   gap: 0.5rem;
 }
 
-.preview-switch-row {
-  border: 0;
-  background: transparent;
-  padding: 0;
+.preview-mode-control {
   display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--bew-text-2);
-  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0.2rem;
+  border-radius: var(--bew-radius);
+  background: var(--bew-fill-2);
 }
 
-.preview-switch-label {
+.preview-mode-option {
+  min-width: 3.5rem;
+  border: 0;
+  border-radius: var(--bew-radius);
+  background: transparent;
+  color: var(--bew-text-2);
+  padding: 0.3rem 0.65rem;
   font-size: 0.8em;
   font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 200ms,
+    background-color 200ms;
 }
 
-.preview-switch {
-  width: 2.15rem;
-  height: 1.25rem;
-  border-radius: 999px;
-  background: var(--bew-fill-2);
-  border: 1px solid var(--bew-border-color);
-  position: relative;
-  transition: background-color 200ms;
-}
-
-.preview-switch.on {
+.preview-mode-option.active {
   background: var(--bew-theme-color);
+  color: var(--bew-text-auto);
 }
 
-.preview-switch-thumb {
-  width: 0.9rem;
-  height: 0.9rem;
-  border-radius: 999px;
-  background: #fff;
-  position: absolute;
-  top: 50%;
-  left: 0.15rem;
-  transform: translateY(-50%);
-  transition: transform 200ms;
-}
-
-.preview-switch.on .preview-switch-thumb {
-  transform: translate(0.85rem, -50%);
+.partition-selection-hint {
+  flex: 1;
+  min-width: 0;
+  color: var(--bew-text-3);
+  font-size: 0.8em;
+  text-align: left;
 }
 
 .confirm-btn {

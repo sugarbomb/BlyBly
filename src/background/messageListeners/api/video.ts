@@ -8,6 +8,8 @@ import { AHS } from '../../utils'
 
 const TOP_FEED_URL = `https://api.bilibili.com${DEFAULT_TOP_FEED_PATH}`
 const WBI_NAV_URL = 'https://api.bilibili.com/x/web-interface/nav'
+const WEB_FEEDBACK_DISLIKE_URL = 'https://api.bilibili.com/x/web-interface/feedback/dislike'
+const WEB_FEEDBACK_CANCEL_URL = 'https://api.bilibili.com/x/web-interface/feedback/dislike/cancel'
 const WBI_PARAM_FILTER_REGEX = /[!'()*]/g
 const TOP_FEED_PARAM_ORDER = [
   'web_location',
@@ -135,6 +137,28 @@ async function getFirefoxCookieHeader(sender?: browser.Runtime.MessageSender): P
   return cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ')
 }
 
+async function getWebCsrf(message: Message, sender?: browser.Runtime.MessageSender): Promise<string> {
+  if (message.csrf)
+    return String(message.csrf)
+
+  // eslint-disable-next-line node/prefer-global/process
+  if (process.env.FIREFOX && sender?.tab?.cookieStoreId) {
+    const cookies = await browser.cookies.getAll({ storeId: sender.tab.cookieStoreId })
+    const csrf = cookies.find(cookie => cookie.name === 'bili_jct')?.value
+    if (csrf)
+      return csrf
+  }
+
+  const csrfCookie = await browser.cookies.get({
+    url: 'https://www.bilibili.com/',
+    name: 'bili_jct',
+  })
+  if (!csrfCookie?.value)
+    throw new Error('Bilibili login cookie (bili_jct) is required for web feedback')
+
+  return csrfCookie.value
+}
+
 async function fetchWbiKeys(requestInit: RequestInit) {
   const response = await fetch(WBI_NAV_URL, requestInit)
   const payload = await response.json()
@@ -219,6 +243,63 @@ async function getRecommendVideosWeb(message: Message, sender?: browser.Runtime.
   return requestTopFeed(message, sender, true)
 }
 
+function buildWebFeedbackParams(message: Message, csrf: string): Record<string, string> {
+  if (!message.id || !message.mid || !message.trackId)
+    throw new Error('Web feedback requires id, mid, and trackId from the recommendation item')
+
+  return {
+    app_id: '100',
+    platform: '5',
+    from_spmid: '',
+    spmid: '333.1007.0.0',
+    goto: message.goto || 'av',
+    id: String(message.id),
+    mid: String(message.mid),
+    track_id: message.trackId,
+    feedback_page: '1',
+    reason_id: String(message.reasonId ?? 1),
+    csrf,
+  }
+}
+
+async function requestWebFeedback(message: Message, sender: browser.Runtime.MessageSender | undefined, url: string) {
+  const csrf = await getWebCsrf(message, sender)
+  const params = buildWebFeedbackParams(message, csrf)
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+  }
+  const firefoxCookieHeader = await getFirefoxCookieHeader(sender)
+  if (firefoxCookieHeader)
+    headers['firefox-multi-account-cookie'] = firefoxCookieHeader
+
+  const requestBase: RequestInit = {
+    // eslint-disable-next-line node/prefer-global/process
+    credentials: process.env.FIREFOX ? 'omit' : 'include',
+    headers,
+    referrer: 'https://www.bilibili.com/',
+  }
+  const { imgKey, subKey } = await fetchWbiKeys(requestBase)
+  const signedParams = signWbiParams(params, imgKey, subKey)
+  const requestURL = new URL(url)
+  requestURL.searchParams.set('w_rid', signedParams.get('w_rid') || '')
+  requestURL.searchParams.set('wts', signedParams.get('wts') || '')
+
+  const response = await fetch(requestURL.toString(), {
+    ...requestBase,
+    method: 'POST',
+    body: new URLSearchParams(params),
+  })
+  return response.json()
+}
+
+async function dislikeVideoWeb(message: Message, sender?: browser.Runtime.MessageSender) {
+  return requestWebFeedback(message, sender, WEB_FEEDBACK_DISLIKE_URL)
+}
+
+async function cancelDislikeVideoWeb(message: Message, sender?: browser.Runtime.MessageSender) {
+  return requestWebFeedback(message, sender, WEB_FEEDBACK_CANCEL_URL)
+}
+
 const API_VIDEO = {
   getRecommendVideos: {
     url: 'https://api.bilibili.com/x/web-interface/index/top/feed/rcmd',
@@ -261,52 +342,9 @@ const API_VIDEO = {
     },
     afterHandle: AHS.J_D,
   },
-  // https://github.com/indefined/UserScripts/blob/master/bilibiliHome/bilibiliHome.API.md#%E6%8F%90%E4%BA%A4%E4%B8%8D%E5%96%9C%E6%AC%A2
-  dislikeVideo: {
-    url: 'https://app.bilibili.com/x/feed/dislike',
-    _fetch: {
-      method: 'get',
-      credentials: 'omit',
-    },
-    // App API is access_key based; keep it isolated from web cookies.
-    useCookie: false,
-    params: {
-      access_key: '',
-      goto: '',
-      id: 0,
-      idx: '',
-      reason_id: 1,
-      device: '',
-      mobi_app: '',
-      build: 0,
-      appkey: '',
-      sign: '',
-    },
-    afterHandle: AHS.J_D,
-  },
-  // https://github.com/indefined/UserScripts/blob/master/bilibiliHome/bilibiliHome.API.md#%E6%92%A4%E9%94%80%E4%B8%8D%E5%96%9C%E6%AC%A2
-  undoDislikeVideo: {
-    url: 'https://app.bilibili.com/x/feed/dislike/cancel',
-    _fetch: {
-      method: 'get',
-      credentials: 'omit',
-    },
-    // App API is access_key based; keep it isolated from web cookies.
-    useCookie: false,
-    params: {
-      access_key: '',
-      goto: '',
-      id: 0,
-      idx: 0,
-      reason_id: 1,
-      device: '',
-      mobi_app: '',
-      build: 0,
-      sign: '',
-      appkey: '',
-    },
-    afterHandle: AHS.J_D,
-  },
+  // Web feedback is cookie + csrf + WBI-signature based, unlike the App API above.
+  dislikeVideoWeb,
+  cancelDislikeVideoWeb,
   // https://socialsisteryi.github.io/bilibili-API-collect/docs/video/info.html#%E8%8E%B7%E5%8F%96%E8%A7%86%E9%A2%91%E8%AF%A6%E7%BB%86%E4%BF%A1%E6%81%AF-web%E7%AB%AF
   getVideoInfo: {
     url: 'https://api.bilibili.com/x/web-interface/view',

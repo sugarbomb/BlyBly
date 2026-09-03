@@ -92,6 +92,10 @@ export interface Settings {
   searchPageWallpaperBlurIntensity: number
 
   recommendationMode: 'web' | 'app'
+  forYouCloseAds: boolean
+  forYouAdCardHandling: 'remove' | 'mask'
+  forYouAutoFeedbackWeb: boolean
+  forYouAutoFeedbackWebExcludeTemporaryBlocks: boolean
 
   // filter setting
   disableFilterForFollowedUser: boolean
@@ -209,6 +213,10 @@ export const originalSettings: Settings = {
   searchPageWallpaperBlurIntensity: 0,
 
   recommendationMode: 'web',
+  forYouCloseAds: false,
+  forYouAdCardHandling: 'remove',
+  forYouAutoFeedbackWeb: false,
+  forYouAutoFeedbackWebExcludeTemporaryBlocks: true,
 
   // filter setting
   disableFilterForFollowedUser: false,

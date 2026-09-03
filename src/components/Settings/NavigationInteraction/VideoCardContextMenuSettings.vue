@@ -36,16 +36,16 @@ function handleConvertLegacyFilters() {
         转换
       </button>
     </SettingsItem>
-    <SettingsItem title="UP 主屏蔽辅助组" desc="包含屏蔽此 UP 主和 7/15 天临时屏蔽。">
+    <SettingsItem title="屏蔽 1" desc="全局屏蔽 UP 主；7、15 天临时屏蔽。">
       <Radio v-model="settings.videoCardContextMenuGroups.blockUserAssistant" />
     </SettingsItem>
-    <SettingsItem title="视频屏蔽辅助组" desc="包含 7/15 天临时屏蔽此视频。">
+    <SettingsItem title="屏蔽 2" desc="7、15天临时屏蔽视频。">
       <Radio v-model="settings.videoCardContextMenuGroups.blockVideoAssistant" />
     </SettingsItem>
-    <SettingsItem title="打开方式功能组">
+    <SettingsItem title="打开方式" desc="包含多种打开方式">
       <Radio v-model="settings.videoCardContextMenuGroups.openWays" />
     </SettingsItem>
-    <SettingsItem title="复制辅助组">
+    <SettingsItem title="复制" desc="复制链接 AV号">
       <Radio v-model="settings.videoCardContextMenuGroups.copyAssistant" />
     </SettingsItem>
     <SettingsItem title="查看封面">

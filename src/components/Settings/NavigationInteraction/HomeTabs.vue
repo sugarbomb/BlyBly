@@ -27,8 +27,8 @@ type GroupId = typeof GROUP_ORDER[number]
 
 const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.WeeklyRanking, HomeSubPage.Trending])
 const groupFollowLive = new Set<HomeSubPage>([HomeSubPage.Following, HomeSubPage.SubscribedSeries, HomeSubPage.Live])
-const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.ForYou])
-const groupPartition = new Set<HomeSubPage>([HomeSubPage.PartitionForYou, HomeSubPage.PartitionRealtime])
+const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.ForYou, HomeSubPage.ForYouGuest, HomeSubPage.ForYouTV])
+const groupPartition = new Set<HomeSubPage>([HomeSubPage.PartitionForYou])
 
 const GROUP_MATCHER: Record<GroupId, ReadonlySet<HomeSubPage>> = {
   rankTrending: groupRankTrending,

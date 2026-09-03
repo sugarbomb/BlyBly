@@ -32,6 +32,7 @@ const DEFAULT_VISIBLE_RULE_LIMIT = 24
 const selectedTime = ref<'permanent' | 'expiring'>('permanent')
 const selectedScope = ref<FilterScope>(FilterScope.Global)
 const searchKeyword = ref('')
+const showSearch = ref(false)
 const showValues = ref(false)
 const showManualAdd = ref(false)
 const visibleRuleLimit = ref(DEFAULT_VISIBLE_RULE_LIMIT)
@@ -40,6 +41,7 @@ const newRuleType = ref<'keyword' | 'uid'>('keyword')
 const newRuleValue = ref('')
 const fileInputRef = ref<HTMLInputElement>()
 const ruleInputRef = ref<HTMLInputElement>()
+const searchInputRef = ref<HTMLInputElement>()
 
 const timeOptions = [
   { value: 'permanent', label: '永久' },
@@ -49,6 +51,8 @@ const timeOptions = [
 const expiringScopeOptions = [
   { value: FilterScope.Global, label: '全局作用' },
 ]
+
+const permanentScopeOptions = FILTER_SCOPE_OPTIONS.filter(option => option.value !== FilterScope.PartitionRealtime)
 
 const ruleTypeOptions = [
   { value: 'keyword', label: '关键字' },
@@ -63,7 +67,7 @@ const displayedScope = computed({
 })
 
 const manualScopeOptions = computed(() => {
-  return selectedTime.value === 'expiring' ? expiringScopeOptions : FILTER_SCOPE_OPTIONS
+  return selectedTime.value === 'expiring' ? expiringScopeOptions : permanentScopeOptions
 })
 
 const effectiveScope = computed(() => {
@@ -113,7 +117,7 @@ const selectedTimeLabel = computed(() => {
 const selectedScopeLabel = computed(() => {
   return selectedTime.value === 'expiring'
     ? '全局作用'
-    : (FILTER_SCOPE_OPTIONS.find(option => option.value === selectedScope.value)?.label ?? '')
+    : (permanentScopeOptions.find(option => option.value === selectedScope.value)?.label ?? '')
 })
 
 const listFilterText = computed(() => {
@@ -169,15 +173,21 @@ function handleAddRule() {
   newRuleValue.value = ''
 }
 
-async function handleRailAdd() {
-  if (!showManualAdd.value) {
-    showManualAdd.value = true
-    await nextTick()
-    ruleInputRef.value?.focus()
-    return
-  }
+async function handleShowManualAdd() {
+  showManualAdd.value = true
+  await nextTick()
+  ruleInputRef.value?.focus()
+}
 
-  handleAddRule()
+async function toggleSearch() {
+  showSearch.value = !showSearch.value
+  if (showSearch.value) {
+    await nextTick()
+    searchInputRef.value?.focus()
+  }
+  else {
+    searchKeyword.value = ''
+  }
 }
 
 function handleShowMoreRules() {
@@ -260,12 +270,10 @@ function handleConvertLegacyFilters() {
     </section>
 
     <section class="filter-toolbar">
-      <div class="search-block">
-        <i i-mingcute:search-2-line />
-        <input v-model="searchKeyword" placeholder="搜索过滤内容">
-      </div>
-
       <div class="toolbar-selects">
+        <div class="select-block scope-select-block">
+          <Select v-model="displayedScope" :options="manualScopeOptions" w="full" />
+        </div>
         <div class="select-block">
           <span>时间</span>
           <Select v-model="selectedTime" :options="timeOptions" w="full" />
@@ -273,8 +281,9 @@ function handleConvertLegacyFilters() {
       </div>
 
       <div class="toolbar-actions">
-        <button class="icon-button" :title="showValues ? '隐藏列表内容' : '显示列表内容'" @click="showValues = !showValues">
-          <i :class="showValues ? 'i-mingcute:eye-2-line' : 'i-mingcute:eye-close-line'" />
+        <button class="text-button" @click="handleShowManualAdd">
+          <i i-mingcute:add-line />
+          <span class="action-label">添加</span>
         </button>
         <button class="text-button" @click="handleImportFile">
           <i i-mingcute:download-2-line />
@@ -299,12 +308,6 @@ function handleConvertLegacyFilters() {
       >
     </section>
 
-    <section class="manual-toolbar">
-      <div class="manual-scope-select">
-        <Select v-model="displayedScope" :options="manualScopeOptions" w="full" />
-      </div>
-    </section>
-
     <section v-if="showManualAdd" class="add-toolbar">
       <div class="manual-type-select">
         <Select v-model="newRuleType" :options="ruleTypeOptions" w="full" />
@@ -316,6 +319,9 @@ function handleConvertLegacyFilters() {
         :placeholder="newRuleType === 'uid' ? '输入作者 ID' : '输入标题或作者关键字'"
         @keyup.enter="handleAddRule"
       >
+      <button class="text-button add-confirm-button" :disabled="!newRuleValue.trim()" @click="handleAddRule">
+        确认
+      </button>
     </section>
 
     <section class="filter-list-layout">
@@ -323,6 +329,11 @@ function handleConvertLegacyFilters() {
         <div class="list-head">
           <span class="list-filter-text">{{ listFilterText }}</span>
           <span>{{ ruleCountText }}</span>
+        </div>
+
+        <div v-if="showSearch" class="list-search-row">
+          <i i-mingcute:search-2-line />
+          <input ref="searchInputRef" v-model="searchKeyword" placeholder="搜索过滤内容">
         </div>
 
         <div v-if="ruleCount === 0" class="empty-state">
@@ -391,6 +402,12 @@ function handleConvertLegacyFilters() {
           <input v-model="currentRangeEnabled" type="checkbox">
           <span />
         </label>
+        <button class="rail-button" :title="showSearch ? '关闭搜索' : '搜索过滤内容'" @click="toggleSearch">
+          <i i-mingcute:search-2-line />
+        </button>
+        <button class="rail-button" :title="showValues ? '隐藏列表内容' : '显示列表内容'" @click="showValues = !showValues">
+          <i :class="showValues ? 'i-mingcute:eye-2-line' : 'i-mingcute:eye-close-line'" />
+        </button>
         <button class="rail-button" title="展开更多" :disabled="!hasMoreRules" @click="handleShowMoreRules">
           <i i-mingcute:arrows-down-line />
         </button>
@@ -399,9 +416,6 @@ function handleConvertLegacyFilters() {
         </button>
         <button class="rail-button" title="粘贴" @click="handleImportShared">
           <i i-mingcute:clipboard-line />
-        </button>
-        <button class="rail-button" title="添加" @click="handleRailAdd">
-          <i i-mingcute:add-line />
         </button>
         <button class="rail-button danger" title="清空" :disabled="ruleCount === 0" @click="handleClearRules">
           <i i-mingcute:delete-2-line />
@@ -421,7 +435,6 @@ function handleConvertLegacyFilters() {
 
 .filter-toolbar,
 .legacy-converter,
-.manual-toolbar,
 .add-toolbar,
 .filter-list-layout {
   position: relative;
@@ -445,7 +458,7 @@ function handleConvertLegacyFilters() {
 .filter-toolbar {
   z-index: 4;
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) auto max-content;
+  grid-template-columns: minmax(0, 1fr) max-content;
   align-items: center;
   gap: 8px;
   padding: 10px;
@@ -459,12 +472,19 @@ function handleConvertLegacyFilters() {
   min-width: 0;
 }
 
-.search-block {
+.toolbar-selects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+
+.list-search-row {
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
   align-items: center;
-  min-width: 0;
+  gap: 6px;
   height: 36px;
+  margin-top: 10px;
   padding: 0 10px;
   border: 1px solid var(--bew-border-color);
   border-radius: var(--bew-radius);
@@ -472,7 +492,7 @@ function handleConvertLegacyFilters() {
   color: var(--bew-text-2);
 }
 
-.search-block input {
+.list-search-row input {
   min-width: 0;
   border: 0;
   outline: none;
@@ -480,7 +500,7 @@ function handleConvertLegacyFilters() {
   color: var(--bew-text-1);
 }
 
-.search-block input::placeholder,
+.list-search-row input::placeholder,
 .rule-input::placeholder {
   color: var(--bew-text-4);
   opacity: 1;
@@ -488,11 +508,16 @@ function handleConvertLegacyFilters() {
 
 .select-block {
   display: grid;
-  grid-template-columns: auto minmax(92px, 128px);
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
+  min-width: 0;
   gap: 6px;
   color: var(--bew-text-2);
   font-size: 13px;
+}
+
+.scope-select-block {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .toolbar-actions {
@@ -552,27 +577,22 @@ function handleConvertLegacyFilters() {
   border-color: var(--bew-border-color);
 }
 
-.manual-toolbar {
+.add-toolbar {
   z-index: 3;
   display: grid;
-  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-}
-
-.add-toolbar {
-  z-index: 2;
-  display: grid;
-  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 12px;
 }
 
-.manual-scope-select,
 .manual-type-select {
   min-width: 0;
+}
+
+.add-confirm-button {
+  height: 40px;
+  padding: 0 14px;
 }
 
 .filter-list-layout {
@@ -791,6 +811,14 @@ button:disabled:hover {
 }
 
 @media (max-width: 900px) {
+  .filter-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toolbar-actions {
+    width: 100%;
+  }
+
   .toolbar-actions .text-button {
     width: 32px;
     padding: 0;
@@ -809,11 +837,9 @@ button:disabled:hover {
 
 @media (max-width: 720px) {
   .filter-toolbar {
-    grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
   }
 
-  .toolbar-selects,
   .toolbar-actions {
     width: 100%;
   }
@@ -822,17 +848,12 @@ button:disabled:hover {
     justify-content: flex-start;
   }
 
-  .select-block {
-    grid-template-columns: auto minmax(0, 1fr);
-    flex: 1;
-  }
-
-  .manual-toolbar {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .add-toolbar {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .add-confirm-button {
+    grid-column: span 2;
   }
 
   .filter-list-layout {

@@ -5,12 +5,11 @@ import { useToast } from 'vue-toastification'
 
 import Button from '~/components/Button.vue'
 import { useBewlyApp } from '~/composables/useAppProvider'
-import { accessKey, settings } from '~/logic'
+import { settings } from '~/logic'
 import type { VideoInfo } from '~/models/video/videoInfo'
 import type { VideoPreviewResult } from '~/models/video/videoPreview'
 import { useMainStore } from '~/stores/mainStore'
 import api from '~/utils/api'
-import { getTvSign, TVAppKey } from '~/utils/authProvider'
 import { calcCurrentTime, calcTimeSince, numFormatter } from '~/utils/dataFormatter'
 import { getCSRF, removeHttpFromUrl } from '~/utils/main'
 
@@ -30,6 +29,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 const emit = defineEmits<{
   (e: 'click', value: MouseEvent): void
+  (e: 'undoRecommendationMask'): void
 }>()
 
 interface Props {
@@ -42,6 +42,7 @@ interface Props {
   horizontal?: boolean
   showPreview?: boolean
   moreBtn?: boolean
+  recommendationMask?: 'feedback' | 'advertisement' | 'autoFeedback'
 }
 
 const toast = useToast()
@@ -50,18 +51,12 @@ const { setActivatedCover } = useMainStore()
 
 const showVideoOptions = ref<boolean>(false)
 const videoOptionsFloatingStyles = ref<CSSProperties>({})
-// Whether the user has marked it as disliked
-const removed = ref<boolean>(false)
-
 const moreBtnRef = ref<HTMLDivElement | null>(null)
-const contextMenuRef = ref<HTMLDivElement | null>(null)
-
-const selectedDislikeOpt = ref<{ dislikeReasonId: number }>()
 
 const videoCurrentTime = ref<number | null>(null)
 
 const videoUrl = computed(() => {
-  if (removed.value || !props.video)
+  if (props.recommendationMask || !props.video)
     return undefined
 
   if (props.video.url)
@@ -205,43 +200,6 @@ function handleMoreBtnClick(event: MouseEvent) {
   showVideoOptions.value = true
 }
 
-function handleUndo() {
-  if (props.type === 'appRcmd') {
-    const params = {
-      access_key: accessKey.value,
-      goto: props.video?.goto,
-      id: props.video?.id,
-      // https://github.com/magicdawn/bilibili-app-recommend/blob/cb51f75f415f48235ce048537f2013122c16b56b/src/components/VideoCard/card.service.ts#L115
-      idx: Number((Date.now() / 1000).toFixed(0)),
-      reason_id: selectedDislikeOpt.value?.dislikeReasonId, // 1 means dislike, e.g. {"id": 1, "name": "不感兴趣","toast": "将减少相似内容推荐"}
-      build: 74800100,
-      device: 'pad',
-      mobi_app: 'iphone',
-      appkey: TVAppKey.appkey,
-    }
-
-    api.video.undoDislikeVideo({
-      ...params,
-      sign: getTvSign(params),
-    }).then((res) => {
-      if (res.code === 0) {
-        removed.value = false
-      }
-      else {
-        toast.error(res.message)
-      }
-    })
-  }
-  else {
-    removed.value = false
-  }
-}
-
-function handleRemoved(selectedOpt?: { dislikeReasonId: number }) {
-  selectedDislikeOpt.value = selectedOpt
-  removed.value = true
-}
-
 provide('getVideoType', () => props.type!)
 </script>
 
@@ -291,26 +249,27 @@ provide('getVideoType', () => props.type!)
             />
 
             <div
-              v-if="removed"
+              v-if="recommendationMask"
               pos="absolute top-0 left-0" w-full h-fit aspect-video flex="~ col gap-2 items-center justify-center"
               bg="$bew-fill-4" backdrop-blur-20px mix-blend-luminosity rounded="$bew-radius" z-2
             >
               <p mb-2 color-white text-lg>
-                {{ $t('video_card.video_removed') }}
+                {{ $t(`settings.for_you_mask_${recommendationMask}`) }}
               </p>
               <Button
+                v-if="recommendationMask === 'feedback'"
                 color="rgba(255,255,255,.35)" text-color="white" size="small"
-                @click.prevent.stop="handleUndo"
+                @click.prevent.stop="emit('undoRecommendationMask')"
               >
                 <template #left>
-                  <div i-mingcute-back-line text-lg />
+                  <div i-mingcute:back-line text-lg />
                 </template>
                 {{ $t('common.undo') }}
               </Button>
             </div>
 
             <!-- Video preview -->
-            <Transition v-if="!removed && showPreview && settings.enableVideoPreview" name="fade">
+            <Transition v-if="!recommendationMask && showPreview && settings.enableVideoPreview" name="fade">
               <video
                 v-if="previewVideoUrl && isHover"
                 ref="videoElement"
@@ -351,96 +310,94 @@ provide('getVideoType', () => props.type!)
               </div>
             </div>
 
-            <template v-if="!removed">
-              <!-- Video Duration -->
-              <div
-                v-if="video.duration || video.durationStr"
-                pos="absolute bottom-0 right-0"
-                z="2"
-                p="x-2 y-1"
-                m="1"
-                rounded="$bew-radius"
-                text="!white xs"
-                bg="black opacity-60"
-                class="group-hover:opacity-0"
-                duration-300
-              >
-                {{ video.duration ? calcCurrentTime(video.duration) : video.durationStr }}
-              </div>
+            <!-- Video Duration -->
+            <div
+              v-if="video.duration || video.durationStr"
+              pos="absolute bottom-0 right-0"
+              z="2"
+              p="x-2 y-1"
+              m="1"
+              rounded="$bew-radius"
+              text="!white xs"
+              bg="black opacity-60"
+              class="group-hover:opacity-0"
+              duration-300
+            >
+              {{ video.duration ? calcCurrentTime(video.duration) : video.durationStr }}
+            </div>
 
-              <div
-                class="opacity-0 group-hover/cover:opacity-100"
-                transform="scale-70 group-hover/cover:scale-100"
-                duration-300
-                pos="absolute top-0 left-0" z-2
-                @click.stop=""
-              >
-                <slot name="coverTopLeft" />
-              </div>
+            <div
+              class="opacity-0 group-hover/cover:opacity-100"
+              transform="scale-70 group-hover/cover:scale-100"
+              duration-300
+              pos="absolute top-0 left-0" z-2
+              @click.stop=""
+            >
+              <slot name="coverTopLeft" />
+            </div>
 
-              <div
-                v-if="video.liveStatus === 1"
-                class="group-hover:opacity-0"
-                pos="absolute left-0 top-0" bg="$bew-theme-color" text="xs white" fw-bold
-                p="x-2 y-1" m-1 inline-block rounded="$bew-radius" duration-300
-              >
-                LIVE
-                <i i-svg-spinners:pulse-3 align-middle mt--0.2em />
-              </div>
+            <div
+              v-if="video.liveStatus === 1"
+              class="group-hover:opacity-0"
+              pos="absolute left-0 top-0" bg="$bew-theme-color" text="xs white" fw-bold
+              p="x-2 y-1" m-1 inline-block rounded="$bew-radius" duration-300
+            >
+              LIVE
+              <i i-svg-spinners:pulse-3 align-middle mt--0.2em />
+            </div>
 
-              <div
-                v-if="video.badge && Object.keys(video.badge).length > 0"
-                class="group-hover:opacity-0"
-                :style="{
-                  backgroundColor: video.badge.bgColor,
-                  color: video.badge.color,
-                }"
-                pos="absolute right-0 top-0" bg="$bew-theme-color" text="xs white"
-                p="x-2 y-1" m-1 inline-block rounded="$bew-radius" duration-300
-              >
-                {{ video.badge.text }}
-              </div>
+            <div
+              v-if="video.badge && Object.keys(video.badge).length > 0"
+              class="group-hover:opacity-0"
+              :style="{
+                backgroundColor: video.badge.bgColor,
+                color: video.badge.color,
+              }"
+              pos="absolute right-0 top-0" bg="$bew-theme-color" text="xs white"
+              p="x-2 y-1" m-1 inline-block rounded="$bew-radius" duration-300
+            >
+              {{ video.badge.text }}
+            </div>
 
-              <!-- Watcher later button -->
-              <button
-                v-if="showWatcherLater"
-                pos="absolute top-0 right-0" z="2"
-                p="x-2 y-1" m="1"
-                rounded="$bew-radius"
-                text="!white xl"
-                bg="black opacity-60"
-                class="opacity-0 group-hover/cover:opacity-100"
-                transform="scale-70 group-hover/cover:scale-100"
-                duration-300
-                @click.prevent.stop="toggleWatchLater"
-              >
-                <Tooltip v-if="!isInWatchLater" :content="$t('common.save_to_watch_later')" placement="bottom-right" type="dark">
-                  <div i-mingcute:carplay-line />
-                </Tooltip>
-                <Tooltip v-else :content="$t('common.added')" placement="bottom-right" type="dark">
-                  <Icon icon="line-md:confirm" />
-                </Tooltip>
-              </button>
+            <!-- Watcher later button -->
+            <button
+              v-if="showWatcherLater"
+              pos="absolute top-0 right-0" z="2"
+              p="x-2 y-1" m="1"
+              rounded="$bew-radius"
+              text="!white xl"
+              bg="black opacity-60"
+              class="opacity-0 group-hover/cover:opacity-100"
+              transform="scale-70 group-hover/cover:scale-100"
+              duration-300
+              @click.prevent.stop="toggleWatchLater"
+            >
+              <Tooltip v-if="!isInWatchLater" :content="$t('common.save_to_watch_later')" placement="bottom-right" type="dark">
+                <div i-mingcute:carplay-line />
+              </Tooltip>
+              <Tooltip v-else :content="$t('common.added')" placement="bottom-right" type="dark">
+                <Icon icon="line-md:confirm" />
+              </Tooltip>
+            </button>
 
-              <div
-                v-if="showCoverBottomRight && $slots.coverBottomRight"
-                class="group-hover/cover:opacity-100"
-                pos="absolute bottom-0 right-0"
-                z="2"
-                p="0"
-                opacity-0
-                transform="scale-70 group-hover/cover:scale-100"
-                duration-300
-                @click.stop=""
-              >
-                <slot name="coverBottomRight" />
-              </div>
-            </template>
+            <div
+              v-if="showCoverBottomRight && $slots.coverBottomRight"
+              class="group-hover/cover:opacity-100"
+              pos="absolute bottom-0 right-0"
+              z="2"
+              p="0"
+              opacity-0
+              transform="scale-70 group-hover/cover:scale-100"
+              duration-300
+              @click.stop=""
+            >
+              <slot name="coverBottomRight" />
+            </div>
           </div>
 
           <!-- Other Information -->
           <div
-            v-if="!removed"
+            v-if="!recommendationMask"
             :style="{
               width: horizontal ? '100%' : 'unset',
               marginTop: horizontal ? '0' : '1rem',
@@ -552,14 +509,12 @@ provide('getVideoType', () => props.type!)
       :to="mainAppRef"
     >
       <VideoCardContextMenu
-        ref="contextMenuRef"
         :video="{
           ...video,
           url: videoUrl,
         }"
         :context-menu-styles="videoOptionsFloatingStyles"
         @close="showVideoOptions = false"
-        @removed="handleRemoved"
       />
       <!-- @reopen="handleMoreBtnClick" -->
     </Teleport>

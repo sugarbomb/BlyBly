@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 
 import RecommendationDislikeWheel from './RecommendationDislikeWheel.vue'
 import VideoCard from './VideoCard.vue'
@@ -18,19 +18,21 @@ const props = withDefaults(defineProps<{
   horizontal?: boolean
   showPreview?: boolean
   moreBtn?: boolean
+  feedbackEnabled?: boolean
+  recommendationMask?: 'feedback' | 'advertisement' | 'autoFeedback'
 }>(), {
   type: 'rcmd',
   moreBtn: true,
+  feedbackEnabled: false,
 })
 const emit = defineEmits<{
   (e: 'click', value: MouseEvent): void
   (e: 'fanAction', value: RecommendationWheelAction): void
+  (e: 'undoFeedback'): void
 }>()
 
-const isFadingAway = ref<boolean>(false)
-
 const recommendationActions = computed<RecommendationWheelAction[]>(() => {
-  if (props.skeleton || !props.video)
+  if (!props.feedbackEnabled || props.recommendationMask || props.skeleton || !props.video)
     return []
 
   return [
@@ -47,20 +49,14 @@ const recommendationActions = computed<RecommendationWheelAction[]>(() => {
   ]
 })
 
-watch(() => props.video?.id, () => {
-  isFadingAway.value = false
-}, { flush: 'post' })
-
 function handleRecommendationAction(action: RecommendationWheelAction) {
   emit('fanAction', action)
-  isFadingAway.value = true
 }
 </script>
 
 <template>
   <div
     class="for-you-video-card"
-    :class="{ 'for-you-video-card--fading': isFadingAway }"
   >
     <VideoCard
       :skeleton="props.skeleton"
@@ -69,8 +65,10 @@ function handleRecommendationAction(action: RecommendationWheelAction) {
       :horizontal="props.horizontal"
       :show-preview="props.showPreview"
       :more-btn="props.moreBtn"
+      :recommendation-mask="props.recommendationMask"
       :show-cover-bottom-right="recommendationActions.length > 0"
       @click="emit('click', $event)"
+      @undo-recommendation-mask="emit('undoFeedback')"
     >
       <template #coverBottomRight>
         <RecommendationDislikeWheel
@@ -87,9 +85,5 @@ function handleRecommendationAction(action: RecommendationWheelAction) {
 <style lang="scss" scoped>
 .for-you-video-card {
   --uno: "transition-all duration-300 ease-in-out";
-}
-
-.for-you-video-card--fading {
-  --uno: "opacity-20 translate-y-1 scale-[0.99] saturate-75 pointer-events-none";
 }
 </style>

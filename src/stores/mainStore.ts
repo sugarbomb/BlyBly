@@ -103,12 +103,16 @@ export const useMainStore = defineStore('main', () => {
         page: HomeSubPage.ForYou,
       },
       {
-        i18nKey: 'home.partition_for_you',
-        page: HomeSubPage.PartitionForYou,
+        i18nKey: 'home.for_you_guest',
+        page: HomeSubPage.ForYouGuest,
       },
       {
-        i18nKey: 'home.partition_realtime',
-        page: HomeSubPage.PartitionRealtime,
+        i18nKey: 'home.for_you_tv',
+        page: HomeSubPage.ForYouTV,
+      },
+      {
+        i18nKey: 'home.partition_for_you',
+        page: HomeSubPage.PartitionForYou,
       },
       {
         i18nKey: 'home.following',

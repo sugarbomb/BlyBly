@@ -98,6 +98,20 @@ settings:
   group_search_page_mode: Search Page Mode
   group_home_tabs: Tabs
   group_refresh_button: Refresh Button
+  group_home_recommendation_interface: Home recommendation interface
+  group_other: Other
+  for_you_close_ads: Hide ads
+  for_you_ad_card_handling: Ad card handling
+  for_you_ad_card_handling_opt:
+    remove: Remove
+    mask: Mask
+  for_you_auto_feedback_web: Automatically process feedback (Web)
+  for_you_auto_feedback_web_desc: Automatically submit "Not interested" feedback when an item matches the block list.
+  for_you_auto_feedback_web_exclude_temporary_blocks: Exclude temporary blocks
+  for_you_auto_feedback_web_exclude_temporary_blocks_desc: When enabled, feedback is not submitted for temporarily blocked authors or videos.
+  for_you_mask_feedback: Feedback submitted
+  for_you_mask_advertisement: Advertisement
+  for_you_mask_autoFeedback: Automatic feedback pending
 
   # Settings buttons
   btn:

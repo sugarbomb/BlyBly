@@ -1,22 +1,16 @@
 <script setup lang="ts">
 import { useWindowSize } from '@vueuse/core'
-import { computed, provide, watch } from 'vue'
+import { computed, provide } from 'vue'
 
-import AccessKeyAuthorizeDialog from '~/components/AccessKeyAuthorizeDialog.vue'
-import ForYouRefreshRail from '~/components/SideBar/ForYouRefreshRail.vue'
 import ForYouVideoCard from '~/components/VideoCard/ForYouVideoCard.vue'
 import { useBewlyApp } from '~/composables/useAppProvider'
-import { FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
-import { LanguageType } from '~/enums/appEnums'
+import { type FilterMatch, FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
 import type { GridLayoutType } from '~/logic'
-import { accessKey, settings } from '~/logic'
-import type { AppForYouResult, Item as AppVideoItem } from '~/models/video/appForYou'
+import { settings } from '~/logic'
 import type { forYouResult } from '~/models/video/forYou'
 import api from '~/utils/api'
-import { TVAppKey } from '~/utils/authProvider'
-import { getUserID } from '~/utils/main'
+import { getCSRF } from '~/utils/main'
 import { createTopFeedSession } from '~/utils/topFeedSession'
-import { isVerticalVideo } from '~/utils/uriParse'
 
 const props = defineProps<{
   gridLayout: GridLayoutType
@@ -33,9 +27,18 @@ interface VideoElement {
   item?: WebLikeVideoItem
 }
 
-interface AppVideoElement {
+interface RecommendationMaskState {
+  type: 'feedback' | 'autoFeedback'
+  reasonId: number
+  status?: 'queued' | 'submitting'
+}
+
+interface AutoFeedbackTask {
+  generation: number
   uniqueId: string
-  item?: AppVideoItem
+  item: WebLikeVideoItem
+  reasonId: number
+  dedupeKey: string
 }
 
 interface WebLikeVideoItem {
@@ -49,6 +52,7 @@ interface WebLikeVideoItem {
   duration?: number | string
   pubdate?: number | string
   is_followed?: number
+  track_id?: string
   owner?: {
     mid?: number | string
     name?: string
@@ -97,33 +101,24 @@ const gridClass = computed((): string => {
   return 'grid-one-column'
 })
 
-const controlRailLayoutStyle = computed(() => {
-  return {
-    flexDirection: settings.value.partitionControlRailPosition === 'left' ? 'row-reverse' as const : 'row' as const,
-  }
-})
-
 const videoList = ref<VideoElement[]>([])
-const appVideoList = ref<AppVideoElement[]>([])
 const isLoading = ref<boolean>(false)
 const needToLoginFirst = ref<boolean>(false)
 const noMoreContent = ref<boolean>(false)
 const pendingInit = ref<boolean>(false)
+const recommendationMasks = ref<Record<string, RecommendationMaskState>>({})
+const AUTO_FEEDBACK_BATCH_LIMIT = 10
+const AUTO_FEEDBACK_INTERVAL_MIN = 1500
+const AUTO_FEEDBACK_INTERVAL_MAX = 2500
+let autoFeedbackGeneration = 0
+let autoFeedbackQueue: AutoFeedbackTask[] = []
+let autoFeedbackWorker: Promise<void> | undefined
+let autoFeedbackDedupeKeys = new Set<string>()
+const autoFeedbackInFlightDedupeKeys = new Set<string>()
+const autoFeedbackCompletedDedupeKeys = new Set<string>()
+let autoFeedbackBatchTaskCount = 0
 const { handleReachBottom, handlePageRefresh } = useBewlyApp()
 const { width, height } = useWindowSize()
-
-type ForYouPlatformMode = 'web' | 'app' | 'guest'
-const initialPlatformMode: ForYouPlatformMode = !getUserID()
-  ? 'guest'
-  : settings.value.recommendationMode === 'app'
-    ? 'app'
-    : 'web'
-const platformMode = ref<ForYouPlatformMode>(initialPlatformMode)
-const isAppMode = computed(() => platformMode.value === 'app')
-const isWebMode = computed(() => platformMode.value === 'web')
-const isWebLikeMode = computed(() => platformMode.value === 'web' || platformMode.value === 'guest')
-
-const showAccessKeyAuthorizeDialog = ref<boolean>(false)
 
 const gridColumnCount = computed<number>(() => {
   const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n))
@@ -165,18 +160,10 @@ const pageSize = computed<number>(() => {
 let topFeedSession = createWebLikeTopFeedSession()
 
 // 推荐页过滤器
-const { shouldFilterItem } = useFilterAdvance(FilterScope.ForYou)
+const { getFilterMatch } = useFilterAdvance(FilterScope.ForYou)
 
 // Context menu uses `pageType` to determine which filter scope to use.
 provide('pageType', 'rcmd')
-
-function shouldFilterByForYou(item: any): boolean {
-  return shouldFilterItem(item)
-}
-
-function isWebLikePlatformMode(mode: ForYouPlatformMode): boolean {
-  return mode === 'web' || mode === 'guest'
-}
 
 onMounted(() => {
   initData()
@@ -187,39 +174,8 @@ onActivated(() => {
   initPageAction()
 })
 
-watch(platformMode, async (newMode, oldMode) => {
-  needToLoginFirst.value = false
-  noMoreContent.value = false
-
-  if (newMode === 'app')
-    settings.value.recommendationMode = 'app'
-  else if (newMode === 'web')
-    settings.value.recommendationMode = 'web'
-  // guest mode doesn't change settings
-
-  const switchedSource = newMode !== oldMode
-  const reuseWebLikeSession = isWebLikePlatformMode(newMode)
-
-  if (switchedSource && reuseWebLikeSession) {
-    // Switching source should not inherit the previous source's click feedback chain.
-    // Keep the current session counters, but clear last_clicklist before the next request.
-    topFeedSession.clearClickFeedback()
-  }
-
-  await initData({
-    resetWebLikeSession: !reuseWebLikeSession,
-  })
-})
-
-watch(() => accessKey.value, async (newAccessKey) => {
-  if (!newAccessKey)
-    return
-  if (!isAppMode.value)
-    return
-  await initData()
-})
-
 async function initData(options: { resetWebLikeSession?: boolean } = {}) {
+  invalidateAutoFeedbackQueue()
   if (isLoading.value) {
     pendingInit.value = true
     return
@@ -229,7 +185,7 @@ async function initData(options: { resetWebLikeSession?: boolean } = {}) {
 
   noMoreContent.value = false
   videoList.value.length = 0
-  appVideoList.value.length = 0
+  recommendationMasks.value = {}
   if (resetWebLikeSession)
     topFeedSession = createWebLikeTopFeedSession()
   await getData()
@@ -239,17 +195,7 @@ async function getData() {
   emit('beforeLoading')
   isLoading.value = true
   try {
-    if (isAppMode.value) {
-      if (!accessKey.value)
-        return
-      await getAppRecommendVideos()
-    }
-    else if (isWebMode.value) {
-      await getRecommendVideosWeb()
-    }
-    else {
-      await getRecommendVideosGuest()
-    }
+    await getRecommendVideosWeb()
   }
   finally {
     isLoading.value = false
@@ -263,7 +209,6 @@ async function getData() {
 }
 
 function initPageAction() {
-  // Manual refresh page: this tab owns refresh through the side rail only.
   // Keep bottom auto-loading disabled so we never inherit a previous tab's pagination callback.
   handleReachBottom.value = undefined
 
@@ -273,64 +218,10 @@ function initPageAction() {
 }
 
 async function refreshCurrentFeed() {
-  // Manual refresh should advance the current web-like session instead of creating a brand-new one.
-  // That keeps uniq_id stable inside the tab and lets fresh_idx/last_showlist continue like the homepage.
-  if (isWebLikeMode.value)
-    topFeedSession.recordBrush()
+  topFeedSession.recordBrush()
   await initData({
-    resetWebLikeSession: !isWebLikeMode.value,
+    resetWebLikeSession: false,
   })
-}
-
-async function getRecommendVideosGuest() {
-  try {
-    let i = 0
-    if (videoList.value.length < pageSize.value) {
-      const pendingVideos: VideoElement[] = Array.from({
-        length: pageSize.value - videoList.value.length,
-      }, () => ({
-        uniqueId: `unique-id-${(videoList.value.length || 0) + i++}`,
-      } satisfies VideoElement))
-      videoList.value.push(...pendingVideos)
-    }
-
-    const response: forYouResult = await api.video.getRecommendVideosGuest(buildWebLikeRequestParams())
-
-    if (!response.data) {
-      noMoreContent.value = true
-      return
-    }
-    if (response.code === 0) {
-      topFeedSession.applyResponse(response, { phase: 'current' })
-      const resData = (response.data.item as WebLikeVideoItem[])
-        .filter(item => !isForYouAdItem(item))
-        .filter(item => !shouldFilterByForYou(item))
-      if (!videoList.value.length) {
-        videoList.value = resData.map(item => ({ uniqueId: `${item.id}`, item }))
-      }
-      else {
-        resData.forEach((item) => {
-          const findFirstEmptyItemIndex = videoList.value.findIndex(video => !video.item)
-          if (findFirstEmptyItemIndex !== -1) {
-            videoList.value[findFirstEmptyItemIndex] = {
-              uniqueId: `${item.id}`,
-              item,
-            }
-          }
-          else {
-            videoList.value.push({
-              uniqueId: `${item.id}`,
-              item,
-            })
-          }
-        })
-      }
-    }
-  }
-  finally {
-    const filledItems = videoList.value.filter(video => video.item)
-    videoList.value = filledItems
-  }
 }
 
 async function getRecommendVideosWeb() {
@@ -354,25 +245,32 @@ async function getRecommendVideosWeb() {
     if (response.code === 0) {
       topFeedSession.applyResponse(response, { phase: 'current' })
       const resData = (response.data.item as WebLikeVideoItem[])
-        .filter(item => !isForYouAdItem(item))
-        .filter(item => !shouldFilterByForYou(item))
+        .filter(shouldDisplayRecommendation)
+        .flatMap((item) => {
+          const filterMatch = getFilterMatch(item)
+          const uniqueId = `${item.id}`
+
+          if (!filterMatch)
+            return [{ uniqueId, item }]
+
+          const autoFeedbackReasonId = getAutoFeedbackReasonId(item, filterMatch)
+          if (!autoFeedbackReasonId)
+            return []
+
+          enqueueAutoFeedback({ uniqueId, item, reasonId: autoFeedbackReasonId })
+          return [{ uniqueId, item }]
+        })
       if (!videoList.value.length) {
-        videoList.value = resData.map(item => ({ uniqueId: `${item.id}`, item }))
+        videoList.value = resData
       }
       else {
-        resData.forEach((item) => {
+        resData.forEach((video) => {
           const findFirstEmptyItemIndex = videoList.value.findIndex(video => !video.item)
           if (findFirstEmptyItemIndex !== -1) {
-            videoList.value[findFirstEmptyItemIndex] = {
-              uniqueId: `${item.id}`,
-              item,
-            }
+            videoList.value[findFirstEmptyItemIndex] = video
           }
           else {
-            videoList.value.push({
-              uniqueId: `${item.id}`,
-              item,
-            })
+            videoList.value.push(video)
           }
         })
       }
@@ -384,73 +282,6 @@ async function getRecommendVideosWeb() {
   finally {
     const filledItems = videoList.value.filter(video => video.item)
     videoList.value = filledItems
-  }
-}
-
-async function getAppRecommendVideos() {
-  try {
-    let i = 0
-    if (appVideoList.value.length < pageSize.value) {
-      const pendingVideos: AppVideoElement[] = Array.from({
-        length: pageSize.value - appVideoList.value.length,
-      }, () => ({
-        uniqueId: `unique-id-${(appVideoList.value.length || 0) + i++}`,
-      } satisfies AppVideoElement))
-      appVideoList.value.push(...pendingVideos)
-    }
-
-    const response: AppForYouResult = await api.video.getAppRecommendVideos({
-      access_key: accessKey.value,
-      s_locale: settings.value.language === LanguageType.Mandarin_TW || settings.value.language === LanguageType.Cantonese ? 'zh-Hant_TW' : 'zh-Hans_CN',
-      c_locate: settings.value.language === LanguageType.Mandarin_TW || settings.value.language === LanguageType.Cantonese ? 'zh-Hant_TW' : 'zh-Hans_CN',
-      appkey: TVAppKey.appkey,
-      idx: appVideoList.value.length > 0 ? appVideoList.value[appVideoList.value.length - 1].item?.idx : 1,
-    })
-
-    if (!response.data) {
-      noMoreContent.value = true
-      return
-    }
-
-    if (response.code === 0) {
-      let resData = response.data.items.filter(item => !item.card_type.includes('banner') && item.card_type !== 'cm_v1')
-      resData = resData.filter((item) => {
-        const owner = {
-          mid: item?.mask?.avatar?.up_id || item?.args?.up_id || 0,
-          name: item?.mask?.avatar?.text || item?.args?.up_name || '',
-          face: item?.mask?.avatar?.cover || item?.avatar?.cover || '',
-        }
-        return !shouldFilterByForYou({ ...item, owner, title: item.title || '' })
-      })
-
-      if (!appVideoList.value.length) {
-        appVideoList.value = resData.map(item => ({ uniqueId: `${item.idx}`, item }))
-      }
-      else {
-        resData.forEach((item) => {
-          const findFirstEmptyItemIndex = appVideoList.value.findIndex(video => !video.item)
-          if (findFirstEmptyItemIndex !== -1) {
-            appVideoList.value[findFirstEmptyItemIndex] = {
-              uniqueId: `${item.idx}`,
-              item,
-            }
-          }
-          else {
-            appVideoList.value.push({
-              uniqueId: `${item.idx}`,
-              item,
-            })
-          }
-        })
-      }
-    }
-    else if (response.code === 62011) {
-      needToLoginFirst.value = true
-    }
-  }
-  finally {
-    const filledItems = appVideoList.value.filter(video => video.item)
-    appVideoList.value = filledItems
   }
 }
 
@@ -480,11 +311,223 @@ function buildWebLikeRequestParams(): Record<string, string> {
 }
 
 function handleWebLikeVideoClick(item?: WebLikeVideoItem) {
-  if (!item || !isWebLikeMode.value)
+  if (!item)
     return
 
   // Feed the next request with the last interacted card, and only advance y_num/last_y_num by real clicks.
   topFeedSession.recordClick(item)
+}
+
+function getAutoFeedbackReasonId(item: WebLikeVideoItem, match: FilterMatch): number | undefined {
+  if (!settings.value.forYouAutoFeedbackWeb || isForYouAdItem(item))
+    return undefined
+  if (match.temporary && settings.value.forYouAutoFeedbackWebExcludeTemporaryBlocks)
+    return undefined
+  if (!item.id || !item.owner?.mid || !item.track_id)
+    return undefined
+
+  if (match.target === 'author')
+    return 4
+  if (match.target === 'title')
+    return 1
+
+  // A video ID does not describe the author or the content, so it only filters the card.
+  return undefined
+}
+
+function enqueueAutoFeedback(task: Omit<AutoFeedbackTask, 'generation' | 'dedupeKey'>) {
+  const dedupeKey = `${task.item.id}:${task.reasonId}`
+  if (
+    autoFeedbackBatchTaskCount >= AUTO_FEEDBACK_BATCH_LIMIT
+    || autoFeedbackDedupeKeys.has(dedupeKey)
+    || autoFeedbackCompletedDedupeKeys.has(dedupeKey)
+    || autoFeedbackInFlightDedupeKeys.has(dedupeKey)
+  ) {
+    return
+  }
+
+  autoFeedbackDedupeKeys.add(dedupeKey)
+  autoFeedbackBatchTaskCount++
+  autoFeedbackQueue.push({
+    ...task,
+    generation: autoFeedbackGeneration,
+    dedupeKey,
+  })
+  recommendationMasks.value = {
+    ...recommendationMasks.value,
+    [task.uniqueId]: { type: 'autoFeedback', reasonId: task.reasonId, status: 'queued' },
+  }
+  void processAutoFeedbackQueue()
+}
+
+async function processAutoFeedbackQueue() {
+  if (autoFeedbackWorker)
+    return autoFeedbackWorker
+
+  autoFeedbackWorker = (async () => {
+    while (autoFeedbackQueue.length > 0) {
+      const task = autoFeedbackQueue.shift()!
+      if (task.generation !== autoFeedbackGeneration)
+        continue
+
+      autoFeedbackInFlightDedupeKeys.add(task.dedupeKey)
+      recommendationMasks.value = {
+        ...recommendationMasks.value,
+        [task.uniqueId]: { type: 'autoFeedback', reasonId: task.reasonId, status: 'submitting' },
+      }
+      try {
+        const response = await api.video.dislikeVideoWeb({
+          goto: task.item.goto || 'av',
+          id: task.item.id,
+          mid: task.item.owner?.mid,
+          trackId: task.item.track_id,
+          reasonId: task.reasonId,
+          csrf: getCSRF(),
+        })
+
+        if (task.generation !== autoFeedbackGeneration)
+          continue
+
+        if (response?.code !== 0) {
+          stopAutoFeedbackBatch(task.generation, task.uniqueId)
+          break
+        }
+
+        autoFeedbackCompletedDedupeKeys.add(task.dedupeKey)
+        recommendationMasks.value = {
+          ...recommendationMasks.value,
+          [task.uniqueId]: { type: 'feedback', reasonId: task.reasonId },
+        }
+
+        if (autoFeedbackQueue.some(nextTask => nextTask.generation === task.generation))
+          await waitForAutoFeedbackInterval()
+      }
+      catch (error) {
+        if (task.generation === autoFeedbackGeneration) {
+          console.error('Unable to submit automatic Web recommendation feedback', error)
+          stopAutoFeedbackBatch(task.generation, task.uniqueId)
+          break
+        }
+        continue
+      }
+      finally {
+        autoFeedbackInFlightDedupeKeys.delete(task.dedupeKey)
+      }
+    }
+  })()
+
+  try {
+    await autoFeedbackWorker
+  }
+  finally {
+    autoFeedbackWorker = undefined
+    if (autoFeedbackQueue.some(task => task.generation === autoFeedbackGeneration))
+      void processAutoFeedbackQueue()
+  }
+}
+
+function stopAutoFeedbackBatch(generation: number, failedUniqueId: string) {
+  const affectedUniqueIds = new Set<string>([failedUniqueId])
+  autoFeedbackQueue = autoFeedbackQueue.filter((task) => {
+    if (task.generation !== generation)
+      return true
+
+    affectedUniqueIds.add(task.uniqueId)
+    return false
+  })
+  removeRecommendationCards(affectedUniqueIds)
+}
+
+function invalidateAutoFeedbackQueue() {
+  autoFeedbackGeneration++
+  autoFeedbackQueue = []
+  autoFeedbackDedupeKeys = new Set<string>()
+  autoFeedbackBatchTaskCount = 0
+}
+
+function removeRecommendationCards(uniqueIds: Set<string>) {
+  videoList.value = videoList.value.filter(video => !uniqueIds.has(video.uniqueId))
+  const remainingMasks = { ...recommendationMasks.value }
+  uniqueIds.forEach(uniqueId => delete remainingMasks[uniqueId])
+  recommendationMasks.value = remainingMasks
+}
+
+function waitForAutoFeedbackInterval() {
+  const interval = AUTO_FEEDBACK_INTERVAL_MIN
+    + Math.random() * (AUTO_FEEDBACK_INTERVAL_MAX - AUTO_FEEDBACK_INTERVAL_MIN)
+  return new Promise<void>(resolve => window.setTimeout(resolve, interval))
+}
+
+async function handleRecommendationAction(action: { key: string }, video: VideoElement) {
+  const reasonIdByAction: Record<string, number> = {
+    'dislike-content': 1,
+    'dislike-author': 4,
+  }
+  const reasonId = reasonIdByAction[action.key]
+  if (!reasonId || !video.item)
+    return
+
+  const item = video.item
+  try {
+    const response = await api.video.dislikeVideoWeb({
+      goto: item.goto || 'av',
+      id: item.id,
+      mid: item.owner?.mid,
+      trackId: item.track_id,
+      reasonId,
+      csrf: getCSRF(),
+    })
+
+    if (response?.code === 0)
+      recommendationMasks.value = { ...recommendationMasks.value, [video.uniqueId]: { type: 'feedback', reasonId } }
+  }
+  catch (error) {
+    console.error('Unable to submit Web recommendation feedback', error)
+  }
+}
+
+async function handleUndoRecommendationFeedback(video: VideoElement) {
+  const maskState = recommendationMasks.value[video.uniqueId]
+  if (maskState?.type !== 'feedback' || !video.item)
+    return
+
+  const item = video.item
+  try {
+    const response = await api.video.cancelDislikeVideoWeb({
+      goto: item.goto || 'av',
+      id: item.id,
+      mid: item.owner?.mid,
+      trackId: item.track_id,
+      reasonId: maskState.reasonId,
+      csrf: getCSRF(),
+    })
+
+    if (response?.code === 0) {
+      const { [video.uniqueId]: _, ...remainingMasks } = recommendationMasks.value
+      recommendationMasks.value = remainingMasks
+    }
+  }
+  catch (error) {
+    console.error('Unable to cancel Web recommendation feedback', error)
+  }
+}
+
+function shouldDisplayRecommendation(item: WebLikeVideoItem): boolean {
+  return !settings.value.forYouCloseAds
+    || !isForYouAdItem(item)
+    || settings.value.forYouAdCardHandling === 'mask'
+}
+
+function getRecommendationMask(video: VideoElement): 'feedback' | 'advertisement' | 'autoFeedback' | undefined {
+  const feedbackMask = recommendationMasks.value[video.uniqueId]
+  if (feedbackMask)
+    return feedbackMask.type
+
+  if (video.item && settings.value.forYouCloseAds && settings.value.forYouAdCardHandling === 'mask' && isForYouAdItem(video.item))
+    return 'advertisement'
+
+  // The auto-feedback setting is reserved for a future API-backed flow.
+  return undefined
 }
 
 function isForYouAdItem(item?: WebLikeVideoItem): boolean {
@@ -542,95 +585,37 @@ defineExpose({ initData })
 
 <template>
   <div>
-    <div flex="~ gap-40px" w-full :style="controlRailLayoutStyle">
-      <div v-if="isAppMode && !accessKey" flex="~ col" flex-1>
-        <div flex justify-center>
-          <Empty mt-6 :description="$t('settings.authorize_app_desc')">
-            <Button type="primary" @click="showAccessKeyAuthorizeDialog = true">
-              {{ $t('settings.btn.authorize') }}...
-            </Button>
-          </Empty>
-        </div>
-      </div>
-
-      <div v-else-if="needToLoginFirst" flex="~ col" flex-1>
-        <div flex justify-center>
-          <Empty mt-6 :description="$t('common.please_log_in_first')">
-            <Button type="primary" @click="jumpToLoginPage()">
-              {{ $t('common.login') }}
-            </Button>
-          </Empty>
-        </div>
-      </div>
-
-      <div
-        v-else
-        m="b-0 t-0" relative w-full h-full
-        flex-1
-      >
-        <main
-          w-full
-          :class="gridClass"
-        >
-          <template v-if="isWebLikeMode">
-            <ForYouVideoCard
-              v-for="video in videoList"
-              :key="video.uniqueId"
-              :skeleton="!video.item"
-              type="rcmd"
-              :video="getWebLikeCardVideo(video.item)"
-              :show-preview="true"
-              :horizontal="gridLayout !== 'adaptive'"
-              :more-btn="true"
-              @click="handleWebLikeVideoClick(video.item)"
-            />
-          </template>
-
-          <template v-else>
-            <ForYouVideoCard
-              v-for="video in appVideoList"
-              :key="video.uniqueId"
-              :skeleton="!video.item"
-              type="appRcmd"
-              :video="video.item ? {
-                id: video.item.args.aid ?? 0,
-                durationStr: video.item.cover_right_text,
-                title: `${video.item.title}`,
-                cover: `${video.item.cover}`,
-                author: {
-                  name: video.item?.mask?.avatar.text,
-                  authorFace: video.item?.mask?.avatar.cover || video.item?.avatar?.cover,
-                  followed: video.item?.bottom_rcmd_reason === '已关注' || video.item?.bottom_rcmd_reason === '已關注',
-                  mid: video.item?.mask?.avatar.up_id,
-                },
-                capsuleText: video.item?.desc?.split('·')[1],
-                bvid: video.item.bvid,
-                viewStr: video.item.cover_left_text_1,
-                danmakuStr: video.item.cover_left_text_2,
-                cid: video.item?.player_args?.cid,
-                goto: video.item?.goto,
-                url: video.item?.goto === 'bangumi' ? video.item.uri : '',
-                type: video.item.card_goto === 'bangumi' ? 'bangumi' : isVerticalVideo(video.item.uri!) ? 'vertical' : 'horizontal',
-                threePointV2: video.item?.three_point_v2,
-              } : undefined"
-              :show-preview="true"
-              :horizontal="gridLayout !== 'adaptive'"
-              :more-btn="true"
-            />
-          </template>
-        </main>
-      </div>
-
-      <div hidden xl:block w-56px shrink-0>
-        <ForYouRefreshRail v-model="platformMode" :loading="isLoading" @refresh="refreshCurrentFeed" />
+    <div v-if="needToLoginFirst" flex="~ col" flex-1>
+      <div flex justify-center>
+        <Empty mt-6 :description="$t('common.please_log_in_first')">
+          <Button type="primary" @click="jumpToLoginPage()">
+            {{ $t('common.login') }}
+          </Button>
+        </Empty>
       </div>
     </div>
+
+    <main v-else w-full :class="gridClass">
+      <ForYouVideoCard
+        v-for="video in videoList"
+        :key="video.uniqueId"
+        :skeleton="!video.item"
+        type="rcmd"
+        :video="getWebLikeCardVideo(video.item)"
+        :show-preview="true"
+        :horizontal="gridLayout !== 'adaptive'"
+        :more-btn="true"
+        feedback-enabled
+        :recommendation-mask="getRecommendationMask(video)"
+        @click="handleWebLikeVideoClick(video.item)"
+        @fan-action="action => handleRecommendationAction(action, video)"
+        @undo-feedback="handleUndoRecommendationFeedback(video)"
+      />
+    </main>
 
     <Loading v-show="isLoading" />
     <!-- no more content -->
     <Empty v-if="noMoreContent" class="pb-4" :description="$t('common.no_more_content')" />
-
-    <AccessKeyAuthorizeDialog v-model="showAccessKeyAuthorizeDialog" />
   </div>
 </template>
 

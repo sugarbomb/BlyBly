@@ -21,7 +21,7 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: ForYouPlatformMode): void
 }>()
 
-const modeOrder: ForYouPlatformMode[] = ['web', 'app', 'guest']
+const modeOrder: ForYouPlatformMode[] = ['web', 'app']
 
 const nextMode = computed<ForYouPlatformMode>(() => {
   const idx = modeOrder.indexOf(props.modelValue)
@@ -33,16 +33,12 @@ const nextMode = computed<ForYouPlatformMode>(() => {
 const currentModeIcon = computed<string>(() => {
   if (props.modelValue === 'app')
     return 'i-mingcute:cellphone-line'
-  if (props.modelValue === 'guest')
-    return 'i-mingcute:user-4-line'
   return 'i-mingcute:world-2-line'
 })
 
 const currentModeLabel = computed<string>(() => {
   if (props.modelValue === 'app')
     return 'App'
-  if (props.modelValue === 'guest')
-    return '游客'
   return '网页'
 })
 

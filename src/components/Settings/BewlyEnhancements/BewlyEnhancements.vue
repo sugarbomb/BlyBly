@@ -21,7 +21,7 @@ const pages = [
     title: t('settings.menu_home'),
     icon: 'i-mingcute:home-5-line',
     iconActivated: 'i-mingcute:home-5-fill',
-    component: defineAsyncComponent(() => import('./Home/Home.vue')),
+    component: defineAsyncComponent(() => import('./Recommendation.vue')),
   },
   {
     value: BewlyPage.TouchScreen,

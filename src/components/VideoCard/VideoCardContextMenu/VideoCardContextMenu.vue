@@ -5,34 +5,24 @@ import { useI18n } from 'vue-i18n'
 import { useBewlyApp } from '~/composables/useAppProvider'
 import { FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
 import { settings } from '~/logic'
-import { Type as ThreePointV2Type } from '~/models/video/appForYou'
 import { openLinkToNewTab } from '~/utils/main'
 import { openLinkInBackground } from '~/utils/tabs'
 
 import type { Video } from '../types'
-import DislikeDialog from './components/DislikeDialog.vue'
 
 const props = defineProps<{
   video: Video
   contextMenuStyles: CSSProperties
 }>()
 const emit = defineEmits<{
-  (event: 'removed', selectedOpt?: { dislikeReasonId: number }): void
   (event: 'close'): void
-  (event: 'reopen'): void
 }>()
 
 const getVideoType = inject<() => string>('getVideoType')!
 const pageType = inject<string>('pageType', 'unknown')
 
-const videoOptions = reactive<{ id: number, name: string }[]>([
-  { id: 1, name: '不感兴趣' },
-  { id: 2, name: '不想看此UP主' },
-])
-
 const { t } = useI18n()
 const showContextMenu = ref<boolean>(false)
-const showDislikeDialog = ref<boolean>(false)
 const showPipWindow = ref<boolean>(false)
 const { openIframeDrawer } = useBewlyApp()
 const { addRule } = useFilterAdvance()
@@ -107,37 +97,6 @@ const menuGroups = computed((): MenuOption[][] => {
       groups.push(blockVideoGroup)
   }
 
-  if (settings.value.videoCardContextMenuGroups.blockUserAssistant || settings.value.videoCardContextMenuGroups.blockVideoAssistant) {
-    const dislikeGroup: MenuOption[] = []
-
-    if (getVideoType() === 'appRcmd') {
-      for (const option of props.video.threePointV2 ?? []) {
-        if (option.type === ThreePointV2Type.WatchLater || option.type === ThreePointV2Type.Feedback)
-          continue
-
-        dislikeGroup.push({
-          key: `app-${option.type}`,
-          name: option.type === ThreePointV2Type.Dislike ? t('video_card.operation.not_interested') : option.title,
-          icon: 'i-solar:confounded-circle-bold-duotone',
-          action: () => handleAppMoreCommand(option.type),
-        })
-      }
-    }
-    else if (getVideoType() === 'rcmd') {
-      for (const option of videoOptions) {
-        dislikeGroup.push({
-          key: `web-${option.id}`,
-          name: option.name,
-          icon: 'i-solar:confounded-circle-bold-duotone',
-          action: () => handleMoreCommand(option.id),
-        })
-      }
-    }
-
-    if (dislikeGroup.length > 0)
-      groups.push(dislikeGroup)
-  }
-
   if (settings.value.videoCardContextMenuGroups.openWays) {
     groups.push([
       { key: VideoOption.OpenInNewTab, name: t('video_card.operation.open_in_new_tab'), icon: 'i-solar:square-top-down-bold-duotone', action: () => handleCommonCommand(VideoOption.OpenInNewTab) },
@@ -176,20 +135,6 @@ const menuGroups = computed((): MenuOption[][] => {
 onMounted(() => {
   showContextMenu.value = true
 })
-
-function handleMoreCommand(_command: number) {
-  handleRemoved()
-}
-
-function handleAppMoreCommand(command: ThreePointV2Type) {
-  switch (command) {
-    case ThreePointV2Type.Feedback:
-      break
-    case ThreePointV2Type.Dislike:
-      openAppDislikeDialog()
-      break
-  }
-}
 
 function handleCommonCommand(command: VideoOption) {
   switch (command) {
@@ -233,28 +178,10 @@ function handleCommonCommand(command: VideoOption) {
   }
 }
 
-function openAppDislikeDialog() {
-  showDislikeDialog.value = true
-  showContextMenu.value = false
-}
-
 function handleClose() {
   showContextMenu.value = false
   showPipWindow.value = false
   emit('close')
-}
-
-function handleReopen() {
-  // showContextMenu.value = false
-  // showPipWindow.value = false
-  // console.log('reopen')
-  // emit('reopen')
-  handleClose()
-}
-
-function handleRemoved(selectedOpt?: { dislikeReasonId: number }) {
-  emit('removed', selectedOpt)
-  handleClose()
 }
 
 function handleBlockUser() {
@@ -342,14 +269,7 @@ function addUserBlockRule(duration?: 7 | 15) {
       v-if="showContextMenu"
       pos="fixed top-0 left-0" w-full h-full
       @click="handleClose"
-      @click.right.prevent.stop="handleReopen"
-    />
-
-    <DislikeDialog
-      v-model="showDislikeDialog"
-      :video="video"
-      @close="handleClose"
-      @removed="handleRemoved"
+      @click.right.prevent.stop="handleClose"
     />
 
     <PipWindow

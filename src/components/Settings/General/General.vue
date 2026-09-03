@@ -61,9 +61,7 @@ watch(() => settings.value.useOriginalBilibiliHomepage, () => {
 <template>
   <div>
     <SettingsItemGroup :title="`功能速览 · v${version}`">
-      <SettingsItem title="刷新按钮设置" desc="查看 导航与交互 - 看看按钮 - 刷新按钮" />
-      <SettingsItem title="卡片菜单设置" desc="查看 导航与交互 - 视频卡片 - 卡片菜单" />
-      <SettingsItem title="新屏蔽列表导航" desc="查看 Bly 增强 - 内容屏蔽" />
+      <SettingsItem title="自动反馈" desc="查看 Bly 推荐 - 视频反馈" />
     </SettingsItemGroup>
 
     <SettingsItemGroup :title="$t('settings.group_common')">

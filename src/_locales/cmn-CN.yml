@@ -88,7 +88,7 @@ settings:
   group_wallpaper: 背景图片
   group_logo: LOGO
   group_search_bar: 搜索栏
-  group_recommendation_mode: 「随便看看」接口选择
+  group_recommendation_mode: TV接口
   group_recommendation_filters_desc: |
     请勿将限制值设置得太大，不然可能会增加加载时间！
   group_recommendation_filters: 「随便看看」过滤
@@ -96,6 +96,20 @@ settings:
   group_search_page_mode: 搜索页模式
   group_home_tabs: 标签栏
   group_refresh_button: 刷新按钮
+  group_home_recommendation_interface: 首页推荐
+  group_other: 其它
+  for_you_close_ads: 屏蔽广告
+  for_you_ad_card_handling: 屏蔽方式
+  for_you_ad_card_handling_opt:
+    remove: 移除
+    mask: 遮挡
+  for_you_auto_feedback_web: 视频反馈
+  for_you_auto_feedback_web_desc: 屏蔽命中会自动提交“不喜欢”
+  for_you_auto_feedback_web_exclude_temporary_blocks: 排除
+  for_you_auto_feedback_web_exclude_temporary_blocks_desc: 不对临时屏蔽的作者或作品提交反馈。
+  for_you_mask_feedback: 已提交
+  for_you_mask_advertisement: 广告
+  for_you_mask_autoFeedback: 即将自动反馈
 
   # Settings buttons
   btn:
@@ -482,7 +496,9 @@ home:
   tell_us_why: 为什么这么做...
   not_interested_desc: 你可以使用 <kbd>↑</kbd> 和 <kbd>↓</kbd> 来选择原因，或者直接使用数字键选择原因，按 <kbd>Enter</kbd> 就直接提交。
 
-  for_you: 随便看看
+  for_you: 首页推荐
+  for_you_guest: 游客
+  for_you_tv: TV
   following: 关注频道
   trending: 全站热门
   ranking: 排行
