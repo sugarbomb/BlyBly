@@ -108,8 +108,8 @@ const gridColumnCount = computed<number>(() => {
 const pageSize = computed(() => Math.max(4, Math.min(gridColumnCount.value * 2, 10)))
 let topFeedSession = createWebLikeTopFeedSession()
 
-const { shouldFilterItem } = useFilterAdvance(FilterScope.ForYou)
-provide('pageType', 'rcmd')
+const { shouldFilterItem } = useFilterAdvance(FilterScope.ForYouGuest)
+provide('pageType', 'guestRcmd')
 
 onMounted(() => {
   initData()

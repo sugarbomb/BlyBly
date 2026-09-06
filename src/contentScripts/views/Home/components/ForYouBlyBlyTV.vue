@@ -44,9 +44,9 @@ const pendingInit = ref(false)
 const showAccessKeyAuthorizeDialog = ref(false)
 const { handleReachBottom, handlePageRefresh } = useBewlyApp()
 const { width } = useWindowSize()
-const { shouldFilterItem } = useFilterAdvance(FilterScope.ForYou)
+const { shouldFilterItem } = useFilterAdvance(FilterScope.ForYouTV)
 
-provide('pageType', 'rcmd')
+provide('pageType', 'tvRcmd')
 
 const gridColumnCount = computed<number>(() => {
   if (props.gridLayout === 'adaptive') {

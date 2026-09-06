@@ -504,6 +504,8 @@ home:
   ranking: 排行
   weekly_ranking: 周选集
   subscribed_series: 追番追剧
+  subscribed_collection: 订阅合集
+  subscribed_collection_placeholder: 订阅合集内容稍后补充
   live: 直播
   partition_for_you: 分区看看
   partition_realtime: 新稿件

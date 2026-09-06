@@ -7,6 +7,7 @@ export enum HomeSubPage {
   PartitionForYou = 'PartitionForYou',
   Following = 'Following',
   SubscribedSeries = 'SubscribedSeries',
+  SubscribedCollection = 'SubscribedCollection',
   Trending = 'Trending',
   Ranking = 'Ranking',
   WeeklyRanking = 'WeeklyRanking',

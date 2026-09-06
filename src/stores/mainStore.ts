@@ -123,6 +123,10 @@ export const useMainStore = defineStore('main', () => {
         page: HomeSubPage.SubscribedSeries,
       },
       {
+        i18nKey: 'home.subscribed_collection',
+        page: HomeSubPage.SubscribedCollection,
+      },
+      {
         i18nKey: 'home.trending',
         page: HomeSubPage.Trending,
       },

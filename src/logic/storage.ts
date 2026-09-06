@@ -250,6 +250,7 @@ export const originalSettings: Settings = {
       items: [
         { page: HomeSubPage.Following, visible: true },
         { page: HomeSubPage.SubscribedSeries, visible: true },
+        { page: HomeSubPage.SubscribedCollection, visible: true },
         { page: HomeSubPage.Live, visible: true },
       ],
     },

@@ -41,6 +41,10 @@ function getFilterScope() {
     return FilterScope.PartitionRealtime
   if (pageType === 'rcmd' || pageType === 'appRcmd')
     return FilterScope.ForYou
+  if (pageType === 'guestRcmd')
+    return FilterScope.ForYouGuest
+  if (pageType === 'tvRcmd')
+    return FilterScope.ForYouTV
 
   // 如果无法判断页面类型，返回undefined使用默认存储
   return undefined

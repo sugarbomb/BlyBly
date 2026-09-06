@@ -465,6 +465,8 @@ home:
   trending: 發燒影片
   ranking: 排行
   subscribed_series: 訂閱劇集
+  subscribed_collection: 訂閱合集
+  subscribed_collection_placeholder: 訂閱合集內容稍後補充
   live: 直播
 
 ranking:

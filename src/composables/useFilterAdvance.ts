@@ -15,6 +15,8 @@ export enum FilterScope {
   PartitionForYou = 4,
   PartitionRealtime = 5,
   ForYou = 6,
+  ForYouGuest = 7,
+  ForYouTV = 8,
 }
 
 export type FilterDuration = 7 | 15 | 30
@@ -125,6 +127,8 @@ export const FILTER_SCOPE_OPTIONS = [
   { value: FilterScope.PartitionForYou, label: '分区推荐' },
   { value: FilterScope.PartitionRealtime, label: '实时稿件' },
   { value: FilterScope.ForYou, label: '个性推荐' },
+  { value: FilterScope.ForYouGuest, label: '游客推荐' },
+  { value: FilterScope.ForYouTV, label: '云电视推荐' },
 ]
 
 export const FILTER_DURATION_OPTIONS = [
@@ -148,6 +152,8 @@ const pageScopes = [
   FilterScope.PartitionForYou,
   FilterScope.PartitionRealtime,
   FilterScope.ForYou,
+  FilterScope.ForYouGuest,
+  FilterScope.ForYouTV,
 ] as const
 
 const store = useStorage<CompactFilterStore>(

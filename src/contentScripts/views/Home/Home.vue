@@ -29,6 +29,7 @@ const pagesRankTrending = {
 const pagesFollowLive = {
   [HomeSubPage.Following]: defineAsyncComponent(() => import('./components/Following.vue')),
   [HomeSubPage.SubscribedSeries]: defineAsyncComponent(() => import('./components/SubscribedSeries.vue')),
+  [HomeSubPage.SubscribedCollection]: defineAsyncComponent(() => import('./components/SubscribedCollection.vue')),
   [HomeSubPage.Live]: defineAsyncComponent(() => import('./components/Live.vue')),
 } as const
 
@@ -71,7 +72,12 @@ const GROUP_ORDER = ['rankTrending', 'followLive', 'partition', 'subForYou'] as 
 type GroupId = typeof GROUP_ORDER[number]
 
 const groupRankTrending = new Set<HomeSubPage>([HomeSubPage.Ranking, HomeSubPage.WeeklyRanking, HomeSubPage.Trending])
-const groupFollowLive = new Set<HomeSubPage>([HomeSubPage.Following, HomeSubPage.SubscribedSeries, HomeSubPage.Live])
+const groupFollowLive = new Set<HomeSubPage>([
+  HomeSubPage.Following,
+  HomeSubPage.SubscribedSeries,
+  HomeSubPage.SubscribedCollection,
+  HomeSubPage.Live,
+])
 const groupSubForYou = new Set<HomeSubPage>([HomeSubPage.ForYou, HomeSubPage.ForYouGuest, HomeSubPage.ForYouTV])
 const groupPartition = new Set<HomeSubPage>([HomeSubPage.PartitionForYou])
 
