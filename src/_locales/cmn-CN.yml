@@ -94,7 +94,7 @@ settings:
   group_recommendation_filters: 「随便看看」过滤
   group_following: 订阅关注
   group_search_page_mode: 搜索页模式
-  group_home_tabs: 标签栏
+  group_home_tabs: 导航标签
   group_refresh_button: 刷新按钮
   group_home_recommendation_interface: 首页推荐
   group_other: 其它

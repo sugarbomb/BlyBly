@@ -36,10 +36,10 @@ function handleConvertLegacyFilters() {
         转换
       </button>
     </SettingsItem>
-    <SettingsItem title="屏蔽 1" desc="全局屏蔽 UP 主；7、15 天临时屏蔽。">
+    <SettingsItem title="屏蔽 1" desc="屏蔽 UP 主、7、15 天临时屏蔽。">
       <Radio v-model="settings.videoCardContextMenuGroups.blockUserAssistant" />
     </SettingsItem>
-    <SettingsItem title="屏蔽 2" desc="7、15天临时屏蔽视频。">
+    <SettingsItem title="屏蔽 2" desc="7、15 天临时屏蔽视频。">
       <Radio v-model="settings.videoCardContextMenuGroups.blockVideoAssistant" />
     </SettingsItem>
     <SettingsItem title="打开方式" desc="包含多种打开方式">
