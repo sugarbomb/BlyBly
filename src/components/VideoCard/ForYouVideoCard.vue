@@ -20,6 +20,7 @@ const props = withDefaults(defineProps<{
   moreBtn?: boolean
   feedbackEnabled?: boolean
   recommendationMask?: 'feedback' | 'advertisement' | 'autoFeedback'
+  recommendationMaskReason?: string
 }>(), {
   type: 'rcmd',
   moreBtn: true,
@@ -66,6 +67,7 @@ function handleRecommendationAction(action: RecommendationWheelAction) {
       :show-preview="props.showPreview"
       :more-btn="props.moreBtn"
       :recommendation-mask="props.recommendationMask"
+      :recommendation-mask-reason="props.recommendationMaskReason"
       :show-cover-bottom-right="recommendationActions.length > 0"
       @click="emit('click', $event)"
       @undo-recommendation-mask="emit('undoFeedback')"

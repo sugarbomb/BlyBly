@@ -61,7 +61,7 @@ watch(() => settings.value.useOriginalBilibiliHomepage, () => {
 <template>
   <div>
     <SettingsItemGroup :title="`功能速览 · v${version}`">
-      <SettingsItem title="自动反馈" desc="查看 Bly 推荐 - 视频反馈" />
+      <SettingsItem title="自动反馈" desc="查看 Bly增强 推荐 - 视频反馈" />
     </SettingsItemGroup>
 
     <SettingsItemGroup :title="$t('settings.group_common')">

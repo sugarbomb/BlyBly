@@ -230,7 +230,7 @@ defineExpose({
           浏览
         </button>
       </div>
-      <span v-if="!selectedPartitions.length" class="partition-selection-hint">
+      <span v-if="!previewEnabled && !selectedPartitions.length" class="partition-selection-hint">
         请至少选择一个作为起始分区
       </span>
       <button

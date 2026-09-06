@@ -31,6 +31,9 @@ interface RecommendationMaskState {
   type: 'feedback' | 'autoFeedback'
   reasonId: number
   status?: 'queued' | 'submitting'
+  videoId?: string
+  keyword?: string
+  reason?: string
 }
 
 interface AutoFeedbackTask {
@@ -39,6 +42,7 @@ interface AutoFeedbackTask {
   item: WebLikeVideoItem
   reasonId: number
   dedupeKey: string
+  match: FilterMatch
 }
 
 interface WebLikeVideoItem {
@@ -257,7 +261,7 @@ async function getRecommendVideosWeb() {
           if (!autoFeedbackReasonId)
             return []
 
-          enqueueAutoFeedback({ uniqueId, item, reasonId: autoFeedbackReasonId })
+          enqueueAutoFeedback({ uniqueId, item, reasonId: autoFeedbackReasonId, match: filterMatch })
           return [{ uniqueId, item }]
         })
       if (!videoList.value.length) {
@@ -335,6 +339,25 @@ function getAutoFeedbackReasonId(item: WebLikeVideoItem, match: FilterMatch): nu
   return undefined
 }
 
+function getFilterMatchReason(match: FilterMatch): string {
+  if (match.target === 'author')
+    return match.rule.type === 'uid' ? `作者 ID：${match.keyword}` : `作者关键词：${match.keyword}`
+  if (match.target === 'title')
+    return `标题关键词：${match.keyword}`
+  return `视频 ID：${match.videoId}`
+}
+
+function createAutoFeedbackMaskState(task: AutoFeedbackTask, status: 'queued' | 'submitting'): RecommendationMaskState {
+  return {
+    type: 'autoFeedback',
+    reasonId: task.reasonId,
+    status,
+    videoId: task.match.videoId,
+    keyword: task.match.keyword,
+    reason: getFilterMatchReason(task.match),
+  }
+}
+
 function enqueueAutoFeedback(task: Omit<AutoFeedbackTask, 'generation' | 'dedupeKey'>) {
   const dedupeKey = `${task.item.id}:${task.reasonId}`
   if (
@@ -348,14 +371,15 @@ function enqueueAutoFeedback(task: Omit<AutoFeedbackTask, 'generation' | 'dedupe
 
   autoFeedbackDedupeKeys.add(dedupeKey)
   autoFeedbackBatchTaskCount++
-  autoFeedbackQueue.push({
+  const queuedTask: AutoFeedbackTask = {
     ...task,
     generation: autoFeedbackGeneration,
     dedupeKey,
-  })
+  }
+  autoFeedbackQueue.push(queuedTask)
   recommendationMasks.value = {
     ...recommendationMasks.value,
-    [task.uniqueId]: { type: 'autoFeedback', reasonId: task.reasonId, status: 'queued' },
+    [task.uniqueId]: createAutoFeedbackMaskState(queuedTask, 'queued'),
   }
   void processAutoFeedbackQueue()
 }
@@ -373,7 +397,7 @@ async function processAutoFeedbackQueue() {
       autoFeedbackInFlightDedupeKeys.add(task.dedupeKey)
       recommendationMasks.value = {
         ...recommendationMasks.value,
-        [task.uniqueId]: { type: 'autoFeedback', reasonId: task.reasonId, status: 'submitting' },
+        [task.uniqueId]: createAutoFeedbackMaskState(task, 'submitting'),
       }
       try {
         const response = await api.video.dislikeVideoWeb({
@@ -396,7 +420,11 @@ async function processAutoFeedbackQueue() {
         autoFeedbackCompletedDedupeKeys.add(task.dedupeKey)
         recommendationMasks.value = {
           ...recommendationMasks.value,
-          [task.uniqueId]: { type: 'feedback', reasonId: task.reasonId },
+          [task.uniqueId]: {
+            ...createAutoFeedbackMaskState(task, 'submitting'),
+            type: 'feedback',
+            status: undefined,
+          },
         }
 
         if (autoFeedbackQueue.some(nextTask => nextTask.generation === task.generation))
@@ -478,8 +506,17 @@ async function handleRecommendationAction(action: { key: string }, video: VideoE
       csrf: getCSRF(),
     })
 
-    if (response?.code === 0)
-      recommendationMasks.value = { ...recommendationMasks.value, [video.uniqueId]: { type: 'feedback', reasonId } }
+    if (response?.code === 0) {
+      recommendationMasks.value = {
+        ...recommendationMasks.value,
+        [video.uniqueId]: {
+          type: 'feedback',
+          reasonId,
+          videoId: `${item.bvid || item.id || ''}`,
+          reason: reasonId === 4 ? '不喜欢作者' : '不喜欢内容',
+        },
+      }
+    }
   }
   catch (error) {
     console.error('Unable to submit Web recommendation feedback', error)
@@ -528,6 +565,10 @@ function getRecommendationMask(video: VideoElement): 'feedback' | 'advertisement
 
   // The auto-feedback setting is reserved for a future API-backed flow.
   return undefined
+}
+
+function getRecommendationMaskReason(video: VideoElement): string | undefined {
+  return recommendationMasks.value[video.uniqueId]?.reason
 }
 
 function isForYouAdItem(item?: WebLikeVideoItem): boolean {
@@ -607,6 +648,7 @@ defineExpose({ initData })
         :more-btn="true"
         feedback-enabled
         :recommendation-mask="getRecommendationMask(video)"
+        :recommendation-mask-reason="getRecommendationMaskReason(video)"
         @click="handleWebLikeVideoClick(video.item)"
         @fan-action="action => handleRecommendationAction(action, video)"
         @undo-feedback="handleUndoRecommendationFeedback(video)"

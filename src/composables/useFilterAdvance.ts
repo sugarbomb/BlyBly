@@ -38,6 +38,8 @@ export interface FilterMatch {
   target: FilterMatchTarget
   rule: FilterRule
   temporary: boolean
+  videoId: string
+  keyword: string
 }
 
 export interface FilterOptions {
@@ -1134,6 +1136,8 @@ export function useFilterAdvance(scopeOrKey: string | FilterScope = FilterScope.
       target,
       rule,
       temporary: rule.duration !== undefined && rule.expiresAt !== undefined,
+      videoId: `${item.bvid ?? item.aid ?? item.id ?? item.param ?? item.args?.aid ?? ''}`,
+      keyword: rule.value,
     })
 
     // Author matches take precedence, so automatic recommendation feedback can use reason_id=4.

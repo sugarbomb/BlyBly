@@ -43,6 +43,7 @@ interface Props {
   showPreview?: boolean
   moreBtn?: boolean
   recommendationMask?: 'feedback' | 'advertisement' | 'autoFeedback'
+  recommendationMaskReason?: string
 }
 
 const toast = useToast()
@@ -52,6 +53,13 @@ const { setActivatedCover } = useMainStore()
 const showVideoOptions = ref<boolean>(false)
 const videoOptionsFloatingStyles = ref<CSSProperties>({})
 const moreBtnRef = ref<HTMLDivElement | null>(null)
+const revealRecommendationMask = ref<boolean>(false)
+const recommendationMaskHovered = ref<boolean>(false)
+
+const showRecommendationOriginal = computed(() => {
+  return !props.recommendationMask
+    || (props.recommendationMask === 'feedback' && revealRecommendationMask.value)
+})
 
 const videoCurrentTime = ref<number | null>(null)
 
@@ -161,6 +169,8 @@ function handleMouseEnter() {
 function handelMouseLeave() {
   contentVisibility.value = 'auto'
   isHover.value = false
+  revealRecommendationMask.value = false
+  recommendationMaskHovered.value = false
   clearTimeout(mouseEnterTimeOut.value)
   clearTimeout(mouseLeaveTimeOut.value)
 }
@@ -178,24 +188,20 @@ function handleCardClick(event: MouseEvent) {
   emit('click', event)
 }
 
-function handleMoreBtnClick(event: MouseEvent) {
-  // the distance between the bottom and the height of the more button
+function handleMoreBtnClick(_event: MouseEvent) {
   if (!moreBtnRef.value)
     return
-  const { bottom, height } = moreBtnRef.value.getBoundingClientRect()
-
-  /**
-   * if (screen height - bottom > 406px) then context-menu offset upwards
-   * Why 406? Because the current context-menu is not a responsive layout, it can be temporarily referred to as 406
-   */
-  const offsetTop = window.innerHeight - bottom > 406 ? 0 : -406 - height
+  const { top, right, bottom } = moreBtnRef.value.getBoundingClientRect()
+  const openUpward = bottom > window.innerHeight / 2
 
   showVideoOptions.value = false
   videoOptionsFloatingStyles.value = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    transform: `translate(${event.x}px, ${event.y + offsetTop}px)`,
+    position: 'fixed',
+    top: `${openUpward ? top - 8 : bottom + 8}px`,
+    left: `${Math.min(right, window.innerWidth - 8)}px`,
+    maxHeight: 'calc(100vh - 16px)',
+    overflowY: 'auto',
+    transform: `translate(-100%, ${openUpward ? '-100%' : '0'})`,
   }
   showVideoOptions.value = true
 }
@@ -250,22 +256,44 @@ provide('getVideoType', () => props.type!)
 
             <div
               v-if="recommendationMask"
+              class="recommendation-mask"
+              :class="{ revealed: revealRecommendationMask }"
               pos="absolute top-0 left-0" w-full h-fit aspect-video flex="~ col gap-2 items-center justify-center"
               bg="$bew-fill-4" backdrop-blur-20px mix-blend-luminosity rounded="$bew-radius" z-2
+              @mouseenter="recommendationMaskHovered = true"
+              @mouseleave="recommendationMaskHovered = false"
             >
-              <p mb-2 color-white text-lg>
-                {{ $t(`settings.for_you_mask_${recommendationMask}`) }}
-              </p>
-              <Button
-                v-if="recommendationMask === 'feedback'"
-                color="rgba(255,255,255,.35)" text-color="white" size="small"
-                @click.prevent.stop="emit('undoRecommendationMask')"
+              <p
+                class="recommendation-mask-message"
+                :title="recommendationMaskHovered ? recommendationMaskReason : undefined"
+                mb-2 color-white text-lg
               >
-                <template #left>
-                  <div i-mingcute:back-line text-lg />
-                </template>
-                {{ $t('common.undo') }}
-              </Button>
+                {{ recommendationMaskHovered && recommendationMaskReason
+                  ? recommendationMaskReason
+                  : $t(`settings.for_you_mask_${recommendationMask}`) }}
+              </p>
+              <div v-if="recommendationMask === 'feedback'" flex="~ gap-2 items-center">
+                <Button
+                  color="rgba(255,255,255,.35)" text-color="white" size="small"
+                  @click.prevent.stop="emit('undoRecommendationMask')"
+                >
+                  <template #left>
+                    <div i-mingcute:back-line text-lg />
+                  </template>
+                  {{ $t('common.undo') }}
+                </Button>
+                <Button
+                  color="rgba(255,255,255,.35)" text-color="white" size="small"
+                  @click.prevent.stop
+                  @mouseenter="revealRecommendationMask = true"
+                  @mouseleave="revealRecommendationMask = false"
+                >
+                  <template #left>
+                    <div i-mingcute:eye-2-line text-lg />
+                  </template>
+                  查看
+                </Button>
+              </div>
             </div>
 
             <!-- Video preview -->
@@ -397,7 +425,7 @@ provide('getVideoType', () => props.type!)
 
           <!-- Other Information -->
           <div
-            v-if="!recommendationMask"
+            v-if="showRecommendationOriginal"
             :style="{
               width: horizontal ? '100%' : 'unset',
               marginTop: horizontal ? '0' : '1rem',
@@ -532,5 +560,20 @@ provide('getVideoType', () => props.type!)
 
 .more-active {
   --uno: "opacity-100";
+}
+
+.recommendation-mask {
+  transition: opacity 180ms ease;
+}
+
+.recommendation-mask.revealed {
+  opacity: 0;
+}
+
+.recommendation-mask-message {
+  max-width: calc(100% - 2rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

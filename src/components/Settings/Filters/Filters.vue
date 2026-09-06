@@ -45,7 +45,7 @@ const searchInputRef = ref<HTMLInputElement>()
 
 const timeOptions = [
   { value: 'permanent', label: '永久' },
-  { value: 'expiring', label: '期限' },
+  { value: 'expiring', label: '限时' },
 ]
 
 const expiringScopeOptions = [
