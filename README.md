@@ -9,27 +9,39 @@
 #### 支持快捷添加
 > <img width="1212" height="324" alt="image" src="https://github.com/user-attachments/assets/4c97cbf5-3cc0-43ab-b46c-2188b7dae27f" />
 
-### 其它功能
+## 本地安装
+#### 插件适用chrome/Edge等Chromium系浏览器，需要手动加载文件夹
 
-- [新周必，新分区浏览页 展示 v0.4.0 ](docs/features/v0.4.0周必，分区页.md)
-- [新推荐页 展示 v0.2.0 ](docs/features/v0.2.0新版本推荐页.md)
-
+请先下载并解压 [extension.rar](https://github.com/sugarbomb/BlyBly/releases/tag/v0.5.2)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/81bc81ea-86e4-4db4-a91f-e942b00a7715" width="600" height="300">
+</div>
 
 ### 安装
-#### 插件适用chrome/Edge等Chromium系浏览器，需要手动加载文件夹
-1. 请先下载并解压 [extension.rar](https://github.com/sugarbomb/BlyBly--morefilter/releases)
-<img width="800" height="600" alt="PixPin_2026-02-03_10-45-09" src="https://github.com/user-attachments/assets/81bc81ea-86e4-4db4-a91f-e942b00a7715" />
+
+1. 打开：`chrome://extensions/`  Edge 打开：`edge://extensions/`
+
 
 2. 开发者模式打开
-<img width="800" height="600" alt="PixPin_2026-02-03_08-32-56" src="https://github.com/user-attachments/assets/cf4a5339-57cc-4657-be10-c5d3c2686db9" />
-<img width="800" height="400" alt="PixPin_2026-02-03_10-20-22" src="https://github.com/user-attachments/assets/06e6ce1c-a12c-4b86-bd3f-3a5148d1de82" />
+
+3. 点击 **加载已解压的扩展程序**。
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/cf4a5339-57cc-4657-be10-c5d3c2686db9" width="500" height="300">
+  <img src="https://github.com/user-attachments/assets/06e6ce1c-a12c-4b86-bd3f-3a5148d1de82" width="500" height="300">
+</div>
+4. 选择文件夹extension
 
 ### 升级
 
-1. 文件解压
-2. 覆盖旧文件夹内的文件，选择全部替换
-3. 刷新插件
-<img width="500" height="299" alt="image" src="https://github.com/user-attachments/assets/32a796f9-84fa-49a0-9d87-0d756c8bf875" />
+1. 下载新压缩包
+2. 覆盖到旧文件夹，选择全部替换，即可保存原数据
+3. 进入：`chrome://extensions/`  Edge `edge://extensions/`
+
+点击扩展卡片上的刷新按钮重新加载即可。
+
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/32a796f9-84fa-49a0-9d87-0d756c8bf875" width="500" height="300">
+</div>
 
 ## 本项目为学习交流目的， 所有赞助以及链接均保存自[BewlyBewly](https://github.com/BewlyBewly/BewlyBewly)  侵删。
 
