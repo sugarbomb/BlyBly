@@ -18,3 +18,7 @@ extension-safari/
 node_modules
 web-ext-profile
 extension-safari-macos/
+# WXT migration artifacts and local backups
+.wxt/
+.output/
+.migration-backups/

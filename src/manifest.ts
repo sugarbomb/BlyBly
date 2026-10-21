@@ -2,9 +2,12 @@ import fs from 'fs-extra'
 import type { Manifest } from 'webextension-polyfill'
 
 import type PkgType from '../package.json'
-import { isDev, isFirefox, isSafari, port, r } from '../scripts/utils'
+import { isDev as legacyDev, isFirefox as legacyFirefox, isSafari as legacySafari, port, r } from '../scripts/utils'
 
-export async function getManifest() {
+export async function getManifest(target?: { browser: string, mode: string }) {
+  const isDev = target ? target.mode === 'development' : legacyDev
+  const isFirefox = target ? target.browser === 'firefox' : legacyFirefox
+  const isSafari = target ? target.browser === 'safari' : legacySafari
   const pkg = await fs.readJSON(r('package.json')) as typeof PkgType
 
   // update this file to update this manifest.json

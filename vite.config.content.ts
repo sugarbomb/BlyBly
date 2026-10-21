@@ -18,6 +18,8 @@ export default defineConfig({
     lib: {
       entry: r('src/contentScripts/index.ts'),
       name: packageJson.name,
+      // Vite 6 otherwise names this after the package, breaking the legacy manifest.
+      cssFileName: 'style',
       formats: ['iife'],
     },
     rollupOptions: {

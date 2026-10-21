@@ -1,6 +1,5 @@
-import type { ErrorPayload, HMRPayload, Update } from 'vite'
-import type { InferCustomEventPayload } from 'vite/types/customEvent'
-import type { ViteHotContext } from 'vite/types/hot'
+import type { ErrorPayload, HMRPayload, InferCustomEventPayload, Update } from 'vite'
+import type { ViteHotContext } from 'vite/types/hot.d.ts'
 
 // Vite v3 doesn't export overlay
 // import { ErrorOverlay, overlayId } from 'vite/src/client/overlay'
@@ -64,6 +63,8 @@ let isFirstUpdate = true
 
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
+    case 'ping':
+      break
     case 'connected':
       console.debug('[vite] connected.')
       sendMessageBuffer()
@@ -210,7 +211,7 @@ async function waitForSuccessfulPing(ms = 1000) {
       await fetch(`${location.protocol}//${socketHost}`)
       break
     }
-    catch (e) {
+    catch {
       // wait ms before attempting to ping again
       await new Promise(resolve => setTimeout(resolve, ms))
     }

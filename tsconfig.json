@@ -1,26 +1,41 @@
 {
+  "extends": "./.wxt/tsconfig.json",
   "compilerOptions": {
     "incremental": false,
     "target": "es2016",
     "jsx": "preserve",
-    "lib": ["DOM", "ESNext"],
+    "lib": [
+      "DOM",
+      "ESNext"
+    ],
     "baseUrl": ".",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "paths": {
-      "~/*": ["src/*"]
+      "~/*": [
+        "src/*"
+      ]
     },
     "resolveJsonModule": true,
     "types": [
       "vite/client"
     ],
     "strict": true,
+    "noUncheckedIndexedAccess": false,
     "noUnusedLocals": true,
     "noEmit": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
+    "verbatimModuleSyntax": false,
     "skipLibCheck": true
   },
-  "exclude": ["dist", "node_modules"]
+  "exclude": [
+    "node_modules",
+    ".output",
+    ".migration-backups",
+    "extension",
+    "extension-firefox",
+    "extension-safari"
+  ]
 }
