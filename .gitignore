@@ -22,3 +22,6 @@ extension-safari-macos/
 .wxt/
 .output/
 .migration-backups/
+
+# Persistent development browser data (cookies, login, extension settings)
+.dev-browser/

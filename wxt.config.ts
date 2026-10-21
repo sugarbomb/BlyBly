@@ -18,12 +18,14 @@ export default defineConfig({
   imports: false,
   webExt: {
     disabled: process.env.WXT_NO_BROWSER === '1',
+    chromiumProfile: resolve('.dev-browser/chrome'),
+    keepProfileChanges: true,
     startUrls: ['https://www.bilibili.com/'],
   },
   zip: {
     dotSources: true,
     includeSources: ['src/**', 'assets/**', 'scripts/**', '*.ts', '*.json', 'pnpm-lock.yaml', '.npmrc', '.gitignore', 'LICENSE', 'README.md', 'docs/WXT-MIGRATION.md'],
-    excludeSources: ['.migration-backups/**', 'extension*/**', 'temp/**', 'web-ext-profile/**', 'package-lock.legacy.json'],
+    excludeSources: ['.migration-backups/**', '.dev-browser/**', 'extension*/**', 'temp/**', 'web-ext-profile/**', 'package-lock.legacy.json'],
   },
   async manifest({ browser, mode }) {
     const manifest = await getManifest({ browser, mode })
@@ -62,7 +64,7 @@ export default defineConfig({
     },
     build: {
       cssCodeSplit: false,
-      minify: 'terser',
+      minify: mode === 'development' ? false : 'terser',
       terserOptions: { mangle: false },
     },
   }),
