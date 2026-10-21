@@ -17,6 +17,7 @@ extension-firefox/
 extension-safari/
 node_modules
 web-ext-profile
+docs/dev
 extension-safari-macos/
 # WXT migration artifacts and local backups
 .wxt/
@@ -25,3 +26,4 @@ extension-safari-macos/
 
 # Persistent development browser data (cookies, login, extension settings)
 .dev-browser/
+

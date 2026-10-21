@@ -37,13 +37,13 @@
     "submit": "run-p submit:*",
     "submit:chrome": "pnpm wxt submit --chrome-zip ./extension.zip",
     "submit:firefox": "pnpm wxt submit --firefox-zip ./extension-firefox.zip --firefox-sources-zip ./extension-firefox-sources.zip",
-    "check:migration": "esno scripts/check-wxt-migration.ts",
+    "check:build": "esno scripts/check-extension-build.ts",
     "dev:manual": "cross-env WXT_NO_BROWSER=1 wxt --mv3",
     "dev:manual-firefox": "cross-env WXT_NO_BROWSER=1 wxt -b firefox --mv3",
     "legacy:build": "node scripts/legacy-build.mjs chrome",
     "legacy:build-firefox": "node scripts/legacy-build.mjs firefox",
     "typecheck:ci": "wxt prepare && node scripts/check-types.mjs",
-    "lint:ci": "eslint wxt.config.ts vitest.config.ts vite.config.content.ts unocss.config.ts src/entrypoints src/extension-matches.ts src/manifest.ts src/background/index.ts src/background/main.ts scripts/check-wxt-migration.ts scripts/check-types.mjs scripts/legacy-build.mjs scripts/typecheck-baseline.json .github/workflows/ci.yml"
+    "lint:ci": "eslint wxt.config.ts vitest.config.ts vite.config.content.ts unocss.config.ts src/entrypoints src/extension-matches.ts src/manifest.ts src/background/index.ts src/background/main.ts scripts/check-extension-build.ts scripts/check-types.mjs scripts/legacy-build.mjs scripts/typecheck-baseline.json .github/workflows/ci.yml"
   },
   "dependencies": {
     "@types/md5": "^2.3.5",

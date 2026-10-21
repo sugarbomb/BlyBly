@@ -24,7 +24,7 @@ export default defineConfig({
   },
   zip: {
     dotSources: true,
-    includeSources: ['src/**', 'assets/**', 'scripts/**', '*.ts', '*.json', 'pnpm-lock.yaml', '.npmrc', '.gitignore', 'LICENSE', 'README.md', 'docs/WXT-MIGRATION.md'],
+    includeSources: ['src/**', 'assets/**', 'scripts/**', '*.ts', '*.json', 'pnpm-lock.yaml', '.npmrc', '.gitignore', 'LICENSE', 'README.md'],
     excludeSources: ['.migration-backups/**', '.dev-browser/**', 'extension*/**', 'temp/**', 'web-ext-profile/**', 'package-lock.legacy.json'],
   },
   async manifest({ browser, mode }) {

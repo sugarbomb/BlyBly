@@ -64,7 +64,7 @@ jobs:
       - name: Build and package MV3
         run: pnpm exec wxt zip -b ${{ matrix.browser }} --mv3
       - name: Check manifest, resources, and icons
-        run: pnpm run check:migration ${{ matrix.browser }}
+        run: pnpm run check:build ${{ matrix.browser }}
       - name: Upload candidate packages
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
