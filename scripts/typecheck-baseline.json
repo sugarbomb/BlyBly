@@ -1,0 +1,17 @@
+[
+  {
+    "file": "src/contentScripts/views/Home/components/ForYouBlyBly.vue",
+    "code": "TS2345",
+    "message": "Argument of type 'WebLikeVideoItem' is not assignable to parameter of type 'FilterableItem'.\n  Types of property 'owner' are incompatible.\n    Type '{ mid?: string | number | undefined; name?: string | undefined; face?: string | undefined; } | null | undefined' is not assignable to type '{ name?: string | undefined; mid?: string | number | undefined; } | undefined'.\n      Type 'null' is not assignable to type '{ name?: string | undefined; mid?: string | number | undefined; } | undefined'."
+  },
+  {
+    "file": "src/contentScripts/views/Home/components/ForYouBlyBlyGuest.vue",
+    "code": "TS2345",
+    "message": "Argument of type 'WebLikeVideoItem' is not assignable to parameter of type 'FilterableItem'.\n  Types of property 'owner' are incompatible.\n    Type '{ mid?: string | number | undefined; name?: string | undefined; face?: string | undefined; } | null | undefined' is not assignable to type '{ name?: string | undefined; mid?: string | number | undefined; } | undefined'.\n      Type 'null' is not assignable to type '{ name?: string | undefined; mid?: string | number | undefined; } | undefined'."
+  },
+  {
+    "file": "src/logic/storage.ts",
+    "code": "TS2339",
+    "message": "Property 'PartitionRealtime' does not exist on type 'typeof HomeSubPage'."
+  }
+]

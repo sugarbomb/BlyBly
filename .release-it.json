@@ -17,9 +17,10 @@
     "after:bump": [
       "pnpm run legacy:build",
       "pnpm run legacy:build-firefox",
-      "pnpm run legacy:pack:zip",
-      "pnpm run legacy:pack:zip-firefox",
-      "pnpm run legacy:pack:zip-firefox-sources"
+      "pnpm exec rimraf extension.zip extension-firefox.zip extension-firefox-sources.zip",
+      "pnpm exec jszip-cli add extension/* -o ./extension.zip",
+      "pnpm exec jszip-cli add extension-firefox/* -o ./extension-firefox.zip",
+      "git archive HEAD -o extension-firefox-sources.zip"
     ],
     "after:release": [
       "gh release upload v${version} extension.zip extension-firefox.zip",
