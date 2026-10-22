@@ -8,8 +8,8 @@ import type { HomeTab } from '~/stores/mainStore'
 import { useMainStore } from '~/stores/mainStore'
 import emitter from '~/utils/mitt'
 
-import type { GridLayoutIcon } from './types'
-import { HomeSubPage } from './types'
+import HomeNavigation from './components/HomeNavigation.vue'
+import { type HomePageGroupId, HomeSubPage } from './types'
 
 const mainStore = useMainStore()
 const { handleBackToTop, scrollbarRef } = useBewlyApp()
@@ -60,13 +60,54 @@ const tabsSubForYou = ref<HomeTab[]>([])
 const tabGroups = ref<{ id: GroupId, tabs: HomeTab[] }[]>([])
 const tabPageRef = ref()
 const topBarVisibility = ref<boolean>(false)
-const gridLayoutIcons = computed((): GridLayoutIcon[] => {
-  return [
-    { icon: 'i-mingcute:table-3-line', iconActivated: 'i-mingcute:table-3-fill', value: 'adaptive' },
-    { icon: 'i-mingcute:layout-grid-line', iconActivated: 'i-mingcute:layout-grid-fill', value: 'twoColumns' },
-    { icon: 'i-mingcute:list-check-3-line', iconActivated: 'i-mingcute:list-check-3-fill', value: 'oneColumn' },
-  ]
+const editableTabGroups = computed(() => {
+  const tabsByPage = new Map(mainStore.homeTabs.map(tab => [tab.page, tab]))
+  return settings.value.homePageGroups.map(group => ({
+    id: group.id,
+    tabs: group.items.flatMap((item) => {
+      const tab = tabsByPage.get(item.page)
+      return tab ? [{ ...tab, visible: item.visible }] : []
+    }),
+  })).filter(group => group.tabs.length)
 })
+
+function toggleNavigationTab(groupId: HomePageGroupId, page: HomeSubPage) {
+  const item = settings.value.homePageGroups.find(group => group.id === groupId)?.items.find(tab => tab.page === page)
+  if (!item)
+    return
+  const visibleCount = settings.value.homePageGroups.flatMap(group => group.items).filter(tab => tab.visible).length
+  if (item.visible && visibleCount <= 1)
+    return
+  settings.value.homePageGroups = settings.value.homePageGroups.map(group => group.id === groupId
+    ? { ...group, items: group.items.map(tab => tab.page === page ? { ...tab, visible: !tab.visible } : tab) }
+    : group)
+}
+
+function reorderNavigationTabs(groupId: HomePageGroupId, pages: HomeSubPage[]) {
+  const group = settings.value.homePageGroups.find(group => group.id === groupId)
+  if (!group || pages.length !== group.items.length || new Set(pages).size !== pages.length)
+    return
+  const itemsByPage = new Map(group.items.map(tab => [tab.page, tab]))
+  if (pages.some(page => !itemsByPage.has(page)))
+    return
+  settings.value.homePageGroups = settings.value.homePageGroups.map(current => current.id === groupId
+    ? { ...current, items: pages.map(page => itemsByPage.get(page)!) }
+    : current)
+}
+
+function swapNavigationGroups(source: HomePageGroupId, target: HomePageGroupId) {
+  if (source === target)
+    return
+  const groups = [...settings.value.homePageGroups]
+  const sourceIndex = groups.findIndex(group => group.id === source)
+  const targetIndex = groups.findIndex(group => group.id === target)
+  if (sourceIndex < 0 || targetIndex < 0)
+    return
+  const sourceGroup = groups[sourceIndex]
+  groups[sourceIndex] = groups[targetIndex]
+  groups[targetIndex] = sourceGroup
+  settings.value.homePageGroups = groups
+}
 
 const GROUP_ORDER = ['rankTrending', 'followLive', 'partition', 'subForYou'] as const
 type GroupId = typeof GROUP_ORDER[number]
@@ -197,8 +238,6 @@ function computeTabs(): HomeTab[] {
 
   return targetTabs
 }
-
-const visibleTabsCount = computed(() => allTabs.value.length)
 
 onMounted(() => {
   showSearchPageMode.value = true
@@ -335,79 +374,16 @@ function toggleTabContentLoading(loading: boolean) {
         </div>
       </Transition>
 
-      <header
-        pos="sticky top-[calc(var(--bew-top-bar-height)+10px)]" w-full z-9 m="b-4" duration-300
-        ease-in-out flex="~ justify-between items-start gap-4"
-        :class="{ hide: shouldMoveTabsUp }"
-      >
-        <div
-          v-if="!(!settings.alwaysShowTabsOnHomePage && visibleTabsCount === 1)"
-          w="[calc(100vw-280px)]"
-          flex="~ gap-2 items-center wrap"
-        >
-          <section
-            v-for="group in tabGroups" :key="group.id"
-            style="backdrop-filter: var(--bew-filter-glass-1)"
-            bg="$bew-elevated" p-1
-            h-38px rounded-full
-            text="sm"
-            shadow="[var(--bew-shadow-1),var(--bew-shadow-edge-glow-1)]"
-            box-border border="1 $bew-border-color"
-          >
-            <OverlayScrollbarsComponent
-              class="home-tabs-inside"
-              element="div" defer
-              :options="{
-                x: 'scroll',
-                y: 'hidden',
-              }"
-              h-full of-hidden
-            >
-              <button
-                v-for="tab in group.tabs" :key="tab.page"
-                :class="{ 'tab-activated': activatedPage === tab.page }"
-                px-3 h-inherit
-                bg="transparent hover:$bew-fill-2" text="$bew-text-2 hover:$bew-text-1" fw-bold rounded-full
-                cursor-pointer duration-300
-                flex="~ gap-2 items-center shrink-0" relative
-                @click="handleChangeTab(tab)"
-              >
-                <span class="text-center">{{ $t(tab.i18nKey) }}</span>
-
-                <Transition name="fade">
-                  <div
-                    v-show="activatedPage === tab.page && tabContentLoading"
-                    i-svg-spinners:ring-resize
-                    pos="absolute right-4px top-4px" duration-300
-                    text="8px white"
-                  />
-                </Transition>
-              </button>
-            </OverlayScrollbarsComponent>
-          </section>
-        </div>
-
-        <div
-          v-if="settings.enableGridLayoutSwitcher"
-          style="backdrop-filter: var(--bew-filter-glass-1)"
-          flex="~ gap-1 shrink-0" p-1 h-38px bg="$bew-elevated" transform-gpu
-          ml-auto rounded-full
-          shadow="[var(--bew-shadow-1),var(--bew-shadow-edge-glow-1)]"
-          box-border border="1 $bew-border-color"
-        >
-          <div
-            v-for="icon in gridLayoutIcons" :key="icon.value"
-            :class="{ 'grid-layout-item-activated': gridLayout.home === icon.value }"
-            flex="~ justify-center items-center"
-            h-full aspect-square text="$bew-text-2 hover:$bew-text-1"
-            rounded-full bg="hover:$bew-fill-2" duration-300
-            cursor-pointer
-            @click="gridLayout.home = icon.value"
-          >
-            <div :class="gridLayout.home === icon.value ? icon.iconActivated : icon.icon" text-base />
-          </div>
-        </div>
-      </header>
+      <HomeNavigation
+        v-model:grid-layout="gridLayout.home"
+        :groups="tabGroups" :active-page="activatedPage"
+        :editable-groups="editableTabGroups"
+        :loading="tabContentLoading" :move-up="shouldMoveTabsUp"
+        :always-show-tabs="settings.alwaysShowTabsOnHomePage"
+        :show-grid-layout-switcher="settings.enableGridLayoutSwitcher"
+        @select="handleChangeTab"
+        @toggle-tab="toggleNavigationTab" @reorder-tabs="reorderNavigationTabs" @swap-groups="swapNavigationGroups"
+      />
 
       <Transition name="page-fade">
         <KeepAlive include="ForYou">
@@ -448,26 +424,5 @@ function toggleTabContentLoading(loading: boolean) {
 }
 .content-leave-to {
   --uno: "hidden";
-}
-
-.hide {
-  --uno: "important-translate-y--70px";
-}
-
-.home-tabs-inside {
-  :deep([data-overlayscrollbars-contents]) {
-    --uno: "flex items-center gap-1 h-inherit rounded-$bew-radius-half";
-  }
-  :deep(.os-scrollbar) {
-    --uno: "mb--4px";
-  }
-}
-
-.tab-activated {
-  --uno: "bg-$bew-theme-color-auto text-$bew-text-auto";
-}
-
-.grid-layout-item-activated {
-  --uno: "bg-$bew-theme-color-auto text-$bew-text-auto";
 }
 </style>

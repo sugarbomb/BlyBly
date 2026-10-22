@@ -119,6 +119,7 @@ export interface Settings {
 
   homePageGroups: HomePageGroup[]
   alwaysShowTabsOnHomePage: boolean
+  showHomeNavigationEditButton: boolean
   useSearchPageModeOnHomePage: boolean
   searchPageModeWallpaperFixed: boolean
   partitionControlRailPosition: 'left' | 'right'
@@ -284,6 +285,7 @@ export const originalSettings: Settings = {
     },
   ],
   alwaysShowTabsOnHomePage: false,
+  showHomeNavigationEditButton: true,
   useSearchPageModeOnHomePage: false,
   searchPageModeWallpaperFixed: false,
   partitionControlRailPosition: 'right',

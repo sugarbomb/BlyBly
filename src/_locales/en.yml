@@ -173,7 +173,7 @@ settings:
     If you don't want these to be accidentally removed, please disable this option.
 
   secondary_navigation:
-    title: Secondary Navigation · Discover by Category Tabs
+    title: Secondary Navigation Tabs · Discover by Category
     pick: Pick
     pick_desc: Pick categories to use as switching sources
     selected: Browse Picks
@@ -201,11 +201,11 @@ settings:
     manual_button: Refresh button
     manual_button_desc: Provide a refresh button on the side.
     wheel: Mouse wheel
-    wheel_desc: Trigger by scrolling the mouse wheel downward a certain distance. Suitable for pages where vertical scrolling is not needed.
+    wheel_desc: Trigger by scrolling the mouse wheel downward a certain distance. Only suitable for fixed pages.
     pull: Pull to refresh
     pull_desc: Perform a downward drag gesture in an empty area
-    pull_distance: Custom distance
-    pull_distance_desc: Adjust the pull distance needed for the first confirmation to prevent accidental triggering
+    pull_distance: Pull distance
+    pull_distance_desc: Pull distance required for the first confirmation, used to prevent accidental triggering
     quantity: Display Quantity
     auto_fill: Calculate automatically
     auto_fill_desc: Calculate the display quantity from the viewport and card dimensions. Requests remain limited by the source API.
@@ -592,6 +592,19 @@ video_card:
   video_removed: Video removed
 
 home:
+  navigation:
+    confirm: Confirm
+    edit_button_tip: You can hide this button in Settings → Home tabs
+    show_edit_button: Show navigation edit button
+    edit: Edit navigation
+    done: Finish editing
+    toggle_tab: Show or hide this tab
+    last_visible: Keep at least one navigation tab visible
+    move_tab: 'Drag to reorder within this group, or use the left and right arrow keys'
+    move_named_tab: 'Reorder {tab}'
+    swap_adjacent: Swap adjacent groups
+    swap_target: Swap positions with the selected group
+    cancel_swap: Cancel swap
   tell_us_why: Choose a reason why
   not_interested_desc: You can use <kbd>↑</kbd> and <kbd>↓</kbd> to choose the reason, or using number keys to choose the reason directly, press <kbd>Enter</kbd> to confirm.
 

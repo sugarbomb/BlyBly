@@ -10,6 +10,8 @@ import { defineConfig } from 'wxt'
 
 import { getManifest } from './src/manifest'
 
+const cleanBrowserProfile = process.env.WXT_CLEAN_PROFILE === '1'
+
 export default defineConfig({
   srcDir: 'src',
   manifestVersion: 3,
@@ -18,8 +20,9 @@ export default defineConfig({
   imports: false,
   webExt: {
     disabled: process.env.WXT_NO_BROWSER === '1',
-    chromiumProfile: resolve('.dev-browser/chrome'),
-    keepProfileChanges: true,
+    // Omitting a profile lets web-ext create a fresh temporary browser profile.
+    chromiumProfile: cleanBrowserProfile ? undefined : resolve('.dev-browser/chrome'),
+    keepProfileChanges: !cleanBrowserProfile,
     startUrls: ['https://www.bilibili.com/'],
   },
   zip: {
@@ -69,6 +72,11 @@ export default defineConfig({
     },
   }),
   hooks: {
+    'config:resolved': function (wxt) {
+      const packageName = wxt.config.browser === 'chrome' ? 'extension' : `extension-${wxt.config.browser}`
+      wxt.config.zip.artifactTemplate = `${packageName}.zip`
+      wxt.config.zip.sourcesTemplate = `${packageName}-sources.zip`
+    },
     'build:manifestGenerated': function (wxt, manifest) {
       // Preserve the existing Safari event-page background instead of WXT's MV3 worker default.
       if (wxt.config.browser === 'safari') {

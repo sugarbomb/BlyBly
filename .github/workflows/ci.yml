@@ -46,7 +46,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [chrome, firefox]
+        include:
+          - browser: chrome
+            package: extension
+          - browser: firefox
+            package: extension-firefox
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -62,13 +66,13 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
       - name: Build and package MV3
-        run: pnpm exec wxt zip -b ${{ matrix.browser }} --mv3
+        run: pnpm run pack:${{ matrix.browser }}
       - name: Check manifest, resources, and icons
         run: pnpm run check:build ${{ matrix.browser }}
       - name: Upload candidate packages
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: wxt-${{ matrix.browser }}-${{ github.sha }}
-          path: .output/*.zip
+          name: ${{ matrix.package }}
+          path: .output/${{ matrix.package }}.zip
           if-no-files-found: error
           retention-days: 14

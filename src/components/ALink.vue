@@ -4,7 +4,7 @@ import { settings } from '~/logic'
 import { isHomePage } from '~/utils/main'
 
 const props = defineProps<{
-  href: string
+  href?: string
   title?: string
   rel?: string
   type: 'topBar' | 'videoCard'
@@ -41,6 +41,11 @@ const target = computed(() => {
 })
 
 function handleClick(event: MouseEvent) {
+  if (!props.href) {
+    event.preventDefault()
+    return
+  }
+
   if (event.ctrlKey || event.metaKey || event.altKey)
     return
 
@@ -58,7 +63,7 @@ function handleClick(event: MouseEvent) {
 </script>
 
 <template>
-  <a :href="href" :target="target" :title="title" :rel="rel" @click="handleClick">
+  <a :href="href || undefined" :target="target" :title="title" :rel="rel" @click="handleClick">
     <slot />
   </a>
 </template>

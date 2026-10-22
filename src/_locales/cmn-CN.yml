@@ -171,7 +171,7 @@ settings:
     如果你不想这些内容被误删除，请禁用此选项。
 
   secondary_navigation:
-    title: 二级导航·分区看看标签组
+    title: 二级导航标签·分区看看
     pick: 拣选
     pick_desc: 选择一些作为切换源
     selected: 浏览拣选
@@ -199,11 +199,11 @@ settings:
     manual_button: 刷新按钮
     manual_button_desc: 提供一个侧面的刷新按钮。
     wheel: 滚轮
-    wheel_desc: 鼠标滚轮向下滚动一段距离触发，适合不考虑上下滚动的页面。
+    wheel_desc: 鼠标滚轮向下滚动一段距离触发，仅适用固定页面
     pull: 下拉刷新
     pull_desc: 在空白处完成下拉手势
-    pull_distance: 自定义距离
-    pull_distance_desc: 调整触发“一级确认”所需的下拉距离，防止误触发
+    pull_distance: 下拉距离
+    pull_distance_desc: “一级确认”所需的下拉距离，用于防止误触
     quantity: 展示数量
     auto_fill: 自动计算
     auto_fill_desc: 根据视野和卡片尺寸计算展示数量。请求仍受限于实际接口的提供范围
@@ -622,6 +622,19 @@ video_card:
   video_removed: 视频已移除
 
 home:
+  navigation:
+    confirm: 确认
+    edit_button_tip: 可在设置 → 首页标签中关闭
+    show_edit_button: 显示导航编辑按钮
+    edit: 编辑导航
+    done: 完成编辑
+    toggle_tab: 显示或隐藏此标签
+    last_visible: 至少保留一个导航标签
+    move_tab: 拖动调整组内顺序，也可使用左右方向键
+    move_named_tab: '调整「{tab}」的顺序'
+    swap_adjacent: 交换相邻两组
+    swap_target: 与已选组交换位置
+    cancel_swap: 取消交换
   tell_us_why: 为什么这么做...
   not_interested_desc: 你可以使用 <kbd>↑</kbd> 和 <kbd>↓</kbd> 来选择原因，或者直接使用数字键选择原因，按 <kbd>Enter</kbd> 就直接提交。
 

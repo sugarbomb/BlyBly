@@ -1,17 +1,19 @@
 <script lang="ts" setup>
 import draggable from 'vuedraggable'
 
-import { useRecommendationControls } from '~/composables/useRecommendationLayoutSettings'
+// import { useRecommendationControls } from '~/composables/useRecommendationLayoutSettings'
 import type { HomePageGroup } from '~/contentScripts/views/Home/types'
 import { HomeSubPage } from '~/contentScripts/views/Home/types'
-import { partitionForYouState, settings } from '~/logic'
-import type { PartitionNavigationMode } from '~/logic/storage'
+import { settings } from '~/logic'
+// import { partitionForYouState } from '~/logic'
+// import type { PartitionNavigationMode } from '~/logic/storage'
 import { useMainStore } from '~/stores/mainStore'
 
 import SettingsItem from '../components/SettingsItem.vue'
 import SettingsItemGroup from '../components/SettingsItemGroup.vue'
 
 const mainStore = useMainStore()
+/*
 const partitionControls = useRecommendationControls('partition')
 const partitionNavigationHidden = computed({
   get: () => !partitionControls.value.showNavigation,
@@ -34,6 +36,7 @@ function selectPartitionMode(mode: PartitionNavigationMode, selected: boolean) {
   if (selected)
     partitionNavigationMode.value = mode
 }
+*/
 
 const homePageGroupsModel = computed<HomePageGroup[]>({
   get: () => settings.value.homePageGroups,
@@ -220,10 +223,14 @@ function handleToggleHomeTab(tab: any) {
           </div>
         </template>
       </SettingsItem>
+      <SettingsItem :title="$t('home.navigation.show_edit_button')">
+        <Radio v-model="settings.showHomeNavigationEditButton" />
+      </SettingsItem>
       <SettingsItem :title="$t('settings.always_show_tabs_on_home_page')">
         <Radio v-model="settings.alwaysShowTabsOnHomePage" />
       </SettingsItem>
     </SettingsItemGroup>
+    <!--
     <SettingsItemGroup :title="$t('settings.secondary_navigation.title')">
       <SettingsItem
         v-for="mode in partitionModes" :key="mode"
@@ -236,5 +243,6 @@ function handleToggleHomeTab(tab: any) {
         <Radio v-model="partitionNavigationHidden" />
       </SettingsItem>
     </SettingsItemGroup>
+    -->
   </div>
 </template>
