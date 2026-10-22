@@ -80,9 +80,9 @@ const menuGroups = computed((): MenuOption[][] => {
     const blockUserGroup: MenuOption[] = []
     if (!Array.isArray(props.video?.author) && props.video?.author?.mid) {
       blockUserGroup.push(
-        { key: 'block-user', name: '屏蔽此UP主', icon: 'i-solar:user-block-bold-duotone', action: handleBlockUser },
-        { key: 'block-user-7', name: '临时屏蔽此UP主 7天', icon: 'i-solar:user-block-bold-duotone', action: () => handleTemporaryBlockUser(7) },
-        { key: 'block-user-15', name: '临时屏蔽此UP主 15天', icon: 'i-solar:user-block-bold-duotone', action: () => handleTemporaryBlockUser(15) },
+        { key: 'block-user', name: t('video_card.operation.block_user'), icon: 'i-solar:user-block-bold-duotone', action: handleBlockUser },
+        { key: 'block-user-7', name: t('video_card.operation.temporarily_block_user', { days: 7 }), icon: 'i-solar:user-block-bold-duotone', action: () => handleTemporaryBlockUser(7) },
+        { key: 'block-user-15', name: t('video_card.operation.temporarily_block_user', { days: 15 }), icon: 'i-solar:user-block-bold-duotone', action: () => handleTemporaryBlockUser(15) },
       )
     }
     if (blockUserGroup.length > 0)
@@ -93,8 +93,8 @@ const menuGroups = computed((): MenuOption[][] => {
     const blockVideoGroup: MenuOption[] = []
     if (props.video?.id) {
       blockVideoGroup.push(
-        { key: 'block-video-7', name: '临时屏蔽此视频 7天', icon: 'i-solar:video-frame-cut-bold-duotone', action: () => handleTemporaryBlockVideo(7) },
-        { key: 'block-video-15', name: '临时屏蔽此视频 15天', icon: 'i-solar:video-frame-cut-bold-duotone', action: () => handleTemporaryBlockVideo(15) },
+        { key: 'block-video-7', name: t('video_card.operation.temporarily_block_video', { days: 7 }), icon: 'i-solar:video-frame-cut-bold-duotone', action: () => handleTemporaryBlockVideo(7) },
+        { key: 'block-video-15', name: t('video_card.operation.temporarily_block_video', { days: 15 }), icon: 'i-solar:video-frame-cut-bold-duotone', action: () => handleTemporaryBlockVideo(15) },
       )
     }
     if (blockVideoGroup.length > 0)

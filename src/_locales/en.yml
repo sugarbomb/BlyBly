@@ -133,8 +133,8 @@ settings:
   select_language: Language
   select_language_opt:
     english: English
-    mandarin_cn: Mandarin - Simplified Chinese
-    mandarin_tw: Mandarin - Traditional Chinese
+    mandarin_cn: Simplified Chinese
+    mandarin_tw: Traditional Chinese
     jyut: Cantonese
   customize_font: Customize font
   customize_font_opt:
@@ -172,9 +172,30 @@ settings:
     Sometimes, the ads above search results are actually year-end summaries or annual reports.
     If you don't want these to be accidentally removed, please disable this option.
 
+  # Video Card
   enable_video_preview: Enable video preview feature (if possible)
   enable_video_ctrl_bar_on_video_card: Display the video control bar on the video card
   hover_video_card_delayed: Delayed video preview on hover over the video card
+
+  # Video Card Context Menu
+  video_card_context_menu:
+    title: Card Menu
+    convert_legacy: Convert legacy data first
+    convert_legacy_desc: Legacy data was detected locally. Convert it before using the blocking features.
+    convert: Convert
+    convert_confirm: Legacy filter data was detected. Conversion will clear the legacy data. Continue?
+    convert_success: Converted {imported} entries, skipped {skipped}, and cleaned up {cleaned} legacy items
+    global_block: Global Blocking
+    global_block_desc: Block uploaders across all sections.
+    block_user: Block Uploader
+    block_user_desc: Block uploaders within the current section, with temporary blocking for 7 or 15 days.
+    block_video: Block Video
+    block_video_desc: Temporarily block this video.
+    open_ways: Opening Options
+    open_ways_desc: Includes multiple ways to open videos
+    copy: Copy
+    copy_desc: Copy video links and AV numbers
+    view_cover: View Cover
 
   # Desktop & Dock
   use_old_top_bar: Use the old top bar
@@ -445,6 +466,9 @@ dock:
 video_card:
   operation:
     not_interested: Not Interested
+    block_user: Block This Uploader
+    temporarily_block_user: Block This Uploader for {days} Days
+    temporarily_block_video: Block This Video for {days} Days
     open_in_new_tab: Open in New Tab
     open_in_background: Open In Background
     open_in_new_window: Open in New Window
@@ -465,6 +489,8 @@ home:
   not_interested_desc: You can use <kbd>↑</kbd> and <kbd>↓</kbd> to choose the reason, or using number keys to choose the reason directly, press <kbd>Enter</kbd> to confirm.
 
   for_you: For you
+  for_you_guest: Guest
+  for_you_tv: Cloud TV
   following: Following
   trending: Trending
   ranking: Ranking

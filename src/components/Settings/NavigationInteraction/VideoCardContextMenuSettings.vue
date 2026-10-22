@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useToast } from 'vue-toastification'
 
 import { useFilterAdvance } from '~/composables/useFilterAdvance'
@@ -9,46 +10,54 @@ import SettingsItem from '../components/SettingsItem.vue'
 import SettingsItemGroup from '../components/SettingsItemGroup.vue'
 
 const toast = useToast()
+const { t } = useI18n()
 const { getLegacyStatus, convertLegacyFilters } = useFilterAdvance()
 const legacyStatus = ref(getLegacyStatus())
 
 function handleConvertLegacyFilters() {
   if (legacyStatus.value.hasNonEmptyLegacy) {
-    const confirmed = window.confirm('检测到旧格式过滤数据。转换后会清空旧格式数据，是否继续？')
+    const confirmed = window.confirm(t('settings.video_card_context_menu.convert_confirm'))
     if (!confirmed)
       return
   }
 
   const result = convertLegacyFilters()
   legacyStatus.value = getLegacyStatus()
-  toast.success(`已转换 ${result.imported} 条，跳过 ${result.skipped} 条，清理 ${result.cleaned} 项旧数据`)
+  toast.success(t('settings.video_card_context_menu.convert_success', {
+    imported: result.imported,
+    skipped: result.skipped,
+    cleaned: result.cleaned,
+  }))
 }
 </script>
 
 <template>
-  <SettingsItemGroup title="卡片菜单">
+  <SettingsItemGroup :title="t('settings.video_card_context_menu.title')">
     <SettingsItem
       v-if="legacyStatus.hasLegacy"
-      title="请先转换旧格式数据"
-      desc="！检测到本地存在旧格式数据，请先转换数据后再使用屏蔽功能。"
+      :title="t('settings.video_card_context_menu.convert_legacy')"
+      :desc="t('settings.video_card_context_menu.convert_legacy_desc')"
     >
       <button class="convert-button" @click="handleConvertLegacyFilters">
-        转换
+        {{ t('settings.video_card_context_menu.convert') }}
       </button>
     </SettingsItem>
-    <SettingsItem title="屏蔽 1" desc="屏蔽 UP 主、7、15 天临时屏蔽。">
+    <SettingsItem :title="t('settings.video_card_context_menu.global_block')" :desc="t('settings.video_card_context_menu.global_block_desc')">
+      <Radio v-model="settings.videoCardContextMenuGroups.globalBlock" />
+    </SettingsItem>
+    <SettingsItem :title="t('settings.video_card_context_menu.block_user')" :desc="t('settings.video_card_context_menu.block_user_desc')">
       <Radio v-model="settings.videoCardContextMenuGroups.blockUserAssistant" />
     </SettingsItem>
-    <SettingsItem title="屏蔽 2" desc="7、15 天临时屏蔽视频。">
+    <SettingsItem :title="t('settings.video_card_context_menu.block_video')" :desc="t('settings.video_card_context_menu.block_video_desc')">
       <Radio v-model="settings.videoCardContextMenuGroups.blockVideoAssistant" />
     </SettingsItem>
-    <SettingsItem title="打开方式" desc="包含多种打开方式">
+    <SettingsItem :title="t('settings.video_card_context_menu.open_ways')" :desc="t('settings.video_card_context_menu.open_ways_desc')">
       <Radio v-model="settings.videoCardContextMenuGroups.openWays" />
     </SettingsItem>
-    <SettingsItem title="复制" desc="复制链接 AV号">
+    <SettingsItem :title="t('settings.video_card_context_menu.copy')" :desc="t('settings.video_card_context_menu.copy_desc')">
       <Radio v-model="settings.videoCardContextMenuGroups.copyAssistant" />
     </SettingsItem>
-    <SettingsItem title="查看封面">
+    <SettingsItem :title="t('settings.video_card_context_menu.view_cover')">
       <Radio v-model="settings.videoCardContextMenuGroups.cover" />
     </SettingsItem>
   </SettingsItemGroup>

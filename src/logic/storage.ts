@@ -35,6 +35,7 @@ export interface Settings {
   enableVideoCtrlBarOnVideoCard: boolean
   hoverVideoCardDelayed: boolean
   videoCardContextMenuGroups: {
+    globalBlock: boolean
     blockUserAssistant: boolean
     blockVideoAssistant: boolean
     openWays: boolean
@@ -156,6 +157,7 @@ export const originalSettings: Settings = {
   enableVideoCtrlBarOnVideoCard: false,
   hoverVideoCardDelayed: false,
   videoCardContextMenuGroups: {
+    globalBlock: false,
     blockUserAssistant: false,
     blockVideoAssistant: false,
     openWays: true,

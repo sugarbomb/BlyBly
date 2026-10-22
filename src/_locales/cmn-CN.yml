@@ -131,8 +131,8 @@ settings:
   select_language: 界面语言
   select_language_opt:
     english: 英文
-    mandarin_cn: 官话 - 简体中文
-    mandarin_tw: 官話 - 繁體中文
+    mandarin_cn: 简体中文
+    mandarin_tw: 繁體中文
     jyut: 廣東話
   customize_font: 自定义字体
   customize_font_opt:
@@ -170,9 +170,30 @@ settings:
     有时候，搜索结果上方的广告实际上是年末总结或年度报告。
     如果你不想这些内容被误删除，请禁用此选项。
 
+  # Video Card
   enable_video_preview: 启用视频预览功能（如果可以的话）
   enable_video_ctrl_bar_on_video_card: 在视频卡片上显示视频控制栏
   hover_video_card_delayed: 将鼠标悬停在视频卡片上时延迟视频预览
+
+  # Video Card Context Menu
+  video_card_context_menu:
+    title: 卡片菜单
+    convert_legacy: 请先转换旧格式数据
+    convert_legacy_desc: ！检测到本地存在旧格式数据，请先转换数据后再使用屏蔽功能。
+    convert: 转换
+    convert_confirm: 检测到旧格式过滤数据。转换后会清空旧格式数据，是否继续？
+    convert_success: 已转换 {imported} 条，跳过 {skipped} 条，清理 {cleaned} 项旧数据
+    global_block: 全局屏蔽
+    global_block_desc: 在所有分区内屏蔽 UP 主。
+    block_user: 屏蔽 UP 主
+    block_user_desc: 在分区内屏蔽 UP 主，支持临时屏蔽 7 天、15 天。
+    block_video: 屏蔽视频
+    block_video_desc: 临时屏蔽此条视频。
+    open_ways: 打开方式
+    open_ways_desc: 包含多种打开方式
+    copy: 复制
+    copy_desc: 复制链接 AV号
+    view_cover: 查看封面
 
   # Desktop & Dock
   use_old_top_bar: 使用旧版顶栏
@@ -477,6 +498,9 @@ dock:
 video_card:
   operation:
     not_interested: 不感兴趣
+    block_user: 屏蔽此 UP 主
+    temporarily_block_user: 临时屏蔽此 UP 主 {days} 天
+    temporarily_block_video: 临时屏蔽此视频 {days} 天
     open_in_new_tab: 新标签页打开
     open_in_background: 后台打开
     open_in_new_window: 新窗口打开

@@ -192,15 +192,23 @@ function handleMoreBtnClick(_event: MouseEvent) {
   if (!moreBtnRef.value)
     return
   const { top, right, bottom } = moreBtnRef.value.getBoundingClientRect()
-  const openUpward = bottom > window.innerHeight / 2
+  const gap = 8
+  const viewportPadding = 8
+  const availableAbove = Math.max(0, top - gap - viewportPadding)
+  const availableBelow = Math.max(0, window.innerHeight - bottom - gap - viewportPadding)
+  // Prefer opening below; flip only when there is too little room to use the menu.
+  const minMenuHeight = 160
+  const openUpward = availableBelow < minMenuHeight && availableAbove > availableBelow
 
   showVideoOptions.value = false
   videoOptionsFloatingStyles.value = {
     position: 'fixed',
-    top: `${openUpward ? top - 8 : bottom + 8}px`,
+    top: `${openUpward ? top - gap : bottom + gap}px`,
     left: `${Math.min(right, window.innerWidth - 8)}px`,
-    maxHeight: 'calc(100vh - 16px)',
+    maxHeight: `${openUpward ? availableAbove : availableBelow}px`,
+    boxSizing: 'border-box',
     overflowY: 'auto',
+    overscrollBehaviorY: 'contain',
     transform: `translate(-100%, ${openUpward ? '-100%' : '0'})`,
   }
   showVideoOptions.value = true

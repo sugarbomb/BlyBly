@@ -21,11 +21,11 @@ const langOptions = computed(() => {
       value: 'cmn-CN',
     },
     {
-      label: t('settings.select_language_opt.mandarin_tw'),
+      label: `${t('settings.select_language_opt.mandarin_tw')}（暂停更新）`,
       value: 'cmn-TW',
     },
     {
-      label: t('settings.select_language_opt.jyut'),
+      label: `${t('settings.select_language_opt.jyut')}（暂停更新）`,
       value: 'jyut',
     },
   ]
