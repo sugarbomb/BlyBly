@@ -170,6 +170,33 @@ settings:
     有时候，搜索结果上方的广告实际上是年末总结或年度报告。
     如果你不想这些内容被误删除，请禁用此选项。
 
+  # Recommendation Layout
+  recommendation_layout:
+    title: 推荐控制
+    regions:
+      home: 首页推荐
+      guest: 游客推荐
+      tv: 云电视
+      partition: 分区看看
+    loading: 刷新模式
+    automatic: 自动加载
+    automatic_desc: 瀑布流，无限滚动
+    manual_button: 刷新按钮
+    manual_button_desc: 提供一个侧面的刷新按钮。
+    wheel: 滚轮触发
+    wheel_desc: 鼠标滚轮向下滚动一段距离
+    pull: 下拉刷新
+    pull_desc: 在空白处完成下拉手势
+    pull_distance: 自定义距离
+    pull_distance_desc: 按实际感受调整触发“一级确认”所需的下拉距离
+    quantity: 展示数量
+    auto_fill: 自动计算
+    auto_fill_desc: 根据视野和卡片尺寸计算展示数量。请求仍受限于实际接口的提供范围
+    show_navigation: 显示次级导航
+    show_navigation_desc: 仅在页面提供次级导航时显示。
+    partition_layout: 分区看看 · 布局设置
+    pending: 等待处理
+
   # Video Card
   enable_video_preview: 启用视频预览功能（如果可以的话）
   enable_video_ctrl_bar_on_video_card: 在视频卡片上显示视频控制栏
@@ -356,6 +383,68 @@ settings:
   contributors: 贡献者
 
   filters:
+    manager:
+      permanent: 永久
+      expiring: 限时
+      keyword: 关键字
+      author_id: 作者 ID
+      duration: 期限
+      rule_count: '{count} 项'
+      enable_scope: '开启{scope}屏蔽'
+      disable_scope: '关闭{scope}屏蔽'
+      expires_at: '{days} 天 · {date}'
+      already_exists: 过滤项已存在
+      copied: '{scope}分区数据已复制'
+      pasted: '{scope}数据已粘贴，去重{skipped}条'
+      import_failed: 导入失败
+      import_result: '导入 {imported} 条，跳过 {skipped} 条'
+      organize_result: '已整理：{promoted} 条归入全局，清理 {expired} 组过期名单'
+      convert_confirm: 检测到旧格式过滤数据。转换后会清空旧格式数据，是否继续？
+      convert_result: '已转换 {imported} 条，跳过 {skipped} 条，清理 {cleaned} 项旧数据'
+      legacy_detected: 检测到旧版过滤数据
+      convert: 转换
+      time: 时间
+      add: 添加
+      import: 导入
+      export: 导出
+      organize: 整理
+      confirm: 确认
+      no_rules: 暂无过滤项
+      block_author: 屏蔽作者 ID
+      content: 内容
+      expiry: 有效期
+      no_content: 暂无内容
+      block_keyword: 屏蔽关键字
+      organize_hint: 清理过期名单，合并满足条件的数据到全局名单
+      author_placeholder: 输入作者 ID
+      keyword_placeholder: 输入标题或作者关键字
+      search: 搜索过滤内容
+      delete: 删除
+      close_search: 关闭搜索
+      hide_values: 隐藏列表内容
+      show_values: 显示列表内容
+      show_more: 展开更多
+      copy: 复制
+      paste: 粘贴
+      clear: 清空
+      title: 标题
+      username: 用户名
+      user_id: 用户ID
+      placeholder: 输入过滤内容
+      import_error: '导入失败：{error}'
+      list_count: '列表 ({count})'
+      enable: 开启
+      expand_all: 展开全部
+      scopes:
+        Global: 全局作用
+        Trending: 热门页
+        Ranking: 排行
+        Weekly: 周选集
+        PartitionForYou: 分区推荐
+        PartitionRealtime: 实时稿件
+        ForYou: 首页推荐
+        ForYouGuest: 游客推荐
+        ForYouTV: 云电视推荐
     title: 过滤
     contentFilter:
       title: 内容屏蔽
@@ -595,3 +684,23 @@ watch_later:
 search_bar:
   history_title: 搜索历史
   clear_history: 清空搜索历史
+
+recommendation:
+  pull_refresh: 下拉刷新
+  cancel: 取消
+  loading: 加载中
+  confirming: 确认中
+  await_confirmation: 等待再次确认
+  complete: 完成
+  wheel_hint: 继续滚动；反向取消
+  pull_hint: 继续下拉
+  load_failed: 推荐内容加载失败
+  retry: 重试
+  advertisement: 广告
+  feedback_reasons:
+    author_id: 作者 ID：{keyword}
+    author_keyword: 作者关键词：{keyword}
+    title_keyword: 标题关键词：{keyword}
+    video_id: 视频 ID：{videoId}
+    dislike_author: 不喜欢作者
+    dislike_content: 不喜欢内容

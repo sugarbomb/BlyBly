@@ -1,3 +1,4 @@
+import type { RecommendationControlSettings, RecommendationLoadTrigger, RecommendationRegion } from '~/components/RecommendationLayout/types'
 import { useStorageLocal } from '~/composables/useStorageLocal'
 import type { wallpaperItem } from '~/constants/imgs'
 import { type HomePageGroup, HomeSubPage } from '~/contentScripts/views/Home/types'
@@ -122,6 +123,19 @@ export interface Settings {
   searchPageModeWallpaperFixed: boolean
   partitionControlRailPosition: 'left' | 'right'
   partitionControlRailHeight: 0 | 1 | 2 | 3 | 4 | 5
+
+  recommendationShowTools: boolean
+  recommendationControls: Partial<Record<RecommendationRegion, Partial<RecommendationControlSettings>>>
+  recommendationShowNavigation: boolean
+  recommendationLoadMode: RecommendationLoadTrigger
+  recommendationBottomDistance: number
+  recommendationWheelThreshold: number
+  recommendationPullThreshold: number
+  recommendationAutoFill: boolean
+  recommendationFixedItems: number
+  recommendationMinItems: number
+  recommendationMaxItems: number
+  recommendationExtraRows: number
 
   adaptToOtherPageStyles: boolean
   showTopBar: boolean
@@ -275,6 +289,19 @@ export const originalSettings: Settings = {
   searchPageModeWallpaperFixed: false,
   partitionControlRailPosition: 'right',
   partitionControlRailHeight: 0,
+
+  recommendationShowTools: true,
+  recommendationControls: {},
+  recommendationShowNavigation: true,
+  recommendationLoadMode: 'manual',
+  recommendationBottomDistance: 300,
+  recommendationWheelThreshold: 400,
+  recommendationPullThreshold: 80,
+  recommendationAutoFill: true,
+  recommendationFixedItems: 10,
+  recommendationMinItems: 4,
+  recommendationMaxItems: 30,
+  recommendationExtraRows: 0,
 
   adaptToOtherPageStyles: true,
   showTopBar: true,

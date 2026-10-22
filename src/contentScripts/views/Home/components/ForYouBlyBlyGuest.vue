@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { useWindowSize } from '@vueuse/core'
 import { computed, provide } from 'vue'
+import { useI18n } from 'vue-i18n'
 
+import RecommendationLayout from '~/components/RecommendationLayout/RecommendationLayout.vue'
+import type { RecommendationLayoutHandle, RecommendationLayoutMetrics, RecommendationLoadContext, RecommendationLoadTrigger, RecommendationPage } from '~/components/RecommendationLayout/types'
+import ForYouRefreshRail from '~/components/SideBar/ForYouRefreshRail.vue'
 import ForYouVideoCard from '~/components/VideoCard/ForYouVideoCard.vue'
 import { useBewlyApp } from '~/composables/useAppProvider'
 import { FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
+import { useRecommendationLayoutSettings } from '~/composables/useRecommendationLayoutSettings'
 import type { GridLayoutType } from '~/logic'
 import type { forYouResult } from '~/models/video/forYou'
 import api from '~/utils/api'
@@ -12,12 +17,33 @@ import { createTopFeedSession } from '~/utils/topFeedSession'
 
 const props = defineProps<{
   gridLayout: GridLayoutType
+  loadModes?: RecommendationLoadTrigger[]
+  toolsSide?: 'left' | 'right'
+  minItems?: number
+  maxItems?: number
+  extraRows?: number
 }>()
 
 const emit = defineEmits<{
   (e: 'beforeLoading'): void
   (e: 'afterLoading'): void
 }>()
+const { t } = useI18n()
+const layoutSettings = useRecommendationLayoutSettings('guest')
+const layoutOptions = computed(() => {
+  const current = layoutSettings.value
+  const minItems = Math.max(4, Math.min(props.minItems ?? current.minItems, 10))
+  const maxItems = Math.max(minItems, Math.min(props.maxItems ?? current.maxItems, 10))
+  return {
+    ...current,
+    toolsSide: props.toolsSide ?? current.toolsSide,
+    loadModes: props.loadModes ?? current.loadModes,
+    minItems,
+    maxItems,
+    extraRows: props.extraRows ?? current.extraRows,
+    itemCount: current.itemCount === undefined ? undefined : Math.max(minItems, Math.min(current.itemCount, maxItems)),
+  }
+})
 
 interface VideoElement {
   uniqueId: string
@@ -74,105 +100,59 @@ interface WebLikeVideoItem {
   } | null
 }
 
-const gridClass = computed((): string => {
-  if (props.gridLayout === 'adaptive')
-    return 'grid-adaptive'
-  if (props.gridLayout === 'twoColumns')
-    return 'grid-two-columns'
-  return 'grid-one-column'
-})
-
-const videoList = ref<VideoElement[]>([])
-const isLoading = ref(false)
-const noMoreContent = ref(false)
-const pendingInit = ref(false)
-const { handleReachBottom, handlePageRefresh } = useBewlyApp()
+const layoutRef = ref<RecommendationLayoutHandle<VideoElement>>()
+const { handleReachBottom, handlePageRefresh, scrollbarRef } = useBewlyApp()
 const { width, height } = useWindowSize()
-
-const gridColumnCount = computed<number>(() => {
-  if (props.gridLayout === 'adaptive') {
-    if (width.value >= 1536)
-      return 5
-    if (width.value >= 1280)
-      return 4
-    if (width.value >= 1024)
-      return 3
-    if (width.value >= 768)
-      return 2
-  }
-  if (props.gridLayout === 'twoColumns')
-    return width.value >= 1280 ? 2 : 1
-  return 1
-})
-
-const pageSize = computed(() => Math.max(4, Math.min(gridColumnCount.value * 2, 10)))
+const scrollViewport = computed<HTMLElement | undefined>(() => scrollbarRef.value?.osInstance()?.elements().viewport)
+const gridColumnCount = ref(1)
+const pageSize = ref(layoutOptions.value.minItems)
 let topFeedSession = createWebLikeTopFeedSession()
+
+function handleLayoutChange(metrics: RecommendationLayoutMetrics) {
+  gridColumnCount.value = metrics.columns
+  pageSize.value = Math.max(4, Math.min(metrics.itemCount, 10))
+}
 
 const { shouldFilterItem } = useFilterAdvance(FilterScope.ForYouGuest)
 provide('pageType', 'guestRcmd')
 
-onMounted(() => {
-  initData()
-  initPageAction()
-})
-
+onMounted(initPageAction)
 onActivated(initPageAction)
 
-async function initData(options: { resetSession?: boolean } = {}) {
-  if (isLoading.value) {
-    pendingInit.value = true
-    return
-  }
-
-  noMoreContent.value = false
-  videoList.value.length = 0
-  if (options.resetSession ?? true)
-    topFeedSession = createWebLikeTopFeedSession()
-  await getData()
+function initData(options: { resetSession?: boolean } = {}) {
+  return layoutRef.value?.refresh((options.resetSession ?? true) ? 'initial' : 'manual') ?? Promise.resolve()
 }
 
-async function getData() {
-  emit('beforeLoading')
-  isLoading.value = true
-  try {
-    let i = 0
-    const pendingVideos = Array.from({ length: pageSize.value }, () => ({
-      uniqueId: `unique-id-${i++}`,
-    } satisfies VideoElement))
-    videoList.value.push(...pendingVideos)
+async function loadPage(context: RecommendationLoadContext): Promise<RecommendationPage<VideoElement>> {
+  pageSize.value = Math.max(4, Math.min(context.count, 10))
+  if (context.source === 'initial')
+    topFeedSession = createWebLikeTopFeedSession()
+  else
+    topFeedSession.recordBrush()
 
-    const response: forYouResult = await api.video.getRecommendVideosGuest(buildRequestParams())
-    if (!response.data) {
-      noMoreContent.value = true
-      return
-    }
-    if (response.code === 0) {
-      topFeedSession.applyResponse(response, { phase: 'current' })
-      videoList.value = (response.data.item as WebLikeVideoItem[])
-        .filter(item => !isAdItem(item))
-        .filter(item => !shouldFilterItem(item))
-        .map(item => ({ uniqueId: `${item.id}`, item }))
-    }
-  }
-  finally {
-    videoList.value = videoList.value.filter(video => video.item)
-    isLoading.value = false
-    emit('afterLoading')
-    if (pendingInit.value) {
-      pendingInit.value = false
-      await initData()
-    }
+  const response: forYouResult = await api.video.getRecommendVideosGuest(buildRequestParams())
+  if (context.signal.aborted)
+    throw new DOMException('Aborted', 'AbortError')
+  if (response.code !== 0)
+    throw new Error(t('recommendation.load_failed'))
+  if (!response.data)
+    return { items: [], hasMore: false }
+
+  topFeedSession.applyResponse(response, { phase: 'current' })
+  const items = (response.data.item ?? []) as WebLikeVideoItem[]
+  return {
+    items: items
+      .filter(item => !isAdItem(item))
+      .filter(item => !shouldFilterItem({ ...item, owner: item.owner ?? undefined }))
+      .map(item => ({ uniqueId: `${item.id}`, item })),
+    hasMore: items.length > 0,
   }
 }
 
 function initPageAction() {
+  // The shared layout owns bottom detection and pagination.
   handleReachBottom.value = undefined
-  handlePageRefresh.value = refreshFeed
-}
-
-async function refreshFeed() {
-  topFeedSession.recordBrush()
-  await initData({ resetSession: false })
+  handlePageRefresh.value = () => layoutRef.value?.refresh('manual')
 }
 
 function createWebLikeTopFeedSession() {
@@ -244,10 +224,23 @@ defineExpose({ initData })
 </script>
 
 <template>
-  <div>
-    <main w-full :class="gridClass">
+  <RecommendationLayout
+    ref="layoutRef"
+    v-bind="layoutOptions"
+    :load-page="loadPage"
+    :get-item-key="video => video.uniqueId"
+    :grid-layout="gridLayout"
+    :scroll-target="scrollViewport"
+    @layout-change="handleLayoutChange"
+    @before-loading="emit('beforeLoading')"
+    @after-loading="emit('afterLoading')"
+  >
+    <template v-if="$slots.navigation" #navigation="slotProps">
+      <slot name="navigation" v-bind="slotProps" />
+    </template>
+    <template #default="{ items }">
       <ForYouVideoCard
-        v-for="video in videoList"
+        v-for="video in items"
         :key="video.uniqueId"
         :skeleton="!video.item"
         type="rcmd"
@@ -257,23 +250,21 @@ defineExpose({ initData })
         :more-btn="true"
         @click="handleVideoClick(video.item)"
       />
-    </main>
-
-    <Loading v-show="isLoading" />
-    <Empty v-if="noMoreContent" class="pb-4" :description="$t('common.no_more_content')" />
-  </div>
+    </template>
+    <template #placeholder="{ count }">
+      <ForYouVideoCard
+        v-for="index in count" :key="`pending-${index}`"
+        skeleton type="rcmd" :horizontal="gridLayout !== 'adaptive'"
+      />
+    </template>
+    <template v-if="layoutOptions.loadModes.includes('manual') || $slots.tools" #tools="slotProps">
+      <slot name="tools" v-bind="slotProps">
+        <ForYouRefreshRail
+          :loading="slotProps.loading"
+          :placement="layoutOptions.toolsSide === 'left' ? 'right' : 'left'"
+          @refresh="slotProps.load('manual')"
+        />
+      </slot>
+    </template>
+  </RecommendationLayout>
 </template>
-
-<style lang="scss" scoped>
-.grid-adaptive {
-  --uno: "grid 2xl:cols-5 xl:cols-4 lg:cols-3 md:cols-2 sm:cols-1 cols-1 gap-5";
-}
-
-.grid-two-columns {
-  --uno: "grid cols-1 xl:cols-2 gap-4";
-}
-
-.grid-one-column {
-  --uno: "grid cols-1 gap-4";
-}
-</style>

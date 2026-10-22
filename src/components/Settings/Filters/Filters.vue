@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useToast } from 'vue-toastification'
 
 import Select from '~/components/Select.vue'
@@ -10,6 +11,7 @@ import {
   useFilterAdvance,
 } from '~/composables/useFilterAdvance'
 
+const { t } = useI18n()
 const toast = useToast()
 const {
   addRule,
@@ -43,21 +45,23 @@ const fileInputRef = ref<HTMLInputElement>()
 const ruleInputRef = ref<HTMLInputElement>()
 const searchInputRef = ref<HTMLInputElement>()
 
-const timeOptions = [
-  { value: 'permanent', label: '永久' },
-  { value: 'expiring', label: '限时' },
-]
+const timeOptions = computed(() => [
+  { value: 'permanent', label: t('settings.filters.manager.permanent') },
+  { value: 'expiring', label: t('settings.filters.manager.expiring') },
+])
 
-const expiringScopeOptions = [
-  { value: FilterScope.Global, label: '全局作用' },
-]
+const expiringScopeOptions = computed(() => [
+  { value: FilterScope.Global, label: t('settings.filters.manager.scopes.Global') },
+])
 
-const permanentScopeOptions = FILTER_SCOPE_OPTIONS.filter(option => option.value !== FilterScope.PartitionRealtime)
+const permanentScopeOptions = computed(() => FILTER_SCOPE_OPTIONS
+  .filter(option => option.value !== FilterScope.PartitionRealtime)
+  .map(option => ({ ...option, label: t(`settings.filters.manager.scopes.${FilterScope[option.value]}`) })))
 
-const ruleTypeOptions = [
-  { value: 'keyword', label: '关键字' },
-  { value: 'uid', label: '作者 ID' },
-]
+const ruleTypeOptions = computed(() => [
+  { value: 'keyword', label: t('settings.filters.manager.keyword') },
+  { value: 'uid', label: t('settings.filters.manager.author_id') },
+])
 
 const displayedScope = computed({
   get: () => selectedTime.value === 'expiring' ? FilterScope.Global : selectedScope.value,
@@ -67,7 +71,7 @@ const displayedScope = computed({
 })
 
 const manualScopeOptions = computed(() => {
-  return selectedTime.value === 'expiring' ? expiringScopeOptions : permanentScopeOptions
+  return selectedTime.value === 'expiring' ? expiringScopeOptions.value : permanentScopeOptions.value
 })
 
 const effectiveScope = computed(() => {
@@ -102,7 +106,7 @@ const displayedKeywordRules = computed(() => keywordRules.value.slice(0, visible
 const renderedRuleCount = computed(() => displayedAuthorRules.value.length + displayedKeywordRules.value.length)
 const hasMoreRules = computed(() => renderedRuleCount.value < ruleCount.value)
 const ruleCountText = computed(() => {
-  return hasMoreRules.value ? `${renderedRuleCount.value}/${ruleCount.value} 项` : `${ruleCount.value} 项`
+  return t('settings.filters.manager.rule_count', { count: hasMoreRules.value ? `${renderedRuleCount.value}/${ruleCount.value}` : ruleCount.value })
 })
 
 const currentRangeEnabled = computed({
@@ -111,13 +115,13 @@ const currentRangeEnabled = computed({
 })
 
 const selectedTimeLabel = computed(() => {
-  return timeOptions.find(option => option.value === selectedTime.value)?.label ?? ''
+  return timeOptions.value.find(option => option.value === selectedTime.value)?.label ?? ''
 })
 
 const selectedScopeLabel = computed(() => {
   return selectedTime.value === 'expiring'
-    ? '全局作用'
-    : (permanentScopeOptions.find(option => option.value === selectedScope.value)?.label ?? '')
+    ? t('settings.filters.manager.scopes.Global')
+    : (permanentScopeOptions.value.find(option => option.value === selectedScope.value)?.label ?? '')
 })
 
 const listFilterText = computed(() => {
@@ -125,13 +129,13 @@ const listFilterText = computed(() => {
 })
 
 const currentPartitionLabel = computed(() => {
-  return selectedTime.value === 'expiring' ? '期限' : selectedScopeLabel.value
+  return selectedTime.value === 'expiring' ? t('settings.filters.manager.duration') : selectedScopeLabel.value
 })
 
 const showExpiresColumn = computed(() => selectedTime.value === 'expiring')
 
 const currentRangeSwitchTitle = computed(() => {
-  return `${currentRangeEnabled.value ? '关闭' : '开启'}${selectedScopeLabel.value}屏蔽`
+  return t(currentRangeEnabled.value ? 'settings.filters.manager.disable_scope' : 'settings.filters.manager.enable_scope', { scope: selectedScopeLabel.value })
 })
 
 watch([effectiveScope, searchKeyword], () => {
@@ -147,9 +151,9 @@ function formatRuleValue(rule: FilterRule) {
 
 function formatExpiresAt(rule: FilterRule) {
   if (!rule.expiresAt)
-    return '永久'
+    return t('settings.filters.manager.permanent')
 
-  return `${rule.duration ?? ''} 天 · ${rule.expiresAt}`
+  return t('settings.filters.manager.expires_at', { days: rule.duration ?? '', date: rule.expiresAt })
 }
 
 function handleAddRule() {
@@ -166,7 +170,7 @@ function handleAddRule() {
   })
 
   if (!added) {
-    toast.warning('过滤项已存在')
+    toast.warning(t('settings.filters.manager.already_exists'))
     return
   }
 
@@ -205,15 +209,15 @@ function handleClearRules() {
 
 function handleExportShared() {
   exportToSharedSpace(effectiveScope.value)
-  toast.success(`${currentPartitionLabel.value}分区数据已复制`)
+  toast.success(t('settings.filters.manager.copied', { scope: currentPartitionLabel.value }))
 }
 
 function handleImportShared() {
   const result = importFromSharedSpace(effectiveScope.value)
   if (result.success)
-    toast.success(`${currentPartitionLabel.value}数据已粘贴，去重${result.skipped ?? 0}条`)
+    toast.success(t('settings.filters.manager.pasted', { scope: currentPartitionLabel.value, skipped: result.skipped ?? 0 }))
   else
-    toast.error(result.error ?? '导入失败')
+    toast.error(result.error ?? t('settings.filters.manager.import_failed'))
 }
 
 function handleExportFile() {
@@ -231,9 +235,9 @@ function handleFileChange(event: Event) {
 
   importFromFile(file).then((result) => {
     if (result.success)
-      toast.success(`导入 ${result.imported ?? 0} 条，跳过 ${result.skipped ?? 0} 条`)
+      toast.success(t('settings.filters.manager.import_result', { imported: result.imported ?? 0, skipped: result.skipped ?? 0 }))
     else
-      toast.error(result.error ?? '导入失败')
+      toast.error(result.error ?? t('settings.filters.manager.import_failed'))
   })
 
   if (fileInputRef.value)
@@ -243,29 +247,29 @@ function handleFileChange(event: Event) {
 function handleOrganizeRules() {
   const result = organizeRules()
   legacyStatus.value = getLegacyStatus()
-  toast.success(`已整理：${result.promotedRules} 条归入全局，清理 ${result.expiredGroups} 组过期名单`)
+  toast.success(t('settings.filters.manager.organize_result', { promoted: result.promotedRules, expired: result.expiredGroups }))
 }
 
 function handleConvertLegacyFilters() {
   if (legacyStatus.value.hasNonEmptyLegacy) {
-    const confirmed = window.confirm('检测到旧格式过滤数据。转换后会清空旧格式数据，是否继续？')
+    const confirmed = window.confirm(t('settings.filters.manager.convert_confirm'))
     if (!confirmed)
       return
   }
 
   const result = convertLegacyFilters()
   legacyStatus.value = getLegacyStatus()
-  toast.success(`已转换 ${result.imported} 条，跳过 ${result.skipped} 条，清理 ${result.cleaned} 项旧数据`)
+  toast.success(t('settings.filters.manager.convert_result', { imported: result.imported, skipped: result.skipped, cleaned: result.cleaned }))
 }
 </script>
 
 <template>
   <div class="filters-page">
     <section v-if="legacyStatus.hasLegacy" class="legacy-converter">
-      <span>检测到旧版过滤数据</span>
+      <span>{{ t('settings.filters.manager.legacy_detected') }}</span>
       <button class="text-button" @click="handleConvertLegacyFilters">
         <i i-mingcute:transfer-3-line />
-        转换
+        {{ t('settings.filters.manager.convert') }}
       </button>
     </section>
 
@@ -275,7 +279,7 @@ function handleConvertLegacyFilters() {
           <Select v-model="displayedScope" :options="manualScopeOptions" w="full" />
         </div>
         <div class="select-block">
-          <span>时间</span>
+          <span>{{ t('settings.filters.manager.time') }}</span>
           <Select v-model="selectedTime" :options="timeOptions" w="full" />
         </div>
       </div>
@@ -283,19 +287,19 @@ function handleConvertLegacyFilters() {
       <div class="toolbar-actions">
         <button class="text-button" @click="handleShowManualAdd">
           <i i-mingcute:add-line />
-          <span class="action-label">添加</span>
+          <span class="action-label">{{ t('settings.filters.manager.add') }}</span>
         </button>
         <button class="text-button" @click="handleImportFile">
           <i i-mingcute:download-2-line />
-          <span class="action-label">导入</span>
+          <span class="action-label">{{ t('settings.filters.manager.import') }}</span>
         </button>
         <button class="text-button" @click="handleExportFile">
           <i i-mingcute:upload-2-line />
-          <span class="action-label">导出</span>
+          <span class="action-label">{{ t('settings.filters.manager.export') }}</span>
         </button>
-        <button class="text-button" title="清理过期名单，合并满足条件的数据到全局名单" @click="handleOrganizeRules">
+        <button class="text-button" :title="t('settings.filters.manager.organize_hint')" @click="handleOrganizeRules">
           <i i-mingcute:broom-line />
-          <span class="action-label">整理</span>
+          <span class="action-label">{{ t('settings.filters.manager.organize') }}</span>
         </button>
       </div>
 
@@ -316,11 +320,11 @@ function handleConvertLegacyFilters() {
         ref="ruleInputRef"
         v-model="newRuleValue"
         class="rule-input"
-        :placeholder="newRuleType === 'uid' ? '输入作者 ID' : '输入标题或作者关键字'"
+        :placeholder="t(newRuleType === 'uid' ? 'settings.filters.manager.author_placeholder' : 'settings.filters.manager.keyword_placeholder')"
         @keyup.enter="handleAddRule"
       >
       <button class="text-button add-confirm-button" :disabled="!newRuleValue.trim()" @click="handleAddRule">
-        确认
+        {{ t('settings.filters.manager.confirm') }}
       </button>
     </section>
 
@@ -333,26 +337,26 @@ function handleConvertLegacyFilters() {
 
         <div v-if="showSearch" class="list-search-row">
           <i i-mingcute:search-2-line />
-          <input ref="searchInputRef" v-model="searchKeyword" placeholder="搜索过滤内容">
+          <input ref="searchInputRef" v-model="searchKeyword" :placeholder="t('settings.filters.manager.search')">
         </div>
 
         <div v-if="ruleCount === 0" class="empty-state">
-          暂无过滤项
+          {{ t('settings.filters.manager.no_rules') }}
         </div>
 
         <div v-else class="rules-scroll">
           <div class="rule-sections">
             <div class="rule-section">
               <div class="section-title">
-                <span>屏蔽作者 ID</span>
+                <span>{{ t('settings.filters.manager.block_author') }}</span>
                 <span>{{ authorRules.length }}</span>
               </div>
               <div class="section-columns" :class="{ 'with-expiry': showExpiresColumn }">
-                <span>内容</span>
-                <span v-if="showExpiresColumn">有效期</span>
+                <span>{{ t('settings.filters.manager.content') }}</span>
+                <span v-if="showExpiresColumn">{{ t('settings.filters.manager.expiry') }}</span>
               </div>
               <div v-if="authorRules.length === 0" class="section-empty">
-                暂无内容
+                {{ t('settings.filters.manager.no_content') }}
               </div>
               <div
                 v-for="rule in displayedAuthorRules"
@@ -362,7 +366,7 @@ function handleConvertLegacyFilters() {
               >
                 <span class="rule-value">{{ formatRuleValue(rule) }}</span>
                 <span v-if="showExpiresColumn" class="rule-meta">{{ formatExpiresAt(rule) }}</span>
-                <button class="row-action" title="删除" @click="removeRule(rule.id)">
+                <button class="row-action" :title="t('settings.filters.manager.delete')" @click="removeRule(rule.id)">
                   <i i-mingcute:delete-2-line />
                 </button>
               </div>
@@ -370,15 +374,15 @@ function handleConvertLegacyFilters() {
 
             <div class="rule-section">
               <div class="section-title">
-                <span>屏蔽关键字</span>
+                <span>{{ t('settings.filters.manager.block_keyword') }}</span>
                 <span>{{ keywordRules.length }}</span>
               </div>
               <div class="section-columns" :class="{ 'with-expiry': showExpiresColumn }">
-                <span>内容</span>
-                <span v-if="showExpiresColumn">有效期</span>
+                <span>{{ t('settings.filters.manager.content') }}</span>
+                <span v-if="showExpiresColumn">{{ t('settings.filters.manager.expiry') }}</span>
               </div>
               <div v-if="keywordRules.length === 0" class="section-empty">
-                暂无内容
+                {{ t('settings.filters.manager.no_content') }}
               </div>
               <div
                 v-for="rule in displayedKeywordRules"
@@ -388,7 +392,7 @@ function handleConvertLegacyFilters() {
               >
                 <span class="rule-value">{{ formatRuleValue(rule) }}</span>
                 <span v-if="showExpiresColumn" class="rule-meta">{{ formatExpiresAt(rule) }}</span>
-                <button class="row-action" title="删除" @click="removeRule(rule.id)">
+                <button class="row-action" :title="t('settings.filters.manager.delete')" @click="removeRule(rule.id)">
                   <i i-mingcute:delete-2-line />
                 </button>
               </div>
@@ -402,22 +406,22 @@ function handleConvertLegacyFilters() {
           <input v-model="currentRangeEnabled" type="checkbox">
           <span />
         </label>
-        <button class="rail-button" :title="showSearch ? '关闭搜索' : '搜索过滤内容'" @click="toggleSearch">
+        <button class="rail-button" :title="t(showSearch ? 'settings.filters.manager.close_search' : 'settings.filters.manager.search')" @click="toggleSearch">
           <i i-mingcute:search-2-line />
         </button>
-        <button class="rail-button" :title="showValues ? '隐藏列表内容' : '显示列表内容'" @click="showValues = !showValues">
+        <button class="rail-button" :title="t(showValues ? 'settings.filters.manager.hide_values' : 'settings.filters.manager.show_values')" @click="showValues = !showValues">
           <i :class="showValues ? 'i-mingcute:eye-2-line' : 'i-mingcute:eye-close-line'" />
         </button>
-        <button class="rail-button" title="展开更多" :disabled="!hasMoreRules" @click="handleShowMoreRules">
+        <button class="rail-button" :title="t('settings.filters.manager.show_more')" :disabled="!hasMoreRules" @click="handleShowMoreRules">
           <i i-mingcute:arrows-down-line />
         </button>
-        <button class="rail-button" title="复制" :disabled="ruleCount === 0" @click="handleExportShared">
+        <button class="rail-button" :title="t('settings.filters.manager.copy')" :disabled="ruleCount === 0" @click="handleExportShared">
           <i i-mingcute:copy-2-line />
         </button>
-        <button class="rail-button" title="粘贴" @click="handleImportShared">
+        <button class="rail-button" :title="t('settings.filters.manager.paste')" @click="handleImportShared">
           <i i-mingcute:clipboard-line />
         </button>
-        <button class="rail-button danger" title="清空" :disabled="ruleCount === 0" @click="handleClearRules">
+        <button class="rail-button danger" :title="t('settings.filters.manager.clear')" :disabled="ruleCount === 0" @click="handleClearRules">
           <i i-mingcute:delete-2-line />
         </button>
       </aside>

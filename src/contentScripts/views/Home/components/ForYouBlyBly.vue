@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { useWindowSize } from '@vueuse/core'
 import { computed, provide } from 'vue'
+import { useI18n } from 'vue-i18n'
 
+import RecommendationLayout from '~/components/RecommendationLayout/RecommendationLayout.vue'
+import type { RecommendationLayoutHandle, RecommendationLayoutMetrics, RecommendationLoadContext, RecommendationPage } from '~/components/RecommendationLayout/types'
+import ForYouRefreshRail from '~/components/SideBar/ForYouRefreshRail.vue'
 import ForYouVideoCard from '~/components/VideoCard/ForYouVideoCard.vue'
 import { useBewlyApp } from '~/composables/useAppProvider'
 import { type FilterMatch, FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
+import { useRecommendationLayoutSettings } from '~/composables/useRecommendationLayoutSettings'
 import type { GridLayoutType } from '~/logic'
 import { settings } from '~/logic'
 import type { forYouResult } from '~/models/video/forYou'
@@ -97,20 +102,25 @@ interface WebLikeVideoItem {
   } | null
 }
 
-const gridClass = computed((): string => {
-  if (props.gridLayout === 'adaptive')
-    return 'grid-adaptive'
-  if (props.gridLayout === 'twoColumns')
-    return 'grid-two-columns'
-  return 'grid-one-column'
+const { t } = useI18n()
+const layoutSettings = useRecommendationLayoutSettings('home')
+const layoutOptions = computed(() => ({
+  ...layoutSettings.value,
+  minItems: 4,
+  maxItems: 10,
+  itemCount: layoutSettings.value.itemCount === undefined ? undefined : Math.max(4, Math.min(layoutSettings.value.itemCount, 10)),
+}))
+const layoutRef = ref<RecommendationLayoutHandle<VideoElement>>()
+const videoList = computed({
+  get: () => layoutRef.value?.items ?? [],
+  set: (items: VideoElement[]) => {
+    if (layoutRef.value)
+      layoutRef.value.items = items
+  },
 })
-
-const videoList = ref<VideoElement[]>([])
-const isLoading = ref<boolean>(false)
-const needToLoginFirst = ref<boolean>(false)
-const noMoreContent = ref<boolean>(false)
-const pendingInit = ref<boolean>(false)
+const needToLoginFirst = ref(false)
 const recommendationMasks = ref<Record<string, RecommendationMaskState>>({})
+const pageActive = ref(true)
 const AUTO_FEEDBACK_BATCH_LIMIT = 10
 const AUTO_FEEDBACK_INTERVAL_MIN = 1500
 const AUTO_FEEDBACK_INTERVAL_MAX = 2500
@@ -121,47 +131,18 @@ let autoFeedbackDedupeKeys = new Set<string>()
 const autoFeedbackInFlightDedupeKeys = new Set<string>()
 const autoFeedbackCompletedDedupeKeys = new Set<string>()
 let autoFeedbackBatchTaskCount = 0
-const { handleReachBottom, handlePageRefresh } = useBewlyApp()
+const { handleReachBottom, handlePageRefresh, scrollbarRef } = useBewlyApp()
 const { width, height } = useWindowSize()
 
-const gridColumnCount = computed<number>(() => {
-  const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n))
-
-  let columns = 1
-
-  if (props.gridLayout === 'adaptive') {
-    // Keep consistent with template breakpoints: 2xl:5 xl:4 lg:3 md:2 sm:1
-    if (width.value >= 1536)
-      columns = 5
-    else if (width.value >= 1280)
-      columns = 4
-    else if (width.value >= 1024)
-      columns = 3
-    else if (width.value >= 768)
-      columns = 2
-    else
-      columns = 1
-  }
-  else if (props.gridLayout === 'twoColumns') {
-    // template: cols-1 xl:cols-2
-    columns = width.value >= 1280 ? 2 : 1
-  }
-  else {
-    columns = 1
-  }
-
-  return clamp(columns, 1, 5)
-})
-
-const pageSize = computed<number>(() => {
-  const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n))
-
-  // Aim for ~2 rows; 5->10, 4->8, 3->6, 2->4...
-  return clamp(gridColumnCount.value * 2, 4, 10)
-})
-// Home web recommendation uses a per-tab session-like state machine.
-// It must be created after pageSize is available, otherwise setup will fail before the first request.
+const scrollViewport = computed<HTMLElement | undefined>(() => scrollbarRef.value?.osInstance()?.elements().viewport)
+const gridColumnCount = ref(1)
+const pageSize = ref(4)
 let topFeedSession = createWebLikeTopFeedSession()
+
+function handleLayoutChange(metrics: RecommendationLayoutMetrics) {
+  gridColumnCount.value = metrics.columns
+  pageSize.value = Math.max(4, Math.min(metrics.itemCount, 10))
+}
 
 // 推荐页过滤器
 const { getFilterMatch } = useFilterAdvance(FilterScope.ForYou)
@@ -169,123 +150,75 @@ const { getFilterMatch } = useFilterAdvance(FilterScope.ForYou)
 // Context menu uses `pageType` to determine which filter scope to use.
 provide('pageType', 'rcmd')
 
-onMounted(() => {
-  initData()
-  initPageAction()
+onMounted(initPageAction)
+onActivated(initPageAction)
+onDeactivated(() => {
+  pageActive.value = false
 })
-
-onActivated(() => {
-  initPageAction()
+onBeforeUnmount(() => {
+  pageActive.value = false
+  invalidateAutoFeedbackQueue()
 })
 
 async function initData(options: { resetWebLikeSession?: boolean } = {}) {
-  invalidateAutoFeedbackQueue()
-  if (isLoading.value) {
-    pendingInit.value = true
-    return
-  }
-
-  const resetWebLikeSession = options.resetWebLikeSession ?? true
-
-  noMoreContent.value = false
-  videoList.value.length = 0
-  recommendationMasks.value = {}
-  if (resetWebLikeSession)
-    topFeedSession = createWebLikeTopFeedSession()
-  await getData()
-}
-
-async function getData() {
-  emit('beforeLoading')
-  isLoading.value = true
-  try {
-    await getRecommendVideosWeb()
-  }
-  finally {
-    isLoading.value = false
-    emit('afterLoading')
-
-    if (pendingInit.value) {
-      pendingInit.value = false
-      await initData()
-    }
-  }
+  needToLoginFirst.value = false
+  await nextTick()
+  await layoutRef.value?.refresh((options.resetWebLikeSession ?? true) ? 'initial' : 'manual')
 }
 
 function initPageAction() {
-  // Keep bottom auto-loading disabled so we never inherit a previous tab's pagination callback.
+  pageActive.value = true
   handleReachBottom.value = undefined
-
-  handlePageRefresh.value = async () => {
-    await refreshCurrentFeed()
-  }
+  handlePageRefresh.value = () => initData({ resetWebLikeSession: false })
+  void processAutoFeedbackQueue()
 }
 
-async function refreshCurrentFeed() {
-  topFeedSession.recordBrush()
-  await initData({
-    resetWebLikeSession: false,
-  })
+function handleAfterLoading() {
+  emit('afterLoading')
+  void processAutoFeedbackQueue()
 }
 
-async function getRecommendVideosWeb() {
-  try {
-    let i = 0
-    if (videoList.value.length < pageSize.value) {
-      const pendingVideos: VideoElement[] = Array.from({
-        length: pageSize.value - videoList.value.length,
-      }, () => ({
-        uniqueId: `unique-id-${(videoList.value.length || 0) + i++}`,
-      } satisfies VideoElement))
-      videoList.value.push(...pendingVideos)
-    }
-
-    const response: forYouResult = await api.video.getRecommendVideosWeb(buildWebLikeRequestParams())
-
-    if (!response.data) {
-      noMoreContent.value = true
-      return
-    }
-    if (response.code === 0) {
-      topFeedSession.applyResponse(response, { phase: 'current' })
-      const resData = (response.data.item as WebLikeVideoItem[])
-        .filter(shouldDisplayRecommendation)
-        .flatMap((item) => {
-          const filterMatch = getFilterMatch(item)
-          const uniqueId = `${item.id}`
-
-          if (!filterMatch)
-            return [{ uniqueId, item }]
-
-          const autoFeedbackReasonId = getAutoFeedbackReasonId(item, filterMatch)
-          if (!autoFeedbackReasonId)
-            return []
-
-          enqueueAutoFeedback({ uniqueId, item, reasonId: autoFeedbackReasonId, match: filterMatch })
-          return [{ uniqueId, item }]
-        })
-      if (!videoList.value.length) {
-        videoList.value = resData
-      }
-      else {
-        resData.forEach((video) => {
-          const findFirstEmptyItemIndex = videoList.value.findIndex(video => !video.item)
-          if (findFirstEmptyItemIndex !== -1) {
-            videoList.value[findFirstEmptyItemIndex] = video
-          }
-          else {
-            videoList.value.push(video)
-          }
-        })
-      }
-    }
-    else if (response.code === 62011) {
-      needToLoginFirst.value = true
-    }
+async function loadPage(context: RecommendationLoadContext): Promise<RecommendationPage<VideoElement>> {
+  pageSize.value = Math.max(4, Math.min(context.count, 10))
+  if (context.mode === 'replace') {
+    invalidateAutoFeedbackQueue()
+    recommendationMasks.value = {}
   }
-  finally {
-    const filledItems = videoList.value.filter(video => video.item)
-    videoList.value = filledItems
+  else {
+    autoFeedbackBatchTaskCount = 0
+  }
+  if (context.source === 'initial')
+    topFeedSession = createWebLikeTopFeedSession()
+  else
+    topFeedSession.recordBrush()
+
+  const response: forYouResult = await api.video.getRecommendVideosWeb(buildWebLikeRequestParams())
+  if (context.signal.aborted)
+    throw new DOMException('Aborted', 'AbortError')
+  if (response.code === 62011) {
+    needToLoginFirst.value = true
+    return { items: [], hasMore: false }
+  }
+  if (response.code !== 0)
+    throw new Error(t('recommendation.load_failed'))
+  if (!response.data)
+    return { items: [], hasMore: false }
+
+  topFeedSession.applyResponse(response, { phase: 'current' })
+  const items = (response.data.item ?? []) as WebLikeVideoItem[]
+  return {
+    items: items.filter(shouldDisplayRecommendation).flatMap((item) => {
+      const filterMatch = getFilterMatch({ ...item, owner: item.owner ?? undefined })
+      const uniqueId = `${item.id}`
+      if (!filterMatch)
+        return [{ uniqueId, item }]
+      const reasonId = getAutoFeedbackReasonId(item, filterMatch)
+      if (!reasonId)
+        return []
+      enqueueAutoFeedback({ uniqueId, item, reasonId, match: filterMatch })
+      return [{ uniqueId, item }]
+    }),
+    hasMore: items.length > 0,
   }
 }
 
@@ -341,10 +274,10 @@ function getAutoFeedbackReasonId(item: WebLikeVideoItem, match: FilterMatch): nu
 
 function getFilterMatchReason(match: FilterMatch): string {
   if (match.target === 'author')
-    return match.rule.type === 'uid' ? `作者 ID：${match.keyword}` : `作者关键词：${match.keyword}`
+    return t(match.rule.type === 'uid' ? 'recommendation.feedback_reasons.author_id' : 'recommendation.feedback_reasons.author_keyword', { keyword: match.keyword })
   if (match.target === 'title')
-    return `标题关键词：${match.keyword}`
-  return `视频 ID：${match.videoId}`
+    return t('recommendation.feedback_reasons.title_keyword', { keyword: match.keyword })
+  return t('recommendation.feedback_reasons.video_id', { videoId: match.videoId })
 }
 
 function createAutoFeedbackMaskState(task: AutoFeedbackTask, status: 'queued' | 'submitting'): RecommendationMaskState {
@@ -381,15 +314,23 @@ function enqueueAutoFeedback(task: Omit<AutoFeedbackTask, 'generation' | 'dedupe
     ...recommendationMasks.value,
     [task.uniqueId]: createAutoFeedbackMaskState(queuedTask, 'queued'),
   }
-  void processAutoFeedbackQueue()
 }
 
 async function processAutoFeedbackQueue() {
   if (autoFeedbackWorker)
     return autoFeedbackWorker
+  if (!pageActive.value || layoutRef.value?.loading)
+    return
 
   autoFeedbackWorker = (async () => {
     while (autoFeedbackQueue.length > 0) {
+      const generation = autoFeedbackGeneration
+      // Delay the first submission too, and never submit alongside a list refresh.
+      await waitForAutoFeedbackInterval()
+      if (!pageActive.value || layoutRef.value?.loading)
+        break
+      if (generation !== autoFeedbackGeneration)
+        continue
       const task = autoFeedbackQueue.shift()!
       if (task.generation !== autoFeedbackGeneration)
         continue
@@ -426,9 +367,6 @@ async function processAutoFeedbackQueue() {
             status: undefined,
           },
         }
-
-        if (autoFeedbackQueue.some(nextTask => nextTask.generation === task.generation))
-          await waitForAutoFeedbackInterval()
       }
       catch (error) {
         if (task.generation === autoFeedbackGeneration) {
@@ -449,7 +387,7 @@ async function processAutoFeedbackQueue() {
   }
   finally {
     autoFeedbackWorker = undefined
-    if (autoFeedbackQueue.some(task => task.generation === autoFeedbackGeneration))
+    if (pageActive.value && !layoutRef.value?.loading && autoFeedbackQueue.some(task => task.generation === autoFeedbackGeneration))
       void processAutoFeedbackQueue()
   }
 }
@@ -513,7 +451,7 @@ async function handleRecommendationAction(action: { key: string }, video: VideoE
           type: 'feedback',
           reasonId,
           videoId: `${item.bvid || item.id || ''}`,
-          reason: reasonId === 4 ? '不喜欢作者' : '不喜欢内容',
+          reason: t(reasonId === 4 ? 'recommendation.feedback_reasons.dislike_author' : 'recommendation.feedback_reasons.dislike_content'),
         },
       }
     }
@@ -590,7 +528,7 @@ function getWebLikeCardVideo(item?: WebLikeVideoItem) {
   const owner = item.owner ?? archive?.owner
   const stat = item.stat ?? archive?.stat
   const title = isForYouAdItem(item)
-    ? `🚀广告 ${businessInfo?.title || archive?.title || item.title || ''}`
+    ? `🚀${t('recommendation.advertisement')} ${businessInfo?.title || archive?.title || item.title || ''}`
     : item.title
 
   return {
@@ -636,41 +574,37 @@ defineExpose({ initData })
       </div>
     </div>
 
-    <main v-else w-full :class="gridClass">
-      <ForYouVideoCard
-        v-for="video in videoList"
-        :key="video.uniqueId"
-        :skeleton="!video.item"
-        type="rcmd"
-        :video="getWebLikeCardVideo(video.item)"
-        :show-preview="true"
-        :horizontal="gridLayout !== 'adaptive'"
-        :more-btn="true"
-        feedback-enabled
-        :recommendation-mask="getRecommendationMask(video)"
-        :recommendation-mask-reason="getRecommendationMaskReason(video)"
-        @click="handleWebLikeVideoClick(video.item)"
-        @fan-action="action => handleRecommendationAction(action, video)"
-        @undo-feedback="handleUndoRecommendationFeedback(video)"
-      />
-    </main>
-
-    <Loading v-show="isLoading" />
-    <!-- no more content -->
-    <Empty v-if="noMoreContent" class="pb-4" :description="$t('common.no_more_content')" />
+    <RecommendationLayout
+      v-else ref="layoutRef" v-bind="layoutOptions"
+      :grid-layout="props.gridLayout" :scroll-target="scrollViewport"
+      :load-page="loadPage" :get-item-key="video => video.uniqueId"
+      @layout-change="handleLayoutChange"
+      @before-loading="emit('beforeLoading')" @after-loading="handleAfterLoading"
+    >
+      <template #default="{ items }">
+        <ForYouVideoCard
+          v-for="video in items"
+          :key="video.uniqueId"
+          :skeleton="!video.item"
+          type="rcmd"
+          :video="getWebLikeCardVideo(video.item)"
+          :show-preview="true"
+          :horizontal="gridLayout !== 'adaptive'"
+          :more-btn="true"
+          feedback-enabled
+          :recommendation-mask="getRecommendationMask(video)"
+          :recommendation-mask-reason="getRecommendationMaskReason(video)"
+          @click="handleWebLikeVideoClick(video.item)"
+          @fan-action="action => handleRecommendationAction(action, video)"
+          @undo-feedback="handleUndoRecommendationFeedback(video)"
+        />
+      </template>
+      <template #placeholder="{ count }">
+        <ForYouVideoCard v-for="index in count" :key="`pending-${index}`" skeleton type="rcmd" :horizontal="gridLayout !== 'adaptive'" />
+      </template>
+      <template v-if="layoutOptions.loadModes.includes('manual')" #tools="{ load, loading }">
+        <ForYouRefreshRail :loading="loading" :placement="layoutOptions.toolsSide === 'left' ? 'right' : 'left'" @refresh="load('manual')" />
+      </template>
+    </RecommendationLayout>
   </div>
 </template>
-
-<style lang="scss" scoped>
-.grid-adaptive {
-  --uno: "grid 2xl:cols-5 xl:cols-4 lg:cols-3 md:cols-2 sm:cols-1 cols-1 gap-5";
-}
-
-.grid-two-columns {
-  --uno: "grid cols-1 xl:cols-2 gap-4";
-}
-
-.grid-one-column {
-  --uno: "grid cols-1 gap-4";
-}
-</style>

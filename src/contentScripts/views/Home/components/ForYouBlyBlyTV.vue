@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { useWindowSize } from '@vueuse/core'
 import { computed, provide, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import AccessKeyAuthorizeDialog from '~/components/AccessKeyAuthorizeDialog.vue'
+import RecommendationLayout from '~/components/RecommendationLayout/RecommendationLayout.vue'
+import type { RecommendationLayoutHandle, RecommendationLoadContext, RecommendationPage } from '~/components/RecommendationLayout/types'
+import ForYouRefreshRail from '~/components/SideBar/ForYouRefreshRail.vue'
 import ForYouVideoCard from '~/components/VideoCard/ForYouVideoCard.vue'
 import { useBewlyApp } from '~/composables/useAppProvider'
 import { FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
+import { useRecommendationLayoutSettings } from '~/composables/useRecommendationLayoutSettings'
 import { LanguageType } from '~/enums/appEnums'
 import type { GridLayoutType } from '~/logic'
 import { accessKey, settings } from '~/logic'
@@ -14,10 +18,7 @@ import api from '~/utils/api'
 import { TVAppKey } from '~/utils/authProvider'
 import { isVerticalVideo } from '~/utils/uriParse'
 
-const props = defineProps<{
-  gridLayout: GridLayoutType
-}>()
-
+const props = defineProps<{ gridLayout: GridLayoutType }>()
 const emit = defineEmits<{
   (e: 'beforeLoading'): void
   (e: 'afterLoading'): void
@@ -25,119 +26,75 @@ const emit = defineEmits<{
 
 interface AppVideoElement {
   uniqueId: string
-  item?: AppVideoItem
+  item: AppVideoItem
 }
 
-const gridClass = computed((): string => {
-  if (props.gridLayout === 'adaptive')
-    return 'grid-adaptive'
-  if (props.gridLayout === 'twoColumns')
-    return 'grid-two-columns'
-  return 'grid-one-column'
-})
-
-const appVideoList = ref<AppVideoElement[]>([])
-const isLoading = ref(false)
+const { t } = useI18n()
+const layoutSettings = useRecommendationLayoutSettings('tv')
+const layoutOptions = computed(() => ({
+  ...layoutSettings.value,
+  minItems: 4,
+  maxItems: 10,
+  itemCount: layoutSettings.value.itemCount === undefined ? undefined : Math.max(4, Math.min(layoutSettings.value.itemCount, 10)),
+}))
+const layoutRef = ref<RecommendationLayoutHandle<AppVideoElement>>()
 const needToLoginFirst = ref(false)
-const noMoreContent = ref(false)
-const pendingInit = ref(false)
 const showAccessKeyAuthorizeDialog = ref(false)
-const { handleReachBottom, handlePageRefresh } = useBewlyApp()
-const { width } = useWindowSize()
+const { handleReachBottom, handlePageRefresh, scrollbarRef } = useBewlyApp()
+const scrollViewport = computed<HTMLElement | undefined>(() => scrollbarRef.value?.osInstance()?.elements().viewport)
 const { shouldFilterItem } = useFilterAdvance(FilterScope.ForYouTV)
 
 provide('pageType', 'tvRcmd')
-
-const gridColumnCount = computed<number>(() => {
-  if (props.gridLayout === 'adaptive') {
-    if (width.value >= 1536)
-      return 5
-    if (width.value >= 1280)
-      return 4
-    if (width.value >= 1024)
-      return 3
-    if (width.value >= 768)
-      return 2
-  }
-  if (props.gridLayout === 'twoColumns')
-    return width.value >= 1280 ? 2 : 1
-  return 1
-})
-
-const pageSize = computed(() => Math.max(4, Math.min(gridColumnCount.value * 2, 10)))
-
-onMounted(() => {
-  initData()
-  initPageAction()
-})
-
+onMounted(initPageAction)
 onActivated(initPageAction)
 
-watch(() => accessKey.value, async (newAccessKey) => {
-  if (newAccessKey)
+watch(() => accessKey.value, async (key) => {
+  if (key)
     await initData()
 })
 
 async function initData() {
-  if (isLoading.value) {
-    pendingInit.value = true
-    return
-  }
-
-  noMoreContent.value = false
   needToLoginFirst.value = false
-  appVideoList.value.length = 0
   if (!accessKey.value)
     return
-  await getData()
+  await nextTick()
+  await layoutRef.value?.refresh('initial')
 }
 
-async function getData() {
-  emit('beforeLoading')
-  isLoading.value = true
-  try {
-    let i = 0
-    appVideoList.value = Array.from({ length: pageSize.value }, () => ({
-      uniqueId: `unique-id-${i++}`,
-    } satisfies AppVideoElement))
-
-    const response: AppForYouResult = await api.video.getAppRecommendVideos({
-      access_key: accessKey.value,
-      s_locale: settings.value.language === LanguageType.Mandarin_TW || settings.value.language === LanguageType.Cantonese ? 'zh-Hant_TW' : 'zh-Hans_CN',
-      c_locate: settings.value.language === LanguageType.Mandarin_TW || settings.value.language === LanguageType.Cantonese ? 'zh-Hant_TW' : 'zh-Hans_CN',
-      appkey: TVAppKey.appkey,
-      idx: 1,
-    })
-
-    if (!response.data) {
-      noMoreContent.value = true
-      return
-    }
-    if (response.code === 0) {
-      const items = response.data.items
-        .filter(item => !item.card_type.includes('banner') && item.card_type !== 'cm_v1')
-        .filter((item) => {
-          const owner = {
-            mid: item?.mask?.avatar?.up_id || item?.args?.up_id || 0,
-            name: item?.mask?.avatar?.text || item?.args?.up_name || '',
-            face: item?.mask?.avatar?.cover || item?.avatar?.cover || '',
-          }
-          return !shouldFilterItem({ ...item, owner, title: item.title || '' })
-        })
-      appVideoList.value = items.map(item => ({ uniqueId: `${item.idx}`, item }))
-    }
-    else if (response.code === 62011) {
-      needToLoginFirst.value = true
-    }
+async function loadPage(context: RecommendationLoadContext): Promise<RecommendationPage<AppVideoElement>> {
+  const idx = context.mode === 'append' && typeof context.cursor === 'number' ? context.cursor : 1
+  const response: AppForYouResult = await api.video.getAppRecommendVideos({
+    access_key: accessKey.value,
+    s_locale: settings.value.language === LanguageType.Mandarin_TW || settings.value.language === LanguageType.Cantonese ? 'zh-Hant_TW' : 'zh-Hans_CN',
+    c_locate: settings.value.language === LanguageType.Mandarin_TW || settings.value.language === LanguageType.Cantonese ? 'zh-Hant_TW' : 'zh-Hans_CN',
+    appkey: TVAppKey.appkey,
+    idx,
+  })
+  if (context.signal.aborted)
+    throw new DOMException('Aborted', 'AbortError')
+  if (response.code === 62011) {
+    needToLoginFirst.value = true
+    return { items: [], hasMore: false }
   }
-  finally {
-    appVideoList.value = appVideoList.value.filter(video => video.item)
-    isLoading.value = false
-    emit('afterLoading')
-    if (pendingInit.value) {
-      pendingInit.value = false
-      await initData()
-    }
+  if (response.code !== 0)
+    throw new Error(t('recommendation.load_failed'))
+  const rawItems = response.data?.items ?? []
+  const items = rawItems
+    .filter(item => !item.card_type.includes('banner') && item.card_type !== 'cm_v1')
+    .filter((item) => {
+      const owner = {
+        mid: item?.mask?.avatar?.up_id || item?.args?.up_id || 0,
+        name: item?.mask?.avatar?.text || item?.args?.up_name || '',
+      }
+      return !shouldFilterItem({ ...item, owner, title: item.title || '' })
+    })
+  return {
+    items: items.map(item => ({
+      uniqueId: item.args?.aid ? `av-${item.args.aid}` : item.bvid || item.uri || `idx-${item.idx}`,
+      item,
+    })),
+    cursor: rawItems.at(-1)?.idx ?? idx,
+    hasMore: rawItems.length > 0,
   }
 }
 
@@ -171,55 +128,52 @@ defineExpose({ initData })
       </Empty>
     </div>
 
-    <main v-else w-full :class="gridClass">
-      <ForYouVideoCard
-        v-for="video in appVideoList"
-        :key="video.uniqueId"
-        :skeleton="!video.item"
-        type="appRcmd"
-        :video="video.item ? {
-          id: video.item.args.aid ?? 0,
-          durationStr: video.item.cover_right_text,
-          title: `${video.item.title}`,
-          cover: `${video.item.cover}`,
-          author: {
-            name: video.item?.mask?.avatar.text,
-            authorFace: video.item?.mask?.avatar.cover || video.item?.avatar?.cover,
-            followed: video.item?.bottom_rcmd_reason === '已关注' || video.item?.bottom_rcmd_reason === '已關注',
-            mid: video.item?.mask?.avatar.up_id,
-          },
-          capsuleText: video.item?.desc?.split('·')[1],
-          bvid: video.item.bvid,
-          viewStr: video.item.cover_left_text_1,
-          danmakuStr: video.item.cover_left_text_2,
-          cid: video.item?.player_args?.cid,
-          goto: video.item?.goto,
-          url: video.item?.goto === 'bangumi' ? video.item.uri : '',
-          type: video.item.card_goto === 'bangumi' ? 'bangumi' : isVerticalVideo(video.item.uri!) ? 'vertical' : 'horizontal',
-          threePointV2: video.item?.three_point_v2,
-        } : undefined"
-        :show-preview="true"
-        :horizontal="gridLayout !== 'adaptive'"
-        :more-btn="true"
-      />
-    </main>
+    <RecommendationLayout
+      v-else ref="layoutRef" v-bind="layoutOptions"
+      :grid-layout="props.gridLayout" :scroll-target="scrollViewport"
+      :load-page="loadPage" :get-item-key="video => video.uniqueId"
+      @before-loading="emit('beforeLoading')" @after-loading="emit('afterLoading')"
+    >
+      <template #default="{ items }">
+        <ForYouVideoCard
+          v-for="video in items"
+          :key="video.uniqueId"
+          :skeleton="!video.item"
+          type="appRcmd"
+          :video="video.item ? {
+            id: video.item.args.aid ?? 0,
+            durationStr: video.item.cover_right_text,
+            title: `${video.item.title}`,
+            cover: `${video.item.cover}`,
+            author: {
+              name: video.item?.mask?.avatar.text,
+              authorFace: video.item?.mask?.avatar.cover || video.item?.avatar?.cover,
+              followed: video.item?.bottom_rcmd_reason === '已关注' || video.item?.bottom_rcmd_reason === '已關注',
+              mid: video.item?.mask?.avatar.up_id,
+            },
+            capsuleText: video.item?.desc?.split('·')[1],
+            bvid: video.item.bvid,
+            viewStr: video.item.cover_left_text_1,
+            danmakuStr: video.item.cover_left_text_2,
+            cid: video.item?.player_args?.cid,
+            goto: video.item?.goto,
+            url: video.item?.goto === 'bangumi' ? video.item.uri : '',
+            type: video.item.card_goto === 'bangumi' ? 'bangumi' : isVerticalVideo(video.item.uri!) ? 'vertical' : 'horizontal',
+            threePointV2: video.item?.three_point_v2,
+          } : undefined"
+          :show-preview="true"
+          :horizontal="gridLayout !== 'adaptive'"
+          :more-btn="true"
+        />
+      </template>
+      <template #placeholder="{ count }">
+        <ForYouVideoCard v-for="index in count" :key="`pending-${index}`" skeleton type="appRcmd" :horizontal="gridLayout !== 'adaptive'" />
+      </template>
+      <template v-if="layoutOptions.loadModes.includes('manual')" #tools="{ load, loading }">
+        <ForYouRefreshRail :loading="loading" :placement="layoutOptions.toolsSide === 'left' ? 'right' : 'left'" @refresh="load('manual')" />
+      </template>
+    </RecommendationLayout>
 
-    <Loading v-show="isLoading" />
-    <Empty v-if="noMoreContent" class="pb-4" :description="$t('common.no_more_content')" />
     <AccessKeyAuthorizeDialog v-model="showAccessKeyAuthorizeDialog" />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.grid-adaptive {
-  --uno: "grid 2xl:cols-5 xl:cols-4 lg:cols-3 md:cols-2 sm:cols-1 cols-1 gap-5";
-}
-
-.grid-two-columns {
-  --uno: "grid cols-1 xl:cols-2 gap-4";
-}
-
-.grid-one-column {
-  --uno: "grid cols-1 gap-4";
-}
-</style>

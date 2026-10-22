@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import Select from '~/components/Select.vue'
 import { type FilterRule, useFilterAdvance } from '~/composables/useFilterAdvance'
@@ -15,10 +16,12 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   description: '',
-  placeholder: '输入过滤内容',
+  placeholder: '',
   maxVisibleRules: 1,
   defaultCollapsed: false,
 })
+
+const { t } = useI18n()
 
 const { options, addRule, removeRule, toggleRule, exportToSharedSpace, importFromSharedSpace, exportToFile, importFromFile, clearAllRules } = useFilterAdvance(props.storageKey)
 
@@ -29,9 +32,9 @@ const newRule = ref<Omit<FilterRule, 'id'>>({
 })
 
 const filterTypes = computed(() => [
-  { value: 'title', label: '标题' },
-  { value: 'username', label: '用户名' },
-  { value: 'uid', label: '用户ID' },
+  { value: 'title', label: t('settings.filters.manager.title') },
+  { value: 'username', label: t('settings.filters.manager.username') },
+  { value: 'uid', label: t('settings.filters.manager.user_id') },
 ])
 
 const isValidRule = computed(() => {
@@ -114,7 +117,7 @@ function handleFileChange(event: Event) {
       }
       else {
         // 可以添加错误提示
-        console.error(`导入失败: ${result.error}`)
+        console.error(t('settings.filters.manager.import_error', { error: result.error }))
       }
     })
     // 清空文件输入，允许重复选择同一文件
@@ -138,7 +141,7 @@ function handleFileChange(event: Event) {
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <span class="text-sm text-$bew-text-2">开启</span>
+        <span class="text-sm text-$bew-text-2">{{ t('settings.filters.manager.enable') }}</span>
         <input v-model="options.enabled" type="checkbox" class="toggle">
       </div>
     </div>
@@ -152,7 +155,7 @@ function handleFileChange(event: Event) {
       <div class="flex-1">
         <input
           v-model="newRule.value"
-          :placeholder="placeholder"
+          :placeholder="placeholder || t('settings.filters.manager.placeholder')"
           class="w-full p-2 rounded bg-$bew-fill-1 border border-$bew-border-color text-$bew-text-1"
           @keyup.enter="handleAddRule"
         >
@@ -163,14 +166,14 @@ function handleFileChange(event: Event) {
         class="px-4 py-2 rounded bg-$bew-theme-color text-white disabled:opacity-50"
         @click="handleAddRule"
       >
-        添加
+        {{ t('settings.filters.manager.add') }}
       </button>
     </div>
 
     <!-- 规则列表 -->
     <div class="space-y-2">
       <div v-if="options.rules.length === 0" class="text-center text-$bew-text-3 py-4">
-        暂无内容
+        {{ t('settings.filters.manager.no_content') }}
       </div>
 
       <!-- 批量操作工具栏 -->
@@ -182,14 +185,14 @@ function handleFileChange(event: Event) {
             @click="handleExportShared"
           >
             <i class="i-mingcute:export-line mr-1" />
-            复制
+            {{ t('settings.filters.manager.copy') }}
           </button>
           <button
             class="px-2 py-1 text-xs rounded bg-$bew-fill-2 hover:bg-$bew-fill-3 text-$bew-text-3 hover:text-$bew-text-2 transition-colors"
             @click="handleImportShared"
           >
             <i class="i-mingcute:import-line mr-1" />
-            粘贴
+            {{ t('settings.filters.manager.paste') }}
           </button>
           <button
             :disabled="options.rules.length === 0"
@@ -197,14 +200,14 @@ function handleFileChange(event: Event) {
             @click="handleExportFile"
           >
             <i class="i-mingcute:upload-line mr-1" />
-            导出
+            {{ t('settings.filters.manager.export') }}
           </button>
           <button
             class="px-2 py-1 text-xs rounded bg-$bew-fill-2 hover:bg-$bew-fill-3 text-$bew-text-3 hover:text-$bew-text-2 transition-colors"
             @click="handleImportFile"
           >
             <i class="i-mingcute:download-line mr-1" />
-            导入
+            {{ t('settings.filters.manager.import') }}
           </button>
           <!-- 隐藏的文件输入 -->
           <input
@@ -220,11 +223,11 @@ function handleFileChange(event: Event) {
             @click="handleClearRules"
           >
             <i class="i-mingcute:delete-2-line mr-1" />
-            清空
+            {{ t('settings.filters.manager.clear') }}
           </button>
         </div>
         <div v-if="showCollapseButton" class="flex items-center gap-2">
-          <span class="text-xs text-$bew-text-3">展开全部</span>
+          <span class="text-xs text-$bew-text-3">{{ t('settings.filters.manager.expand_all') }}</span>
           <input
             :checked="!isCollapsed"
             type="checkbox"
@@ -237,7 +240,7 @@ function handleFileChange(event: Event) {
       <!-- 规则列表头部 -->
       <div v-if="options.rules.length > 0" class="flex items-center justify-between mb-3">
         <div class="text-sm text-$bew-text-2">
-          列表 ({{ options.rules.length }})
+          {{ t('settings.filters.manager.list_count', { count: options.rules.length }) }}
         </div>
       </div>
 

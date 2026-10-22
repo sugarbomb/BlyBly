@@ -126,7 +126,7 @@ export const FILTER_SCOPE_OPTIONS = [
   { value: FilterScope.Weekly, label: '周选集' },
   { value: FilterScope.PartitionForYou, label: '分区推荐' },
   { value: FilterScope.PartitionRealtime, label: '实时稿件' },
-  { value: FilterScope.ForYou, label: '个性推荐' },
+  { value: FilterScope.ForYou, label: '首页推荐' },
   { value: FilterScope.ForYouGuest, label: '游客推荐' },
   { value: FilterScope.ForYouTV, label: '云电视推荐' },
 ]

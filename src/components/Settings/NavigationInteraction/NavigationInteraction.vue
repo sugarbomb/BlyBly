@@ -9,7 +9,7 @@ enum NavigationInteractionPage {
   HomeTabs = 'HomeTabs',
   LinkOpening = 'LinkOpening',
   VideoCard = 'VideoCard',
-  RecommendationRefreshButton = 'RecommendationRefreshButton',
+  RecommendationLayout = 'RecommendationLayout',
 }
 
 const { t } = useI18n()
@@ -46,11 +46,11 @@ const pages = [
     component: defineAsyncComponent(() => import('./HomeTabs.vue')),
   },
   {
-    value: NavigationInteractionPage.RecommendationRefreshButton,
-    title: t('settings.menu_recommendation_components'),
+    value: NavigationInteractionPage.RecommendationLayout,
+    title: t('settings.recommendation_layout.title'),
     icon: 'i-mingcute:layout-6-line',
     iconActivated: 'i-mingcute:layout-6-fill',
-    component: defineAsyncComponent(() => import('./RecommendationRefreshButton.vue')),
+    component: defineAsyncComponent(() => import('./RecommendationLayoutSettings.vue')),
   },
   {
     value: NavigationInteractionPage.LinkOpening,

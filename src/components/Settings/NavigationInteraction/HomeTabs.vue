@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import draggable from 'vuedraggable'
 
+import { useRecommendationControls } from '~/composables/useRecommendationLayoutSettings'
 import type { HomePageGroup } from '~/contentScripts/views/Home/types'
 import { HomeSubPage } from '~/contentScripts/views/Home/types'
 import { settings } from '~/logic'
@@ -10,6 +11,13 @@ import SettingsItem from '../components/SettingsItem.vue'
 import SettingsItemGroup from '../components/SettingsItemGroup.vue'
 
 const mainStore = useMainStore()
+const partitionControls = useRecommendationControls('partition')
+const partitionNavigation = computed({
+  get: () => partitionControls.value.showNavigation,
+  set: (value: boolean) => {
+    partitionControls.value = { ...partitionControls.value, showNavigation: value }
+  },
+})
 
 const homePageGroupsModel = computed<HomePageGroup[]>({
   get: () => settings.value.homePageGroups,
@@ -198,6 +206,11 @@ function handleToggleHomeTab(tab: any) {
       </SettingsItem>
       <SettingsItem :title="$t('settings.always_show_tabs_on_home_page')">
         <Radio v-model="settings.alwaysShowTabsOnHomePage" />
+      </SettingsItem>
+    </SettingsItemGroup>
+    <SettingsItemGroup :title="$t('settings.recommendation_layout.partition_layout')" :desc="$t('settings.recommendation_layout.pending')">
+      <SettingsItem :title="$t('settings.recommendation_layout.show_navigation')" :desc="$t('settings.recommendation_layout.show_navigation_desc')">
+        <Radio v-model="partitionNavigation" />
       </SettingsItem>
     </SettingsItemGroup>
   </div>

@@ -172,6 +172,33 @@ settings:
     Sometimes, the ads above search results are actually year-end summaries or annual reports.
     If you don't want these to be accidentally removed, please disable this option.
 
+  # Recommendation Layout
+  recommendation_layout:
+    title: Recommendation Controls
+    regions:
+      home: Home Recommendations
+      guest: Guest Recommendations
+      tv: Cloud TV
+      partition: Discover by Category
+    loading: Refresh Mode
+    automatic: Automatic loading
+    automatic_desc: Continuous feed with infinite scrolling
+    manual_button: Refresh button
+    manual_button_desc: Provide a refresh button on the side.
+    wheel: Wheel trigger
+    wheel_desc: Scroll the mouse wheel downward a certain distance
+    pull: Pull to refresh
+    pull_desc: Perform a downward drag gesture in an empty area
+    pull_distance: Custom distance
+    pull_distance_desc: Adjust the pull distance needed for the first confirmation to your preference
+    quantity: Display Quantity
+    auto_fill: Calculate automatically
+    auto_fill_desc: Calculate the display quantity from the viewport and card dimensions. Requests remain limited by the source API.
+    show_navigation: Show secondary navigation
+    show_navigation_desc: Only shown when the page provides secondary navigation.
+    partition_layout: Discover by Category · Layout
+    pending: Pending
+
   # Video Card
   enable_video_preview: Enable video preview feature (if possible)
   enable_video_ctrl_bar_on_video_card: Display the video control bar on the video card
@@ -359,6 +386,70 @@ settings:
   safari_helpers_desc4: Help answer Apple developer registration questions
 
   contributors: Contributors
+
+  filters:
+    manager:
+      permanent: Permanent
+      expiring: Temporary
+      keyword: Keyword
+      author_id: Author ID
+      duration: Duration
+      rule_count: '{count} items'
+      enable_scope: 'Enable blocking for {scope}'
+      disable_scope: 'Disable blocking for {scope}'
+      expires_at: '{days} days · {date}'
+      already_exists: This filter already exists
+      copied: 'Copied {scope} filter data'
+      pasted: 'Pasted {scope} filter data; skipped {skipped} duplicates'
+      import_failed: Import failed
+      import_result: 'Imported {imported} items; skipped {skipped}'
+      organize_result: 'Moved {promoted} rules to global filters and removed {expired} expired groups'
+      convert_confirm: Legacy filter data detected. Converting will clear the legacy data. Continue?
+      convert_result: 'Converted {imported} items, skipped {skipped}, and cleared {cleaned} legacy entries'
+      legacy_detected: Legacy filter data detected
+      convert: Convert
+      time: Time
+      add: Add
+      import: Import
+      export: Export
+      organize: Organize
+      confirm: Confirm
+      no_rules: No filters yet
+      block_author: Blocked author IDs
+      content: Content
+      expiry: Expiration
+      no_content: No content
+      block_keyword: Blocked keywords
+      organize_hint: Remove expired lists and merge eligible rules into the global list
+      author_placeholder: Enter an author ID
+      keyword_placeholder: Enter a title or author keyword
+      search: Search filters
+      delete: Delete
+      close_search: Close search
+      hide_values: Hide list contents
+      show_values: Show list contents
+      show_more: Show more
+      copy: Copy
+      paste: Paste
+      clear: Clear
+      title: Title
+      username: Username
+      user_id: User ID
+      placeholder: Enter filter content
+      import_error: 'Import failed: {error}'
+      list_count: 'List ({count})'
+      enable: Enable
+      expand_all: Expand all
+      scopes:
+        Global: Global
+        Trending: Trending
+        Ranking: Ranking
+        Weekly: Weekly Picks
+        PartitionForYou: Category Recommendations
+        PartitionRealtime: Recent Submissions
+        ForYou: Home Recommendations
+        ForYouGuest: Guest Recommendations
+        ForYouTV: Cloud TV Recommendations
 
 auth:
   auth_access_key_first: Before doing this, authorize BewlyBewly to use the access key.
@@ -561,3 +652,23 @@ watch_later:
 search_bar:
   history_title: Search History
   clear_history: Clear search history
+
+recommendation:
+  pull_refresh: Pull to refresh
+  cancel: Cancel
+  loading: Loading
+  confirming: Confirming
+  await_confirmation: Awaiting confirmation
+  complete: Done
+  wheel_hint: Keep scrolling; reverse to cancel
+  pull_hint: Keep pulling down
+  load_failed: Could not load recommendations
+  retry: Retry
+  advertisement: Ad
+  feedback_reasons:
+    author_id: 'Uploader ID: {keyword}'
+    author_keyword: 'Uploader keyword: {keyword}'
+    title_keyword: 'Title keyword: {keyword}'
+    video_id: 'Video ID: {videoId}'
+    dislike_author: Not interested in this uploader
+    dislike_content: Not interested in this content
