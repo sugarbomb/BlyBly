@@ -274,7 +274,6 @@ export const originalSettings: Settings = {
       id: 'partition',
       items: [
         { page: HomeSubPage.PartitionForYou, visible: true },
-        { page: HomeSubPage.PartitionRealtime, visible: true },
       ],
     },
     {
@@ -325,9 +324,12 @@ export const sidePanel = useStorageLocal<{ home: boolean }>('sidePanel', {
   home: true,
 }, { mergeDefaults: true })
 
+export type PartitionNavigationMode = 'pick' | 'selected' | 'all'
+
 export interface PartitionRealtimeState {
   showPanel: boolean
   previewEnabled: boolean
+  navigationMode?: PartitionNavigationMode
   selectedPartitionIds: Array<string | number>
   activePartitionId: string | number | null
 }

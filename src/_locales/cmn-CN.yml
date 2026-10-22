@@ -170,6 +170,21 @@ settings:
     有时候，搜索结果上方的广告实际上是年末总结或年度报告。
     如果你不想这些内容被误删除，请禁用此选项。
 
+  secondary_navigation:
+    title: 二级导航·分区看看标签组
+    pick: 拣选
+    pick_desc: 选择一些作为切换源
+    selected: 浏览拣选
+    selected_desc: 只展示拣选的分区
+    all: 浏览全部
+    hide: 隐藏导航
+    partition_selection: 分区选择
+    mode_label: 分区操作模式
+    no_picks: 暂无拣选分区
+    no_partitions: 暂无可选分区
+    pick_hint: 请至少选择一个作为起始分区
+    collapse: 收起
+
   # Recommendation Layout
   recommendation_layout:
     title: 推荐控制
@@ -183,12 +198,12 @@ settings:
     automatic_desc: 瀑布流，无限滚动
     manual_button: 刷新按钮
     manual_button_desc: 提供一个侧面的刷新按钮。
-    wheel: 滚轮触发
-    wheel_desc: 鼠标滚轮向下滚动一段距离
+    wheel: 滚轮
+    wheel_desc: 鼠标滚轮向下滚动一段距离触发，适合不考虑上下滚动的页面。
     pull: 下拉刷新
     pull_desc: 在空白处完成下拉手势
     pull_distance: 自定义距离
-    pull_distance_desc: 按实际感受调整触发“一级确认”所需的下拉距离
+    pull_distance_desc: 调整触发“一级确认”所需的下拉距离，防止误触发
     quantity: 展示数量
     auto_fill: 自动计算
     auto_fill_desc: 根据视野和卡片尺寸计算展示数量。请求仍受限于实际接口的提供范围
@@ -587,7 +602,8 @@ dock:
 video_card:
   operation:
     not_interested: 不感兴趣
-    block_user: 屏蔽此 UP 主
+    block_user: 屏蔽up主(在此分区)
+    block_user_global: 全局屏蔽up主
     temporarily_block_user: 临时屏蔽此 UP 主 {days} 天
     temporarily_block_video: 临时屏蔽此视频 {days} 天
     open_in_new_tab: 新标签页打开

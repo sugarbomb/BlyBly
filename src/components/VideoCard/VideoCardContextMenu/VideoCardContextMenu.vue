@@ -25,7 +25,6 @@ const { t } = useI18n()
 const showContextMenu = ref<boolean>(false)
 const showPipWindow = ref<boolean>(false)
 const { openIframeDrawer } = useBewlyApp()
-const { addRule } = useFilterAdvance()
 
 function getFilterScope() {
   // 通过pageType判断当前页面
@@ -46,7 +45,7 @@ function getFilterScope() {
   if (pageType === 'tvRcmd')
     return FilterScope.ForYouTV
 
-  // 如果无法判断页面类型，返回undefined使用默认存储
+  // Unknown pages have no section-specific block scope.
   return undefined
 }
 
@@ -76,11 +75,21 @@ interface MenuOption {
 const menuGroups = computed((): MenuOption[][] => {
   const groups: MenuOption[][] = []
 
+  if (settings.value.videoCardContextMenuGroups.globalBlock && !Array.isArray(props.video.author) && props.video.author?.mid) {
+    groups.push([
+      { key: 'block-user-global', name: t('video_card.operation.block_user_global'), icon: 'i-solar:user-block-bold-duotone', action: handleGlobalBlockUser },
+    ])
+  }
+
   if (settings.value.videoCardContextMenuGroups.blockUserAssistant) {
     const blockUserGroup: MenuOption[] = []
     if (!Array.isArray(props.video?.author) && props.video?.author?.mid) {
+      if (getFilterScope() !== undefined) {
+        blockUserGroup.push(
+          { key: 'block-user', name: t('video_card.operation.block_user'), icon: 'i-solar:user-block-bold-duotone', action: handleBlockUser },
+        )
+      }
       blockUserGroup.push(
-        { key: 'block-user', name: t('video_card.operation.block_user'), icon: 'i-solar:user-block-bold-duotone', action: handleBlockUser },
         { key: 'block-user-7', name: t('video_card.operation.temporarily_block_user', { days: 7 }), icon: 'i-solar:user-block-bold-duotone', action: () => handleTemporaryBlockUser(7) },
         { key: 'block-user-15', name: t('video_card.operation.temporarily_block_user', { days: 15 }), icon: 'i-solar:user-block-bold-duotone', action: () => handleTemporaryBlockUser(15) },
       )
@@ -188,13 +197,20 @@ function handleClose() {
   emit('close')
 }
 
+function handleGlobalBlockUser() {
+  addUserBlockRule(FilterScope.Global)
+  handleClose()
+}
+
 function handleBlockUser() {
-  addUserBlockRule()
+  const scope = getFilterScope()
+  if (scope !== undefined)
+    addUserBlockRule(scope)
   handleClose()
 }
 
 function handleTemporaryBlockUser(days: 7 | 15) {
-  addUserBlockRule(days)
+  addUserBlockRule(FilterScope.ExpiringGlobal, days)
   handleClose()
 }
 
@@ -210,31 +226,12 @@ function handleTemporaryBlockVideo(days: 7 | 15) {
   handleClose()
 }
 
-function addUserBlockRule(duration?: 7 | 15) {
-  let mid: number | undefined
-  if (props.video?.author) {
-    if (Array.isArray(props.video.author)) {
-      // 多作者暂不处理
-      mid = undefined
-    }
-    else {
-      mid = props.video.author.mid
-    }
-  }
-  if (mid) {
-    if (duration) {
-      useFilterAdvance(FilterScope.ExpiringGlobal).addRule({ type: 'uid', value: String(mid), enabled: true, duration })
-      return
-    }
+function addUserBlockRule(scope: FilterScope, duration?: 7 | 15) {
+  const author = props.video.author
+  if (!author || Array.isArray(author) || !author.mid)
+    return
 
-    const filterScope = getFilterScope()
-    if (filterScope) {
-      useFilterAdvance(filterScope).addRule({ type: 'uid', value: String(mid), enabled: true })
-    }
-    else {
-      addRule({ type: 'uid', value: String(mid), enabled: true })
-    }
-  }
+  useFilterAdvance(scope).addRule({ type: 'uid', value: String(author.mid), enabled: true, duration })
 }
 </script>
 

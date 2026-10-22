@@ -15,6 +15,9 @@ const props = withDefaults(defineProps<{
   statusColor?: string
   statusLabel?: string
   switchDisabled?: boolean
+  showRefresh?: boolean
+  position?: 'left' | 'right'
+  positionRatio?: number
 }>(), {
   modelValue: false,
   variant: 'sidebar',
@@ -22,6 +25,7 @@ const props = withDefaults(defineProps<{
   statusColor: '',
   statusLabel: '未选择分区',
   switchDisabled: false,
+  showRefresh: true,
 })
 
 const emit = defineEmits<{
@@ -48,7 +52,7 @@ const railPositionRatio = computed(() => {
     5: 80,
   }
 
-  return ratios[settings.value.partitionControlRailHeight] ?? ratios[0]
+  return props.positionRatio ?? ratios[settings.value.partitionControlRailHeight] ?? ratios[0]
 })
 
 const railContentStyle = computed(() => {
@@ -59,7 +63,7 @@ const railContentStyle = computed(() => {
 })
 
 const sidebarTooltipPlacement = computed<'left' | 'right'>(() => {
-  return settings.value.partitionControlRailPosition === 'left' ? 'right' : 'left'
+  return (props.position ?? settings.value.partitionControlRailPosition) === 'left' ? 'right' : 'left'
 })
 
 function handleIndicatorToggle() {
@@ -127,7 +131,7 @@ function handleSwitchPartition() {
           @switch="handleSwitchPartition"
         />
 
-        <Tooltip :content="$t('common.operation.refresh')" :placement="sidebarTooltipPlacement">
+        <Tooltip v-if="props.showRefresh" :content="$t('common.operation.refresh')" :placement="sidebarTooltipPlacement">
           <Button
             type="secondary"
             :disabled="props.loading"
@@ -158,7 +162,7 @@ function handleSwitchPartition() {
       box-border border="1 $bew-border-color"
       flex="~ col items-center gap-2"
     >
-      <Tooltip :content="$t('common.operation.refresh')" placement="left">
+      <Tooltip v-if="props.showRefresh" :content="$t('common.operation.refresh')" placement="left">
         <Button
           type="secondary"
           :loading="props.loading"
@@ -214,7 +218,7 @@ function handleSwitchPartition() {
     flex="~ items-center gap-2"
     w-full
   >
-    <Tooltip :content="$t('common.operation.refresh')" placement="bottom">
+    <Tooltip v-if="props.showRefresh" :content="$t('common.operation.refresh')" placement="bottom">
       <Button
         type="secondary"
         :loading="props.loading"

@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
 import PartitionSelectionControl from '~/components/List/PartitionSelectionControl.vue'
+import RecommendationLayout from '~/components/RecommendationLayout/RecommendationLayout.vue'
+import type { RecommendationLayoutHandle, RecommendationLoadContext, RecommendationPage } from '~/components/RecommendationLayout/types'
 import PartitionRealtimeControlRail from '~/components/SideBar/PartitionRealtimeControlRail.vue'
 import type { Video } from '~/components/VideoCard/types'
 import { useBewlyApp } from '~/composables/useAppProvider'
 import { FilterScope, useFilterAdvance } from '~/composables/useFilterAdvance'
-import { type GridLayoutType, partitionForYouState, settings } from '~/logic'
+import { useRecommendationControls, useRecommendationLayoutSettings } from '~/composables/useRecommendationLayoutSettings'
+import { type GridLayoutType, partitionForYouState } from '~/logic'
+import type { PartitionNavigationMode } from '~/logic/storage'
 import api from '~/utils/api'
 import { PARTITION_ZONE_DATASET_V2 } from '~/utils/partitionZoneDatasetv2'
 
@@ -79,20 +85,34 @@ const DISPLAY_ID_MIN = 1
 const DISPLAY_ID_MAX_MIN = 3
 const DISPLAY_ID_MAX_MAX = 10
 
-const { handleReachBottom, handlePageRefresh } = useBewlyApp()
+const { t } = useI18n()
+const { handleReachBottom, handlePageRefresh, scrollbarRef } = useBewlyApp()
 const { shouldFilterItem } = useFilterAdvance(FilterScope.PartitionForYou)
-const isLoading = ref<boolean>(false)
-const videoList = ref<VideoElement[]>([])
-const requestToken = ref<number>(0)
+const partitionControls = useRecommendationControls('partition')
+const layoutSettings = useRecommendationLayoutSettings('partition')
+const layoutRef = ref<RecommendationLayoutHandle<VideoElement>>()
+const videoList = computed(() => layoutRef.value?.items ?? [])
+const scrollViewport = computed<HTMLElement | undefined>(() => scrollbarRef.value?.osInstance()?.elements().viewport)
 const displayId = ref<number>(DISPLAY_ID_MIN)
 const displayIdCycleMax = ref<number>(getRandomDisplayIdCycleMax())
 const showPartitionPanel = computed<boolean>({
-  get: () => partitionForYouState.value.showPanel,
-  set: value => partitionForYouState.value.showPanel = value,
+  get: () => partitionForYouState.value.showPanel && partitionControls.value.showNavigation,
+  set: (value) => {
+    partitionForYouState.value.showPanel = value
+    if (value && !partitionControls.value.showNavigation)
+      partitionControls.value = { ...partitionControls.value, showNavigation: true }
+  },
 })
-const previewEnabled = computed<boolean>({
-  get: () => partitionForYouState.value.previewEnabled,
-  set: value => partitionForYouState.value.previewEnabled = value,
+const navigationMode = computed<PartitionNavigationMode>({
+  get: () => partitionForYouState.value.navigationMode ?? (partitionForYouState.value.previewEnabled ? 'all' : 'pick'),
+  set: (value) => {
+    partitionForYouState.value.navigationMode = value
+    partitionForYouState.value.previewEnabled = value !== 'pick'
+  },
+})
+const previewEnabled = computed({
+  get: () => navigationMode.value !== 'pick',
+  set: (value: boolean) => navigationMode.value = value ? 'all' : 'pick',
 })
 const selectedPartitionIds = computed<Array<string | number>>({
   get: () => partitionForYouState.value.selectedPartitionIds,
@@ -122,6 +142,16 @@ const activePartition = computed(() => {
   return partitionOptions.value.find(item => item.id === activePartitionId.value) ?? null
 })
 
+const activeRegion = computed(resolveActivePartitionId)
+const layoutOptions = computed(() => ({
+  ...layoutSettings.value,
+  loadModes: activeRegion.value ? layoutSettings.value.loadModes : [],
+  // The endpoint returns a fixed batch; sizing does not change its request parameters.
+  maxItems: PAGE_SIZE,
+  itemCount: layoutSettings.value.itemCount === undefined ? undefined : Math.min(PAGE_SIZE, layoutSettings.value.itemCount),
+}))
+const showRefresh = computed(() => layoutSettings.value.loadModes.includes('manual'))
+
 const partitionStatus = computed<'idle' | 'selected'>(() => {
   return activePartition.value ? 'selected' : 'idle'
 })
@@ -146,20 +176,6 @@ const switchDisabled = computed(() => {
   return selectedPartitions.value.length <= 1
 })
 
-const gridClass = computed((): string => {
-  if (props.gridLayout === 'adaptive')
-    return 'grid-adaptive'
-  if (props.gridLayout === 'twoColumns')
-    return 'grid-two-columns'
-  return 'grid-one-column'
-})
-
-const controlRailLayoutStyle = computed(() => {
-  return {
-    flexDirection: settings.value.partitionControlRailPosition === 'left' ? 'row-reverse' as const : 'row' as const,
-  }
-})
-
 function shouldFilterByForYou(item: { aid?: number | string, bvid?: string, title?: string, owner?: { name?: string, mid?: number | string } }): boolean {
   return shouldFilterItem(item)
 }
@@ -170,43 +186,37 @@ function resolveArchiveOwner(item: PartitionForYouArchive) {
 
 onMounted(() => {
   initPageAction()
-  initData()
 })
 
 onActivated(() => {
   initPageAction()
 })
 
-watch(selectedPartitions, (nextSelected, prevSelected) => {
-  const previousLength = prevSelected?.length ?? 0
+watch([selectedPartitions, navigationMode], ([nextSelected, mode]) => {
+  if (mode === 'all') {
+    if (!activePartitionId.value && nextSelected.length)
+      activePartitionId.value = nextSelected[0].id
+    return
+  }
 
   if (!nextSelected.length) {
     activePartitionId.value = null
-    videoList.value = []
     return
   }
 
   const hasActive = nextSelected.some(item => item.id === activePartitionId.value)
-  if (!hasActive) {
-    if (!activePartitionId.value || nextSelected.length > previousLength)
-      activePartitionId.value = nextSelected[0].id
-  }
+  if (!hasActive)
+    activePartitionId.value = nextSelected[0].id
 }, { immediate: true })
 
-watch(activePartitionId, (nextPartitionId, prevPartitionId) => {
+watch(activeRegion, (nextPartitionId, prevPartitionId) => {
   if (nextPartitionId === prevPartitionId)
     return
   resetDisplayIdCycle()
-  initData()
-})
-
-watch(previewEnabled, (enabled) => {
-  if (enabled)
-    initData()
-})
+}, { flush: 'sync' })
 
 function initPageAction() {
-  // Manual refresh page: disable scroll-to-bottom auto-loading for this tab.
+  // The common layout owns bottom detection for this tab.
   handleReachBottom.value = undefined
 
   handlePageRefresh.value = async () => {
@@ -215,66 +225,43 @@ function initPageAction() {
 }
 
 async function initData() {
-  if (isLoading.value)
+  if (!activeRegion.value)
     return
+  await nextTick()
+  await layoutRef.value?.refresh()
+}
 
-  const fromRegion = resolveActivePartitionId()
-  if (!fromRegion) {
-    videoList.value = []
-    return
-  }
+async function loadPage(context: RecommendationLoadContext): Promise<RecommendationPage<VideoElement>> {
+  if (context.signal.aborted)
+    throw new DOMException('Aborted', 'AbortError')
+  const fromRegion = activeRegion.value
+  if (!fromRegion)
+    return { items: [], hasMore: false }
 
-  emit('beforeLoading')
-  isLoading.value = true
+  const response = await api.partition.getPartitionForYouList({
+    from_region: fromRegion,
+    display_id: displayId.value,
+  }) as PartitionForYouResult
 
-  const currentToken = requestToken.value + 1
-  requestToken.value = currentToken
+  if (context.signal.aborted || fromRegion !== activeRegion.value)
+    throw new DOMException('Aborted', 'AbortError')
+  if (response?.code !== 0)
+    throw new Error(t('recommendation.load_failed'))
 
-  try {
-    videoList.value = Array.from({ length: PAGE_SIZE }, (_, index) => ({
-      uniqueId: `partition-foryou-${fromRegion}-pending-${currentToken}-${index}`,
-    }))
-
-    const response = await api.partition.getPartitionForYouList({
-      from_region: fromRegion,
-      display_id: displayId.value,
-    }) as PartitionForYouResult
-
-    if (currentToken !== requestToken.value)
-      return
-
-    if (response?.code === 0) {
-      const archives = extractArchives(response).filter((item) => {
-        const owner = resolveArchiveOwner(item)
-        return !shouldFilterByForYou({
-          aid: item.aid,
-          bvid: item.bvid,
-          title: item.title ?? '',
-          owner: {
-            name: owner?.name ?? '',
-            mid: owner?.mid,
-          },
-        })
-      })
-      videoList.value = archives.map((item, index) => ({
-        uniqueId: resolveUniqueId(item, index),
-        item,
-      }))
-      displayId.value = getNextDisplayId(displayId.value)
-    }
-    else {
-      videoList.value = []
-    }
-
-    await nextTick()
-  }
-  catch (error) {
-    console.error(error)
-    videoList.value = []
-  }
-  finally {
-    isLoading.value = false
-    emit('afterLoading')
+  const rawArchives = extractArchives(response)
+  const archives = rawArchives.filter((item) => {
+    const owner = resolveArchiveOwner(item)
+    return !shouldFilterByForYou({
+      aid: item.aid,
+      bvid: item.bvid,
+      title: item.title ?? '',
+      owner: { name: owner?.name ?? '', mid: owner?.mid },
+    })
+  })
+  displayId.value = getNextDisplayId(displayId.value)
+  return {
+    items: archives.map((item, index) => ({ uniqueId: resolveUniqueId(item, index), item })),
+    hasMore: rawArchives.length > 0,
   }
 }
 
@@ -394,6 +381,7 @@ defineExpose({
   initData,
   showPartitionPanel,
   previewEnabled,
+  navigationMode,
   selectedPartitionIds,
   selectedPartitions,
   activePartition,
@@ -402,75 +390,57 @@ defineExpose({
 </script>
 
 <template>
-  <div flex="~ gap-20px" w-full :style="controlRailLayoutStyle">
-    <main w-full min-w-0 flex="~ col">
+  <RecommendationLayout
+    :key="activeRegion ?? 'idle'" ref="layoutRef" class="partition-recommendations"
+    v-bind="layoutOptions" :grid-layout="props.gridLayout" :scroll-target="scrollViewport"
+    :load-page="loadPage" :get-item-key="video => video.uniqueId"
+    :immediate="!!activeRegion" :show-navigation="showPartitionPanel" persistent-tools
+    @before-loading="emit('beforeLoading')" @after-loading="emit('afterLoading')"
+  >
+    <template #header="{ load, loading }">
       <div block lg:hidden m="b-3">
         <PartitionRealtimeControlRail
-          v-model="showPartitionPanel"
-          variant="inline"
-          :status-icon="railStatusIcon"
-          :status-color="railStatusColor"
-          :status-label="railStatusLabel"
-          :switch-disabled="switchDisabled"
-          :loading="isLoading"
-          @switch-partition="handleSwitchPartition"
-          @refresh="initData"
+          v-model="showPartitionPanel" variant="inline"
+          :status-icon="railStatusIcon" :status-color="railStatusColor" :status-label="railStatusLabel"
+          :switch-disabled="switchDisabled" :loading="loading" :show-refresh="showRefresh"
+          @switch-partition="handleSwitchPartition" @refresh="load('manual')"
         />
       </div>
+    </template>
 
+    <template #navigation>
       <PartitionSelectionControl
-        v-model="selectedPartitionIds"
-        v-model:visible="showPartitionPanel"
-        v-model:preview-enabled="previewEnabled"
-        :browse-active-id="activePartitionId"
-        :partitions="partitionOptions"
-        @select-partition="handleSelectPartition"
-        @confirm="handleConfirmPartitions"
+        v-model="selectedPartitionIds" v-model:visible="showPartitionPanel" v-model:mode="navigationMode"
+        :browse-active-id="activePartitionId" :partitions="partitionOptions"
+        @select-partition="handleSelectPartition" @confirm="handleConfirmPartitions"
       />
+    </template>
 
-      <div
-        m="t-4"
-        relative
-        w-full
-        min-h-0
-        :class="gridClass"
-      >
-        <VideoCard
-          v-for="(video, index) in videoList"
-          :key="video.uniqueId"
-          :skeleton="!video.item"
-          :video="video.item ? toVideoCardData(video.item, index + 1) : undefined"
-          show-preview
-          :horizontal="gridLayout !== 'adaptive'"
-        />
-      </div>
-    </main>
+    <template #default="{ items }">
+      <VideoCard
+        v-for="(video, index) in items" :key="video.uniqueId"
+        :skeleton="!video.item" :video="video.item ? toVideoCardData(video.item, index + 1) : undefined"
+        show-preview :horizontal="gridLayout !== 'adaptive'"
+      />
+    </template>
+    <template #placeholder="{ count }">
+      <VideoCard v-for="index in count" :key="`partition-pending-${index}`" skeleton :horizontal="gridLayout !== 'adaptive'" />
+    </template>
 
-    <div hidden lg:block w-56px shrink-0>
+    <template #tools="{ load, loading }">
       <PartitionRealtimeControlRail
         v-model="showPartitionPanel"
-        :status-icon="railStatusIcon"
-        :status-color="railStatusColor"
-        :status-label="railStatusLabel"
-        :switch-disabled="switchDisabled"
-        :loading="isLoading"
-        @switch-partition="handleSwitchPartition"
-        @refresh="initData"
+        :status-icon="railStatusIcon" :status-color="railStatusColor" :status-label="railStatusLabel"
+        :switch-disabled="switchDisabled" :loading="loading" :show-refresh="showRefresh"
+        :position="layoutOptions.toolsSide" :position-ratio="layoutOptions.toolsPositionRatio"
+        @switch-partition="handleSwitchPartition" @refresh="load('manual')"
       />
-    </div>
-  </div>
+    </template>
+  </RecommendationLayout>
 </template>
 
 <style scoped lang="scss">
-.grid-adaptive {
-  --uno: "grid 2xl:cols-5 xl:cols-4 lg:cols-3 md:cols-2 sm:cols-1 cols-1 gap-5";
-}
-
-.grid-two-columns {
-  --uno: "grid cols-1 xl:cols-2 gap-4";
-}
-
-.grid-one-column {
-  --uno: "grid cols-1 gap-4";
+.partition-recommendations :deep(.recommendation-tools) {
+  --uno: "hidden lg:block w-56px";
 }
 </style>

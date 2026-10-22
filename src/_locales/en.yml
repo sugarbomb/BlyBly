@@ -172,6 +172,21 @@ settings:
     Sometimes, the ads above search results are actually year-end summaries or annual reports.
     If you don't want these to be accidentally removed, please disable this option.
 
+  secondary_navigation:
+    title: Secondary Navigation · Discover by Category Tabs
+    pick: Pick
+    pick_desc: Pick categories to use as switching sources
+    selected: Browse Picks
+    selected_desc: Show only picked categories
+    all: Browse All
+    hide: Hide navigation
+    partition_selection: Category selection
+    mode_label: Category navigation mode
+    no_picks: No categories picked yet
+    no_partitions: No categories available
+    pick_hint: Pick at least one starting category
+    collapse: Collapse
+
   # Recommendation Layout
   recommendation_layout:
     title: Recommendation Controls
@@ -185,12 +200,12 @@ settings:
     automatic_desc: Continuous feed with infinite scrolling
     manual_button: Refresh button
     manual_button_desc: Provide a refresh button on the side.
-    wheel: Wheel trigger
-    wheel_desc: Scroll the mouse wheel downward a certain distance
+    wheel: Mouse wheel
+    wheel_desc: Trigger by scrolling the mouse wheel downward a certain distance. Suitable for pages where vertical scrolling is not needed.
     pull: Pull to refresh
     pull_desc: Perform a downward drag gesture in an empty area
     pull_distance: Custom distance
-    pull_distance_desc: Adjust the pull distance needed for the first confirmation to your preference
+    pull_distance_desc: Adjust the pull distance needed for the first confirmation to prevent accidental triggering
     quantity: Display Quantity
     auto_fill: Calculate automatically
     auto_fill_desc: Calculate the display quantity from the viewport and card dimensions. Requests remain limited by the source API.
@@ -557,7 +572,8 @@ dock:
 video_card:
   operation:
     not_interested: Not Interested
-    block_user: Block This Uploader
+    block_user: Block Uploader (This Section)
+    block_user_global: Block Uploader Globally
     temporarily_block_user: Block This Uploader for {days} Days
     temporarily_block_video: Block This Video for {days} Days
     open_in_new_tab: Open in New Tab

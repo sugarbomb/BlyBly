@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useWindowSize } from '@vueuse/core'
-import { computed, provide } from 'vue'
+import { computed, provide, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 import RecommendationLayout from '~/components/RecommendationLayout/RecommendationLayout.vue'
@@ -120,6 +120,16 @@ const videoList = computed({
 })
 const needToLoginFirst = ref(false)
 const recommendationMasks = ref<Record<string, RecommendationMaskState>>({})
+let pendingRecommendationMasks: Record<string, RecommendationMaskState> | undefined
+
+// Keep masks attached to the displayed batch until its replacement is committed.
+watch(videoList, () => {
+  if (pendingRecommendationMasks) {
+    recommendationMasks.value = pendingRecommendationMasks
+    pendingRecommendationMasks = undefined
+  }
+}, { flush: 'sync' })
+
 const pageActive = ref(true)
 const AUTO_FEEDBACK_BATCH_LIMIT = 10
 const AUTO_FEEDBACK_INTERVAL_MIN = 1500
@@ -174,6 +184,8 @@ function initPageAction() {
 }
 
 function handleAfterLoading() {
+  if (pendingRecommendationMasks)
+    invalidateAutoFeedbackQueue()
   emit('afterLoading')
   void processAutoFeedbackQueue()
 }
@@ -182,7 +194,7 @@ async function loadPage(context: RecommendationLoadContext): Promise<Recommendat
   pageSize.value = Math.max(4, Math.min(context.count, 10))
   if (context.mode === 'replace') {
     invalidateAutoFeedbackQueue()
-    recommendationMasks.value = {}
+    pendingRecommendationMasks = {}
   }
   else {
     autoFeedbackBatchTaskCount = 0
@@ -310,9 +322,12 @@ function enqueueAutoFeedback(task: Omit<AutoFeedbackTask, 'generation' | 'dedupe
     dedupeKey,
   }
   autoFeedbackQueue.push(queuedTask)
-  recommendationMasks.value = {
-    ...recommendationMasks.value,
-    [task.uniqueId]: createAutoFeedbackMaskState(queuedTask, 'queued'),
+  const mask = createAutoFeedbackMaskState(queuedTask, 'queued')
+  if (pendingRecommendationMasks) {
+    pendingRecommendationMasks[task.uniqueId] = mask
+  }
+  else {
+    recommendationMasks.value = { ...recommendationMasks.value, [task.uniqueId]: mask }
   }
 }
 
@@ -405,6 +420,7 @@ function stopAutoFeedbackBatch(generation: number, failedUniqueId: string) {
 }
 
 function invalidateAutoFeedbackQueue() {
+  pendingRecommendationMasks = undefined
   autoFeedbackGeneration++
   autoFeedbackQueue = []
   autoFeedbackDedupeKeys = new Set<string>()

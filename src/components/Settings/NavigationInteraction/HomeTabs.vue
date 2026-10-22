@@ -4,7 +4,8 @@ import draggable from 'vuedraggable'
 import { useRecommendationControls } from '~/composables/useRecommendationLayoutSettings'
 import type { HomePageGroup } from '~/contentScripts/views/Home/types'
 import { HomeSubPage } from '~/contentScripts/views/Home/types'
-import { settings } from '~/logic'
+import { partitionForYouState, settings } from '~/logic'
+import type { PartitionNavigationMode } from '~/logic/storage'
 import { useMainStore } from '~/stores/mainStore'
 
 import SettingsItem from '../components/SettingsItem.vue'
@@ -12,12 +13,27 @@ import SettingsItemGroup from '../components/SettingsItemGroup.vue'
 
 const mainStore = useMainStore()
 const partitionControls = useRecommendationControls('partition')
-const partitionNavigation = computed({
-  get: () => partitionControls.value.showNavigation,
+const partitionNavigationHidden = computed({
+  get: () => !partitionControls.value.showNavigation,
   set: (value: boolean) => {
-    partitionControls.value = { ...partitionControls.value, showNavigation: value }
+    partitionControls.value = { ...partitionControls.value, showNavigation: !value }
+    if (!value)
+      partitionForYouState.value.showPanel = true
   },
 })
+const partitionNavigationMode = computed<PartitionNavigationMode>({
+  get: () => partitionForYouState.value.navigationMode ?? (partitionForYouState.value.previewEnabled ? 'all' : 'pick'),
+  set: (value) => {
+    partitionForYouState.value.navigationMode = value
+    partitionForYouState.value.previewEnabled = value !== 'pick'
+  },
+})
+const partitionModes: PartitionNavigationMode[] = ['pick', 'selected', 'all']
+
+function selectPartitionMode(mode: PartitionNavigationMode, selected: boolean) {
+  if (selected)
+    partitionNavigationMode.value = mode
+}
 
 const homePageGroupsModel = computed<HomePageGroup[]>({
   get: () => settings.value.homePageGroups,
@@ -208,9 +224,16 @@ function handleToggleHomeTab(tab: any) {
         <Radio v-model="settings.alwaysShowTabsOnHomePage" />
       </SettingsItem>
     </SettingsItemGroup>
-    <SettingsItemGroup :title="$t('settings.recommendation_layout.partition_layout')" :desc="$t('settings.recommendation_layout.pending')">
-      <SettingsItem :title="$t('settings.recommendation_layout.show_navigation')" :desc="$t('settings.recommendation_layout.show_navigation_desc')">
-        <Radio v-model="partitionNavigation" />
+    <SettingsItemGroup :title="$t('settings.secondary_navigation.title')">
+      <SettingsItem
+        v-for="mode in partitionModes" :key="mode"
+        :title="$t(`settings.secondary_navigation.${mode}`)"
+        :desc="mode === 'all' ? '' : $t(`settings.secondary_navigation.${mode}_desc`)"
+      >
+        <Radio :model-value="partitionNavigationMode === mode" @update:model-value="selectPartitionMode(mode, $event)" />
+      </SettingsItem>
+      <SettingsItem :title="$t('settings.secondary_navigation.hide')">
+        <Radio v-model="partitionNavigationHidden" />
       </SettingsItem>
     </SettingsItemGroup>
   </div>

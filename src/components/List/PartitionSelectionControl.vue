@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+import type { PartitionNavigationMode } from '~/logic/storage'
+
 interface PartitionItem {
   id: string | number
   name: string
@@ -20,6 +24,7 @@ const props = withDefaults(defineProps<{
   modelValue?: Array<string | number>
   visible?: boolean
   previewEnabled?: boolean
+  mode?: PartitionNavigationMode
   browseActiveId?: string | number | null
   partitions?: PartitionItem[]
   emptyText?: string
@@ -30,18 +35,24 @@ const props = withDefaults(defineProps<{
   previewEnabled: false,
   browseActiveId: null,
   partitions: () => [],
-  emptyText: '暂无可选分区',
-  confirmText: '收起',
+  emptyText: '',
+  confirmText: '',
 })
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: Array<string | number>): void
   (e: 'update:visible', value: boolean): void
   (e: 'update:previewEnabled', value: boolean): void
+  (e: 'update:mode', value: PartitionNavigationMode): void
   (e: 'change', partitions: PartitionItem[]): void
   (e: 'selectPartition', payload: PartitionSelectPayload): void
   (e: 'confirm', partitions: PartitionItem[]): void
 }>()
+
+const { t } = useI18n()
+const currentMode = computed(() => props.mode ?? (props.previewEnabled ? 'all' : 'pick'))
+const browsing = computed(() => currentMode.value !== 'pick')
+const modes: PartitionNavigationMode[] = ['pick', 'selected', 'all']
 
 const normalizedPartitions = computed<PartitionItem[]>(() => {
   const items: PartitionItem[] = []
@@ -79,6 +90,8 @@ const selectedPartitions = computed(() => {
   return normalizedPartitions.value.filter(partition => selectedIdSet.value.has(partition.id))
 })
 
+const displayedPartitions = computed(() => currentMode.value === 'selected' ? selectedPartitions.value : normalizedPartitions.value)
+
 watch(normalizedPartitions, (nextPartitions) => {
   const validIds = new Set(nextPartitions.filter(item => !item.disabled).map(item => item.id))
   const nextSelectedIds = props.modelValue.filter(id => validIds.has(id))
@@ -98,7 +111,7 @@ function handleSelect(partition: PartitionItem) {
   let nextSelectedPartitions: PartitionItem[] = []
   let selected = true
 
-  if (props.previewEnabled) {
+  if (browsing.value) {
     // Browse mode: do not overwrite selected set.
     nextSelectedIds = [...selectedIds.value]
     nextSelectedPartitions = normalizedPartitions.value.filter(item => selectedIdSet.value.has(item.id))
@@ -123,7 +136,7 @@ function handleSelect(partition: PartitionItem) {
       .filter(item => nextSelectedIdSet.has(item.id))
   }
 
-  if (!props.previewEnabled) {
+  if (!browsing.value) {
     emit('update:modelValue', nextSelectedIds)
     emit('change', nextSelectedPartitions)
   }
@@ -136,18 +149,18 @@ function handleSelect(partition: PartitionItem) {
 }
 
 function handleConfirm() {
-  if (!selectedPartitions.value.length)
+  if (!selectedPartitions.value.length && currentMode.value === 'pick')
     return
 
   emit('confirm', selectedPartitions.value)
   emit('update:visible', false)
 }
 
-function setPreviewEnabled(enabled: boolean) {
-  if (props.previewEnabled === enabled)
+function setMode(mode: PartitionNavigationMode) {
+  if (currentMode.value === mode)
     return
-
-  emit('update:previewEnabled', enabled)
+  emit('update:mode', mode)
+  emit('update:previewEnabled', mode !== 'pick')
 }
 
 function resolveFallbackLabel(name: string): string {
@@ -165,19 +178,19 @@ defineExpose({
 <template>
   <div v-show="visible" class="partition-select-control">
     <div
-      v-if="normalizedPartitions.length"
+      v-if="displayedPartitions.length"
       class="partition-grid"
       role="listbox"
-      aria-label="分区选择"
+      :aria-label="t('settings.secondary_navigation.partition_selection')"
     >
       <button
-        v-for="partition in normalizedPartitions"
+        v-for="partition in displayedPartitions"
         :key="partition.id"
         type="button"
         class="partition-item"
         :class="{
-          'active': selectedIdSet.has(partition.id) && !previewEnabled,
-          'browse-active': previewEnabled && partition.id === browseActiveId,
+          'active': selectedIdSet.has(partition.id) && !browsing,
+          'browse-active': browsing && partition.id === browseActiveId,
           'disabled': partition.disabled,
         }"
         :title="partition.href || partition.name"
@@ -206,40 +219,31 @@ defineExpose({
       </button>
     </div>
     <div v-else class="partition-empty">
-      {{ emptyText }}
+      {{ emptyText || t(currentMode === 'selected' ? 'settings.secondary_navigation.no_picks' : 'settings.secondary_navigation.no_partitions') }}
     </div>
 
     <div class="partition-actions">
-      <div class="preview-mode-control" role="group" aria-label="分区操作模式">
+      <div class="preview-mode-control" role="group" :aria-label="t('settings.secondary_navigation.mode_label')">
         <button
-          type="button"
-          class="preview-mode-option"
-          :class="{ active: !previewEnabled }"
-          :aria-pressed="!previewEnabled"
-          @click="setPreviewEnabled(false)"
+          v-for="modeOption in modes" :key="modeOption"
+          type="button" class="preview-mode-option"
+          :class="{ active: currentMode === modeOption }" :aria-pressed="currentMode === modeOption"
+          :title="modeOption === 'all' ? t('settings.secondary_navigation.all') : t(`settings.secondary_navigation.${modeOption}_desc`)"
+          @click="setMode(modeOption)"
         >
-          拣选
-        </button>
-        <button
-          type="button"
-          class="preview-mode-option"
-          :class="{ active: previewEnabled }"
-          :aria-pressed="previewEnabled"
-          @click="setPreviewEnabled(true)"
-        >
-          浏览
+          {{ t(`settings.secondary_navigation.${modeOption}`) }}
         </button>
       </div>
-      <span v-if="!previewEnabled && !selectedPartitions.length" class="partition-selection-hint">
-        请至少选择一个作为起始分区
+      <span v-if="!browsing && !selectedPartitions.length" class="partition-selection-hint">
+        {{ t('settings.secondary_navigation.pick_hint') }}
       </span>
       <button
         type="button"
         class="confirm-btn"
-        :disabled="!selectedPartitions.length"
+        :disabled="!selectedPartitions.length && currentMode === 'pick'"
         @click="handleConfirm"
       >
-        {{ confirmText }}
+        {{ confirmText || t('settings.secondary_navigation.collapse') }}
       </button>
     </div>
   </div>
@@ -252,7 +256,7 @@ defineExpose({
 
 .partition-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
   gap: 0.5rem;
 }
 
@@ -350,6 +354,7 @@ defineExpose({
 }
 
 .partition-actions {
+  flex-wrap: wrap;
   margin-top: 0.625rem;
   display: flex;
   align-items: center;
@@ -412,7 +417,7 @@ defineExpose({
 
 @media (max-width: 768px) {
   .partition-grid {
-    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   }
 
   .partition-item {

@@ -17,6 +17,7 @@ const props = withDefaults(defineProps<{
   gridLayout?: GridLayoutType
   toolsSide?: 'left' | 'right'
   showTools?: boolean
+  persistentTools?: boolean
   showNavigation?: boolean
   toolsPositionRatio?: number
   loadModes?: RecommendationLoadTrigger[]
@@ -44,6 +45,7 @@ const props = withDefaults(defineProps<{
   gridLayout: 'adaptive',
   toolsSide: 'right',
   showTools: true,
+  persistentTools: false,
   showNavigation: true,
   toolsPositionRatio: 25,
   loadModes: () => ['manual', 'pull'],
@@ -136,7 +138,7 @@ function measure() {
     (viewportBottom - viewportTop) * props.toolsPositionRatio / 100,
     viewportBottom - viewportTop - toolsHeight - 16,
   ))
-  const height = Math.max(0, viewportBottom - Math.max(viewportTop, rect.top))
+  const height = Math.max(0, viewportBottom - viewportTop)
   let columns = 1
   if (props.gridLayout === 'adaptive') {
     columns = Math.max(1, Math.min(props.maxColumns, Math.floor((rect.width + gap.value) / (Math.max(1, props.minItemWidth) + gap.value))))
@@ -285,6 +287,7 @@ defineExpose({ requestLoad, refresh, metrics, items: list.items, loading, noMore
       @wheel="handleWheel" @pointerdown="handlePointerDown" @click.capture="handleClick"
       @touchstart.passive="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd" @touchcancel="cancelPull"
     >
+      <slot name="header" :loading="loading" :load="requestLoad" />
       <div v-if="pullEnabled" class="pull-affordance">
         <button
           type="button" class="pull-grip" data-recommendation-grip
@@ -314,7 +317,7 @@ defineExpose({ requestLoad, refresh, metrics, items: list.items, loading, noMore
         </slot>
       </div>
     </section>
-    <aside v-if="showTools && $slots.tools && !loadModes.includes('bottom')" ref="toolsRef" class="recommendation-tools" :style="{ top: `${toolsTop}px` }">
+    <aside v-if="$slots.tools && (persistentTools || (showTools && !loadModes.includes('bottom')))" ref="toolsRef" class="recommendation-tools" :style="{ top: `${toolsTop}px` }">
       <slot name="tools" :load="requestLoad" :loading="loading" :metrics="metrics" />
     </aside>
     <div v-if="showIndicator" class="gesture-indicator" :style="indicatorPosition" role="status" aria-live="polite">
