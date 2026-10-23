@@ -65,7 +65,7 @@ function updateNumber(field: NumberField, event: Event) {
         <Radio :model-value="controls.automaticBottom" @update:model-value="patchControls({ automaticBottom: $event })" />
       </SettingsItem>
 
-      <SettingsItem :title="t('settings.recommendation_layout.manual_button')" :desc="t('settings.recommendation_layout.manual_button_desc')">
+      <SettingsItem :title="t('settings.recommendation_layout.manual_button')">
         <Radio :model-value="controls.manualButton" @update:model-value="patchControls({ manualButton: $event })" />
       </SettingsItem>
       <template v-if="controls.manualButton">

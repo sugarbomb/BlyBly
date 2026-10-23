@@ -333,6 +333,7 @@ export interface PartitionRealtimeState {
   previewEnabled: boolean
   navigationMode?: PartitionNavigationMode
   selectedPartitionIds: Array<string | number>
+  navigationPartitionIds?: Array<string | number>
   activePartitionId: string | number | null
 }
 
@@ -347,5 +348,6 @@ export const partitionForYouState = useStorageLocal<PartitionRealtimeState>('par
   showPanel: true,
   previewEnabled: false,
   selectedPartitionIds: [],
+  navigationPartitionIds: [],
   activePartitionId: null,
 }, { mergeDefaults: true })

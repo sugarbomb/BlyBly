@@ -13,7 +13,11 @@ injectCSS(`
     font-family: "Onest";
     src: url(${browser.runtime.getURL('/assets/fonts/Onest[wght].woff2')}) format("woff2-variations");
   }
+`)
 
+// A build-time flag removes both Chinese font URLs from the lightweight bundle.
+if (!import.meta.env.BEWLY_NO_CHINESE_FONTS) {
+  injectCSS(`
   @font-face {
     font-family: "ShangguSansSCVF";
     src: url(${browser.runtime.getURL('/assets/fonts/ShangguSansSC-VF.ttf')}) format("truetype-variations");
@@ -24,4 +28,5 @@ injectCSS(`
     unicode-range: U+2014, U+2E3A-2E3B;
     src: url(${browser.runtime.getURL('/assets/fonts/ZhudouSansVF-subset.woff2')}) format("woff2-variations");
   }
-`)
+  `)
+}

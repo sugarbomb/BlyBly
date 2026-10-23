@@ -288,6 +288,9 @@ defineExpose({ requestLoad, refresh, metrics, items: list.items, loading, noMore
       @touchstart.passive="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd" @touchcancel="cancelPull"
     >
       <slot name="header" :loading="loading" :load="requestLoad" />
+      <nav v-if="showNavigation && $slots.navigation" class="recommendation-navigation">
+        <slot name="navigation" :metrics="metrics" />
+      </nav>
       <div v-if="pullEnabled" class="pull-affordance">
         <button
           type="button" class="pull-grip" data-recommendation-grip
@@ -299,9 +302,6 @@ defineExpose({ requestLoad, refresh, metrics, items: list.items, loading, noMore
         </button>
       </div>
       <div class="recommendation-moving" :style="contentStyle" @transitionend.self="finishRebound">
-        <nav v-if="showNavigation && $slots.navigation" class="recommendation-navigation">
-          <slot name="navigation" :metrics="metrics" />
-        </nav>
         <div ref="gridRef" :style="gridStyle">
           <slot :metrics="metrics" :items="displayItems" :loading="loading" />
           <slot v-if="loading && !preservingItems && !rebounding" name="placeholder" :count="metrics.itemCount" :mode="list.mode.value" />

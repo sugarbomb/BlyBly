@@ -172,6 +172,12 @@ settings:
 
   secondary_navigation:
     title: 二级导航标签·分区看看
+    browse: 浏览
+    edit: 编辑
+    confirm: 选好了
+    switch_to_all: 切换到全部
+    pick_and_hide: 拣选并隐藏面板
+    edit_tip: 自定义分区标签；也可将当前选择用于侧边组件的切换标签组。
     pick: 拣选
     pick_desc: 选择一些作为切换源
     selected: 浏览拣选
@@ -193,20 +199,19 @@ settings:
       guest: 游客推荐
       tv: 云电视
       partition: 分区看看
-    loading: 刷新模式
+    loading: 刷新
     automatic: 自动加载
     automatic_desc: 瀑布流，无限滚动
     manual_button: 刷新按钮
-    manual_button_desc: 提供一个侧面的刷新按钮。
-    wheel: 滚轮
-    wheel_desc: 鼠标滚轮向下滚动一段距离触发，仅适用固定页面
-    pull: 下拉刷新
-    pull_desc: 在空白处完成下拉手势
+    wheel: 滚轮动作
+    wheel_desc: 鼠标滚轮。不适合非固定区域，会截断滚动页面
+    pull: 下拉手势
+    pull_desc: 左键按住拉动
     pull_distance: 下拉距离
-    pull_distance_desc: “一级确认”所需的下拉距离，用于防止误触
-    quantity: 展示数量
+    pull_distance_desc: “一级确认”所需的下拉距离，用于调节触发
+    quantity: 数量
     auto_fill: 自动计算
-    auto_fill_desc: 根据视野和卡片尺寸计算展示数量。请求仍受限于实际接口的提供范围
+    auto_fill_desc: 根据视野和卡片尺寸计算展示数量。由于接口差异大，效果不一致是正常的，同理，同刷新模式在不同推荐页下效果也不同，叠加各种规则可能更复杂...
     show_navigation: 显示次级导航
     show_navigation_desc: 仅在页面提供次级导航时显示。
     partition_layout: 分区看看 · 布局设置

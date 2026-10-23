@@ -103,9 +103,11 @@ const showPartitionPanel = computed<boolean>({
       partitionControls.value = { ...partitionControls.value, showNavigation: true }
   },
 })
+const editingNavigation = ref(!partitionForYouState.value.navigationPartitionIds?.length)
 const navigationMode = computed<PartitionNavigationMode>({
-  get: () => partitionForYouState.value.navigationMode ?? (partitionForYouState.value.previewEnabled ? 'all' : 'pick'),
+  get: () => partitionForYouState.value.navigationMode === 'pick' ? 'pick' : 'all',
   set: (value) => {
+    editingNavigation.value = value === 'pick'
     partitionForYouState.value.navigationMode = value
     partitionForYouState.value.previewEnabled = value !== 'pick'
   },
@@ -117,6 +119,10 @@ const previewEnabled = computed({
 const selectedPartitionIds = computed<Array<string | number>>({
   get: () => partitionForYouState.value.selectedPartitionIds,
   set: value => partitionForYouState.value.selectedPartitionIds = value,
+})
+const navigationPartitionIds = computed<Array<string | number>>({
+  get: () => partitionForYouState.value.navigationPartitionIds ?? [],
+  set: value => partitionForYouState.value.navigationPartitionIds = value,
 })
 const activePartitionId = computed<string | number | null>({
   get: () => partitionForYouState.value.activePartitionId,
@@ -142,15 +148,16 @@ const activePartition = computed(() => {
   return partitionOptions.value.find(item => item.id === activePartitionId.value) ?? null
 })
 
+const browsing = computed(() => !showPartitionPanel.value || navigationMode.value === 'all' || !editingNavigation.value)
 const activeRegion = computed(resolveActivePartitionId)
 const layoutOptions = computed(() => ({
   ...layoutSettings.value,
-  loadModes: activeRegion.value ? layoutSettings.value.loadModes : [],
+  loadModes: browsing.value && activeRegion.value ? layoutSettings.value.loadModes : [],
   // The endpoint returns a fixed batch; sizing does not change its request parameters.
   maxItems: PAGE_SIZE,
   itemCount: layoutSettings.value.itemCount === undefined ? undefined : Math.min(PAGE_SIZE, layoutSettings.value.itemCount),
 }))
-const showRefresh = computed(() => layoutSettings.value.loadModes.includes('manual'))
+const showRefresh = computed(() => browsing.value && layoutSettings.value.loadModes.includes('manual'))
 
 const partitionStatus = computed<'idle' | 'selected'>(() => {
   return activePartition.value ? 'selected' : 'idle'
@@ -173,7 +180,7 @@ const railStatusLabel = computed(() => {
 })
 
 const switchDisabled = computed(() => {
-  return selectedPartitions.value.length <= 1
+  return !browsing.value || selectedPartitions.value.length <= 1
 })
 
 function shouldFilterByForYou(item: { aid?: number | string, bvid?: string, title?: string, owner?: { name?: string, mid?: number | string } }): boolean {
@@ -192,22 +199,14 @@ onActivated(() => {
   initPageAction()
 })
 
-watch([selectedPartitions, navigationMode], ([nextSelected, mode]) => {
-  if (mode === 'all') {
-    if (!activePartitionId.value && nextSelected.length)
-      activePartitionId.value = nextSelected[0].id
+watch(browsing, async (value) => {
+  if (!value || videoList.value.length)
     return
-  }
-
-  if (!nextSelected.length) {
-    activePartitionId.value = null
-    return
-  }
-
-  const hasActive = nextSelected.some(item => item.id === activePartitionId.value)
-  if (!hasActive)
-    activePartitionId.value = nextSelected[0].id
-}, { immediate: true })
+  const currentLayout = layoutRef.value
+  await nextTick()
+  if (currentLayout && currentLayout === layoutRef.value)
+    await initData()
+})
 
 watch(activeRegion, (nextPartitionId, prevPartitionId) => {
   if (nextPartitionId === prevPartitionId)
@@ -225,14 +224,16 @@ function initPageAction() {
 }
 
 async function initData() {
-  if (!activeRegion.value)
+  if (!browsing.value || !activeRegion.value)
     return
   await nextTick()
+  if (!browsing.value)
+    return
   await layoutRef.value?.refresh()
 }
 
 async function loadPage(context: RecommendationLoadContext): Promise<RecommendationPage<VideoElement>> {
-  if (context.signal.aborted)
+  if (context.signal.aborted || !browsing.value)
     throw new DOMException('Aborted', 'AbortError')
   const fromRegion = activeRegion.value
   if (!fromRegion)
@@ -243,7 +244,7 @@ async function loadPage(context: RecommendationLoadContext): Promise<Recommendat
     display_id: displayId.value,
   }) as PartitionForYouResult
 
-  if (context.signal.aborted || fromRegion !== activeRegion.value)
+  if (context.signal.aborted || !browsing.value || fromRegion !== activeRegion.value)
     throw new DOMException('Aborted', 'AbortError')
   if (response?.code !== 0)
     throw new Error(t('recommendation.load_failed'))
@@ -346,6 +347,8 @@ function resolveActivePartitionId(): number | null {
 }
 
 function handleSelectPartition(payload: { partition: PartitionOption, selected: boolean, selectedIds: Array<string | number> }) {
+  if (!browsing.value)
+    return
   if (payload.selected)
     activePartitionId.value = payload.partition.id
   else if (!payload.selectedIds.length)
@@ -361,6 +364,8 @@ function getNextDisplayId(current: number): number {
 }
 
 function handleSwitchPartition() {
+  if (!browsing.value)
+    return
   const items = selectedPartitions.value
   if (items.length <= 1)
     return
@@ -368,13 +373,6 @@ function handleSwitchPartition() {
   const currentIndex = items.findIndex(item => item.id === activePartitionId.value)
   const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % items.length : 0
   activePartitionId.value = items[nextIndex].id
-}
-
-function handleConfirmPartitions(partitions: PartitionOption[]) {
-  if (!partitions.length)
-    return
-  if (!activePartitionId.value)
-    activePartitionId.value = partitions[0].id
 }
 
 defineExpose({
@@ -394,7 +392,7 @@ defineExpose({
     :key="activeRegion ?? 'idle'" ref="layoutRef" class="partition-recommendations"
     v-bind="layoutOptions" :grid-layout="props.gridLayout" :scroll-target="scrollViewport"
     :load-page="loadPage" :get-item-key="video => video.uniqueId"
-    :immediate="!!activeRegion" :show-navigation="showPartitionPanel" persistent-tools
+    :immediate="browsing && !!activeRegion" :show-navigation="showPartitionPanel" persistent-tools
     @before-loading="emit('beforeLoading')" @after-loading="emit('afterLoading')"
   >
     <template #header="{ load, loading }">
@@ -410,9 +408,10 @@ defineExpose({
 
     <template #navigation>
       <PartitionSelectionControl
-        v-model="selectedPartitionIds" v-model:visible="showPartitionPanel" v-model:mode="navigationMode"
+        v-model="selectedPartitionIds" v-model:navigation-ids="navigationPartitionIds"
+        v-model:editing="editingNavigation" v-model:visible="showPartitionPanel" v-model:mode="navigationMode"
         :browse-active-id="activePartitionId" :partitions="partitionOptions"
-        @select-partition="handleSelectPartition" @confirm="handleConfirmPartitions"
+        @select-partition="handleSelectPartition"
       />
     </template>
 

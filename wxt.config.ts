@@ -11,9 +11,13 @@ import { defineConfig } from 'wxt'
 import { getManifest } from './src/manifest'
 
 const cleanBrowserProfile = process.env.WXT_CLEAN_PROFILE === '1'
+const noChineseFonts = process.env.BEWLY_NO_CHINESE_FONTS === '1'
+const variantSuffix = noChineseFonts ? '-no-fonts' : ''
+const chineseFontFiles = new Set(['ShangguSansSC-VF.ttf', 'ZhudouSansVF-subset.woff2'])
 
 export default defineConfig({
   srcDir: 'src',
+  outDirTemplate: `{{browser}}-mv{{manifestVersion}}{{modeSuffix}}${variantSuffix}`,
   manifestVersion: 3,
   modules: ['@wxt-dev/module-vue'],
   // Keep the existing Vue/browser imports; avoid two competing import systems.
@@ -28,7 +32,7 @@ export default defineConfig({
   zip: {
     dotSources: true,
     includeSources: ['src/**', 'assets/**', 'scripts/**', '*.ts', '*.json', 'pnpm-lock.yaml', '.npmrc', '.gitignore', 'LICENSE', 'README.md'],
-    excludeSources: ['.migration-backups/**', '.dev-browser/**', 'extension*/**', 'temp/**', 'web-ext-profile/**', 'package-lock.legacy.json'],
+    excludeSources: ['.migration-backups/**', '.dev-browser/**', '.crx-keys/**', '**/*.pem', 'extension*/**', 'temp/**', 'web-ext-profile/**', 'package-lock.legacy.json'],
   },
   async manifest({ browser, mode }) {
     const manifest = await getManifest({ browser, mode })
@@ -62,6 +66,7 @@ export default defineConfig({
       'process.env.FIREFOX': JSON.stringify(browser === 'firefox'),
       'process.env.NODE_ENV': JSON.stringify(mode === 'development' ? 'development' : 'production'),
       'import.meta.env.BEWLY_CONTENT_CSS': JSON.stringify('content-scripts/bewly.css'),
+      'import.meta.env.BEWLY_NO_CHINESE_FONTS': JSON.stringify(noChineseFonts),
       '__VUE_OPTIONS_API__': 'true',
       '__VUE_PROD_DEVTOOLS__': 'false',
     },
@@ -73,7 +78,7 @@ export default defineConfig({
   }),
   hooks: {
     'config:resolved': function (wxt) {
-      const packageName = wxt.config.browser === 'chrome' ? 'extension' : `extension-${wxt.config.browser}`
+      const packageName = (wxt.config.browser === 'chrome' ? 'extension' : `extension-${wxt.config.browser}`) + variantSuffix
       wxt.config.zip.artifactTemplate = `${packageName}.zip`
       wxt.config.zip.sourcesTemplate = `${packageName}-sources.zip`
     },
@@ -93,7 +98,7 @@ export default defineConfig({
           const path = `${dir}/${entry.name}`
           if (entry.isDirectory())
             await addAssets(path)
-          else
+          else if (!(noChineseFonts && dir === 'assets/fonts' && chineseFontFiles.has(entry.name)))
             files.push({ absoluteSrc: resolve(path), relativeDest: path })
         }
       }

@@ -11,8 +11,10 @@ const browsers = targets.length ? targets : ['chrome', 'firefox']
 const sorted = (values: unknown[] = []) => [...values].sort()
 
 async function checkExtensionBuild() {
-  for (const browser of browsers) {
-    const root = resolve(`.output/${browser}-mv3`)
+  for (const target of browsers) {
+    const noChineseFonts = target.endsWith('-no-chinese-fonts')
+    const browser = target.replace(/-no-chinese-fonts$/, '')
+    const root = resolve(`.output/${browser}-mv3${noChineseFonts ? '-no-chinese-fonts' : ''}`)
     const actual = JSON.parse(readFileSync(resolve(root, 'manifest.json'), 'utf8'))
     const expected = await getManifest({ browser, mode: 'production' })
 
@@ -58,6 +60,13 @@ async function checkExtensionBuild() {
     for (const file of referencedFiles)
       assert.ok(existsSync(resolve(root, file)), `${browser}: missing ${file}`)
 
+    const contentScripts = actual.content_scripts.flatMap((entry: { js: string[] }) => entry.js)
+      .map((file: string) => readFileSync(resolve(root, file), 'utf8')).join('\n')
+    for (const font of ['ShangguSansSC-VF.ttf', 'ZhudouSansVF-subset.woff2']) {
+      assert.equal(existsSync(resolve(root, 'assets/fonts', font)), !noChineseFonts, `${target}: font asset ${font}`)
+      assert.equal(contentScripts.includes(font), !noChineseFonts, `${target}: font URL ${font}`)
+    }
+
     // Execute the actual bundled MAIN-world script, then exercise SPA navigation.
     const events: unknown[] = []
     const window = {
@@ -77,7 +86,7 @@ async function checkExtensionBuild() {
     assert.equal(window.___inject, true)
     assert.equal(window.history.pushState(), 'original-return')
     assert.equal((events[0] as { type: string }).type, 'historyChange')
-    console.log(`${browser}: manifest parity, resources, and bundled history hook passed`)
+    console.log(`${target}: manifest parity, resources, font variant, and bundled history hook passed`)
   }
 }
 

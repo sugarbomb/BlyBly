@@ -22,6 +22,8 @@ interface PartitionSelectPayload {
 
 const props = withDefaults(defineProps<{
   modelValue?: Array<string | number>
+  navigationIds?: Array<string | number>
+  editing?: boolean
   visible?: boolean
   previewEnabled?: boolean
   mode?: PartitionNavigationMode
@@ -31,6 +33,8 @@ const props = withDefaults(defineProps<{
   confirmText?: string
 }>(), {
   modelValue: () => [],
+  navigationIds: () => [],
+  editing: true,
   visible: true,
   previewEnabled: false,
   browseActiveId: null,
@@ -41,6 +45,8 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: Array<string | number>): void
+  (e: 'update:navigationIds', value: Array<string | number>): void
+  (e: 'update:editing', value: boolean): void
   (e: 'update:visible', value: boolean): void
   (e: 'update:previewEnabled', value: boolean): void
   (e: 'update:mode', value: PartitionNavigationMode): void
@@ -50,9 +56,9 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const currentMode = computed(() => props.mode ?? (props.previewEnabled ? 'all' : 'pick'))
-const browsing = computed(() => currentMode.value !== 'pick')
-const modes: PartitionNavigationMode[] = ['pick', 'selected', 'all']
+const currentMode = computed<'all' | 'pick'>(() => props.mode === 'pick' ? 'pick' : 'all')
+const browsing = computed(() => currentMode.value === 'all' || !props.editing)
+const editSelectionIds = ref<Array<string | number>>([])
 
 const normalizedPartitions = computed<PartitionItem[]>(() => {
   const items: PartitionItem[] = []
@@ -79,7 +85,10 @@ const normalizedPartitions = computed<PartitionItem[]>(() => {
 
 const selectedIds = computed(() => {
   const validIds = new Set(normalizedPartitions.value.filter(item => !item.disabled).map(item => item.id))
-  return props.modelValue.filter(id => validIds.has(id))
+  const ids = currentMode.value === 'pick'
+    ? (props.editing ? editSelectionIds.value : props.navigationIds)
+    : props.navigationIds
+  return ids.filter(id => validIds.has(id))
 })
 
 const selectedIdSet = computed(() => {
@@ -90,17 +99,26 @@ const selectedPartitions = computed(() => {
   return normalizedPartitions.value.filter(partition => selectedIdSet.value.has(partition.id))
 })
 
-const displayedPartitions = computed(() => currentMode.value === 'selected' ? selectedPartitions.value : normalizedPartitions.value)
+const displayedPartitions = computed(() => currentMode.value === 'pick' && !props.editing
+  ? selectedPartitions.value
+  : normalizedPartitions.value)
+
+watch(() => props.editing, (editing) => {
+  if (!editing)
+    return
+  editSelectionIds.value = [...(props.navigationIds.length ? props.navigationIds : props.modelValue)]
+}, { immediate: true })
 
 watch(normalizedPartitions, (nextPartitions) => {
   const validIds = new Set(nextPartitions.filter(item => !item.disabled).map(item => item.id))
   const nextSelectedIds = props.modelValue.filter(id => validIds.has(id))
-  if (nextSelectedIds.length === props.modelValue.length)
-    return
-
-  const nextSelectedPartitions = nextPartitions.filter(item => nextSelectedIds.includes(item.id))
-  emit('update:modelValue', nextSelectedIds)
-  emit('change', nextSelectedPartitions)
+  if (nextSelectedIds.length !== props.modelValue.length) {
+    emit('update:modelValue', nextSelectedIds)
+    emit('change', nextPartitions.filter(item => nextSelectedIds.includes(item.id)))
+  }
+  const nextNavigationIds = props.navigationIds.filter(id => validIds.has(id))
+  if (nextNavigationIds.length !== props.navigationIds.length)
+    emit('update:navigationIds', nextNavigationIds)
 })
 
 function handleSelect(partition: PartitionItem) {
@@ -111,13 +129,7 @@ function handleSelect(partition: PartitionItem) {
   let nextSelectedPartitions: PartitionItem[] = []
   let selected = true
 
-  if (browsing.value) {
-    // Browse mode: do not overwrite selected set.
-    nextSelectedIds = [...selectedIds.value]
-    nextSelectedPartitions = normalizedPartitions.value.filter(item => selectedIdSet.value.has(item.id))
-  }
-  else {
-    // Select mode: keep multi-select behavior.
+  if (!browsing.value) {
     const nextSelectedIdSet = new Set(selectedIdSet.value)
 
     if (nextSelectedIdSet.has(partition.id)) {
@@ -134,12 +146,12 @@ function handleSelect(partition: PartitionItem) {
 
     nextSelectedPartitions = normalizedPartitions.value
       .filter(item => nextSelectedIdSet.has(item.id))
+    editSelectionIds.value = nextSelectedIds
+    return
   }
 
-  if (!browsing.value) {
-    emit('update:modelValue', nextSelectedIds)
-    emit('change', nextSelectedPartitions)
-  }
+  nextSelectedIds = [...props.modelValue]
+  nextSelectedPartitions = normalizedPartitions.value.filter(item => props.modelValue.includes(item.id))
   emit('selectPartition', {
     partition,
     selected,
@@ -149,18 +161,35 @@ function handleSelect(partition: PartitionItem) {
 }
 
 function handleConfirm() {
-  if (!selectedPartitions.value.length && currentMode.value === 'pick')
+  if (!selectedPartitions.value.length)
     return
-
+  emit('update:navigationIds', [...editSelectionIds.value])
   emit('confirm', selectedPartitions.value)
+  emit('update:editing', false)
+}
+
+function switchToAll() {
+  setMode('all')
+}
+
+function useAsSwitchGroupAndHide() {
+  if (!selectedPartitions.value.length)
+    return
+  emit('update:modelValue', [...editSelectionIds.value])
+  emit('change', selectedPartitions.value)
+  setMode('all')
   emit('update:visible', false)
 }
 
 function setMode(mode: PartitionNavigationMode) {
-  if (currentMode.value === mode)
+  const nextMode = mode === 'pick' ? 'pick' : 'all'
+  if (nextMode === 'pick')
+    editSelectionIds.value = [...(props.navigationIds.length ? props.navigationIds : props.modelValue)]
+  emit('update:editing', nextMode === 'pick')
+  if (currentMode.value === nextMode)
     return
-  emit('update:mode', mode)
-  emit('update:previewEnabled', mode !== 'pick')
+  emit('update:mode', nextMode)
+  emit('update:previewEnabled', nextMode !== 'pick')
 }
 
 function resolveFallbackLabel(name: string): string {
@@ -176,75 +205,103 @@ defineExpose({
 </script>
 
 <template>
-  <div v-show="visible" class="partition-select-control">
-    <div
-      v-if="displayedPartitions.length"
-      class="partition-grid"
-      role="listbox"
-      :aria-label="t('settings.secondary_navigation.partition_selection')"
-    >
-      <button
-        v-for="partition in displayedPartitions"
-        :key="partition.id"
-        type="button"
-        class="partition-item"
-        :class="{
-          'active': selectedIdSet.has(partition.id) && !browsing,
-          'browse-active': browsing && partition.id === browseActiveId,
-          'disabled': partition.disabled,
-        }"
-        :title="partition.href || partition.name"
-        :data-href="partition.href || undefined"
-        :data-zone-id="partition.zoneId || undefined"
-        :aria-selected="selectedIdSet.has(partition.id)"
-        :aria-disabled="partition.disabled"
-        @click="handleSelect(partition)"
-      >
-        <span class="partition-icon">
-          <svg v-if="partition.icon?.startsWith('#')" aria-hidden="true">
-            <use :xlink:href="partition.icon" />
-          </svg>
-          <i
-            v-else-if="partition.icon?.startsWith('i-')"
-            :class="partition.icon"
-            :style="{ color: partition.color }"
-            aria-hidden="true"
-          />
-          <img v-else-if="partition.icon" :src="partition.icon" :alt="partition.name" loading="lazy">
-          <span v-else class="partition-icon-fallback">
-            {{ resolveFallbackLabel(partition.name) }}
-          </span>
-        </span>
-        <span class="partition-name">{{ partition.name }}</span>
-      </button>
-    </div>
-    <div v-else class="partition-empty">
-      {{ emptyText || t(currentMode === 'selected' ? 'settings.secondary_navigation.no_picks' : 'settings.secondary_navigation.no_partitions') }}
-    </div>
-
-    <div class="partition-actions">
-      <div class="preview-mode-control" role="group" :aria-label="t('settings.secondary_navigation.mode_label')">
+  <div v-show="visible" class="partition-select-control" :class="{ 'is-focused': !browsing }">
+    <div class="partition-focus-surface">
+      <div class="partition-toolbar">
         <button
-          v-for="modeOption in modes" :key="modeOption"
-          type="button" class="preview-mode-option"
-          :class="{ active: currentMode === modeOption }" :aria-pressed="currentMode === modeOption"
-          :title="modeOption === 'all' ? t('settings.secondary_navigation.all') : t(`settings.secondary_navigation.${modeOption}_desc`)"
-          @click="setMode(modeOption)"
+          type="button" class="browse-mode-button"
+          :aria-pressed="currentMode === 'all'"
+          @click="setMode('all')"
         >
-          {{ t(`settings.secondary_navigation.${modeOption}`) }}
+          {{ t('settings.secondary_navigation.browse') }}
+        </button>
+        <button
+          type="button" class="edit-mode-button"
+          :class="{ active: !browsing }"
+          :aria-pressed="!browsing"
+          :title="t('settings.secondary_navigation.edit')"
+          :aria-label="t('settings.secondary_navigation.edit')"
+          @click="setMode('pick')"
+        >
+          <i i-mingcute:edit-line aria-hidden="true" />
         </button>
       </div>
-      <span v-if="!browsing && !selectedPartitions.length" class="partition-selection-hint">
-        {{ t('settings.secondary_navigation.pick_hint') }}
-      </span>
-      <button
-        type="button"
-        class="confirm-btn"
-        :disabled="!selectedPartitions.length && currentMode === 'pick'"
-        @click="handleConfirm"
+      <div
+        v-if="displayedPartitions.length"
+        class="partition-grid"
+        :class="{ 'is-editing': !browsing }"
+        role="listbox"
+        :aria-label="t('settings.secondary_navigation.partition_selection')"
       >
-        {{ confirmText || t('settings.secondary_navigation.collapse') }}
-      </button>
+        <svg v-if="!browsing" class="partition-edit-outline" aria-hidden="true" focusable="false">
+          <rect width="100%" height="100%" rx="16" vector-effect="non-scaling-stroke" />
+        </svg>
+        <button
+          v-for="partition in displayedPartitions"
+          :key="partition.id"
+          type="button"
+          class="partition-item"
+          :class="{
+            'active': selectedIdSet.has(partition.id) && !browsing,
+            'browse-active': browsing && partition.id === browseActiveId,
+            'disabled': partition.disabled,
+          }"
+          :title="partition.href || partition.name"
+          :data-href="partition.href || undefined"
+          :data-zone-id="partition.zoneId || undefined"
+          :aria-selected="browsing ? partition.id === browseActiveId : selectedIdSet.has(partition.id)"
+          :aria-disabled="partition.disabled"
+          @click="handleSelect(partition)"
+        >
+          <span class="partition-icon">
+            <svg v-if="partition.icon?.startsWith('#')" aria-hidden="true">
+              <use :xlink:href="partition.icon" />
+            </svg>
+            <i
+              v-else-if="partition.icon?.startsWith('i-')"
+              :class="partition.icon"
+              :style="{ color: partition.color }"
+              aria-hidden="true"
+            />
+            <img v-else-if="partition.icon" :src="partition.icon" :alt="partition.name" loading="lazy">
+            <span v-else class="partition-icon-fallback">
+              {{ resolveFallbackLabel(partition.name) }}
+            </span>
+          </span>
+          <span class="partition-name">{{ partition.name }}</span>
+        </button>
+      </div>
+      <div v-else class="partition-empty">
+        {{ emptyText || t('settings.secondary_navigation.no_partitions') }}
+      </div>
+
+      <div v-if="!browsing" class="partition-actions">
+        <span v-if="!selectedPartitions.length" class="partition-selection-hint">
+          {{ t('settings.secondary_navigation.pick_hint') }}
+        </span>
+        <div class="edit-action-group">
+          <button
+            type="button" class="edit-action edit-action-primary"
+            :disabled="!selectedPartitions.length"
+            @click="handleConfirm"
+          >
+            {{ t('settings.secondary_navigation.confirm') }}
+          </button>
+          <button type="button" class="edit-action edit-action-switch-all" @click="switchToAll">
+            {{ t('settings.secondary_navigation.switch_to_all') }}
+          </button>
+          <button
+            type="button" class="edit-action edit-action-secondary"
+            :disabled="!selectedPartitions.length"
+            @click="useAsSwitchGroupAndHide"
+          >
+            {{ t('settings.secondary_navigation.pick_and_hide') }}
+          </button>
+        </div>
+      </div>
+      <p v-if="!browsing" class="partition-tips">
+        {{ t('settings.secondary_navigation.edit_tip') }}
+      </p>
     </div>
   </div>
 </template>
@@ -254,10 +311,48 @@ defineExpose({
   width: 100%;
 }
 
+.partition-select-control.is-focused {
+  position: relative;
+}
+
+.is-focused .partition-focus-surface {
+  position: relative;
+  padding: 12px;
+  border: 1px solid var(--bew-theme-color-40);
+  border-radius: var(--bew-radius);
+  background: var(--bew-elevated);
+  box-shadow: 0 0 0 3px var(--bew-theme-color-20);
+}
+
+.partition-tips {
+  margin: 12px 0 0;
+  color: var(--bew-text-3);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .partition-grid {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
   gap: 0.5rem;
+}
+
+.partition-grid.is-editing {
+  padding: 8px;
+}
+
+.partition-edit-outline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: var(--bew-theme-color);
+  stroke-width: 2;
+  stroke-dasharray: 8 6;
+  pointer-events: none;
 }
 
 .partition-item {
@@ -283,8 +378,8 @@ defineExpose({
 }
 
 .partition-item.active {
-  color: var(--bew-text-auto);
-  background: var(--bew-theme-color);
+  color: var(--bew-theme-color);
+  background: var(--bew-theme-color-20);
 }
 
 .partition-item.browse-active {
@@ -358,36 +453,70 @@ defineExpose({
   margin-top: 0.625rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.5rem;
 }
 
-.preview-mode-control {
-  display: inline-flex;
-  flex-shrink: 0;
-  padding: 0.2rem;
-  border-radius: var(--bew-radius);
-  background: var(--bew-fill-2);
+.partition-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  margin-bottom: 8px;
 }
 
-.preview-mode-option {
-  min-width: 3.5rem;
+.browse-mode-button,
+.edit-mode-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  height: 30px;
   border: 0;
   border-radius: var(--bew-radius);
   background: transparent;
   color: var(--bew-text-2);
-  padding: 0.3rem 0.65rem;
+  font: inherit;
   font-size: 0.8em;
   font-weight: 600;
   cursor: pointer;
   transition:
-    color 200ms,
-    background-color 200ms;
+    color 150ms ease,
+    opacity 150ms ease,
+    background-color 150ms ease;
 }
 
-.preview-mode-option.active {
-  background: var(--bew-theme-color);
-  color: var(--bew-text-auto);
+.browse-mode-button {
+  padding: 0 8px;
+}
+
+.browse-mode-button:hover,
+.browse-mode-button:focus-visible {
+  color: var(--bew-text-1);
+}
+
+.edit-mode-button {
+  width: 30px;
+  color: var(--bew-text-3);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.partition-toolbar:hover .edit-mode-button,
+.partition-toolbar:focus-within .edit-mode-button,
+.edit-mode-button.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.edit-mode-button:hover,
+.edit-mode-button:focus-visible {
+  color: var(--bew-theme-color);
+}
+
+.edit-mode-button.active {
+  background: var(--bew-theme-color-20);
+  color: var(--bew-theme-color);
 }
 
 .partition-selection-hint {
@@ -398,19 +527,48 @@ defineExpose({
   text-align: left;
 }
 
-.confirm-btn {
-  border: 1px solid transparent;
-  border-radius: var(--bew-radius);
-  background: var(--bew-theme-color);
-  color: var(--bew-text-auto);
-  padding: 0.35rem 0.75rem;
-  font-size: 0.8em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 200ms;
+.edit-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
-.confirm-btn:disabled {
+.edit-action {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--bew-radius);
+  background: transparent;
+  color: var(--bew-text-3);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    opacity 150ms ease;
+}
+
+.edit-action-primary {
+  color: var(--bew-text-2);
+}
+
+.edit-action-primary:hover,
+.edit-action-primary:focus-visible,
+.edit-action-switch-all:hover,
+.edit-action-switch-all:focus-visible,
+.edit-action-secondary:hover {
+  background: var(--bew-fill-2);
+  color: var(--bew-text-1);
+}
+
+.edit-action-secondary:focus-visible {
+  background: var(--bew-fill-2);
+  color: var(--bew-text-1);
+}
+
+.edit-action:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
