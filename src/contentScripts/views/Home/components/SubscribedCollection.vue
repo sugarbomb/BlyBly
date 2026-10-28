@@ -82,6 +82,11 @@ const shouldMoveAsideUp = ref(false)
 const isCollectionLoading = ref(false)
 const needToLoginFirst = ref(false)
 const favoriteCollections = ref<FavoriteCollection[]>([])
+const collectionPage = ref(1)
+const collectionHasMore = ref(false)
+const isLoadingMoreCollections = ref(false)
+const collectionLoadIndicator = ref<HTMLElement | null>(null)
+let collectionLoadObserver: IntersectionObserver | undefined
 const activatedCollection = ref<FavoriteCollection>()
 const fullCollection = ref<FavoriteCollection>()
 const fullCollectionVideos = ref<FavoriteCollectionVideo[]>([])
@@ -115,6 +120,18 @@ watch(() => props.topBarVisibility, () => {
     && !props.topBarVisibility
 })
 
+watch(collectionLoadIndicator, (element, previousElement) => {
+  if (previousElement)
+    collectionLoadObserver?.unobserve(previousElement)
+  if (element) {
+    collectionLoadObserver ??= new IntersectionObserver((entries) => {
+      if (entries.some(entry => entry.isIntersecting))
+        void loadMoreCollections()
+    })
+    collectionLoadObserver.observe(element)
+  }
+})
+
 onMounted(() => {
   initData()
   initPageAction()
@@ -135,6 +152,7 @@ onDeactivated(() => {
 })
 
 onBeforeUnmount(() => {
+  collectionLoadObserver?.disconnect()
   persistCollectionCountSnapshot()
 })
 
@@ -145,19 +163,21 @@ function initPageAction() {
     await getFullCollectionVideos()
   }
   handlePageRefresh.value = async () => {
-    if (isCollectionLoading.value || isFullCollectionLoading.value)
+    if (isCollectionLoading.value || isFullCollectionLoading.value || isLoadingMoreCollections.value)
       return
     await initData()
   }
 }
 
 async function initData() {
-  if (isCollectionLoading.value)
+  if (isCollectionLoading.value || isLoadingMoreCollections.value)
     return
 
   emit('beforeLoading')
   try {
     isCollectionLoading.value = true
+    collectionPage.value = 1
+    collectionHasMore.value = false
     needToLoginFirst.value = false
     fullCollectionVideos.value = []
     fullCollectionPage.value = 1
@@ -186,6 +206,7 @@ async function initData() {
         return
 
       favoriteCollections.value = response.data.list ?? []
+      collectionHasMore.value = response.data.has_more
       collectionCountsUserId.value = userId
       await updateCollectionCountChanges(userId)
       if (activatedCollection.value) {
@@ -215,6 +236,51 @@ async function initData() {
   finally {
     isCollectionLoading.value = false
     emit('afterLoading')
+  }
+}
+
+async function loadMoreCollections() {
+  if (isCollectionLoading.value || isLoadingMoreCollections.value || !collectionHasMore.value)
+    return
+
+  isLoadingMoreCollections.value = true
+  try {
+    const nextPage = collectionPage.value + 1
+    const response: FavoriteCollectionResult = await api.favorite.getFavoriteCollections({
+      up_mid: getUserID(),
+      pn: nextPage,
+    })
+    if (response.code !== 0)
+      return
+
+    const existingIds = new Set(favoriteCollections.value.map(item => item.id))
+    const newCollections = (response.data.list ?? []).filter((item) => {
+      if (existingIds.has(item.id))
+        return false
+      existingIds.add(item.id)
+      return true
+    })
+    const previousSnapshot = await readCollectionCountSnapshot(collectionCountsUserId.value)
+    for (const item of newCollections) {
+      const previousCount = previousSnapshot?.[String(item.id)]
+      if (previousCount !== undefined && Number.isFinite(previousCount)) {
+        const change = item.media_count - previousCount
+        if (change !== 0)
+          collectionCountChanges.set(item.id, change)
+      }
+    }
+    favoriteCollections.value.push(...newCollections)
+    collectionPage.value = nextPage
+    collectionHasMore.value = response.data.has_more
+    await persistCollectionCountSnapshot()
+    await nextTick()
+    if (collectionHasMore.value && collectionLoadIndicator.value) {
+      collectionLoadObserver?.unobserve(collectionLoadIndicator.value)
+      collectionLoadObserver?.observe(collectionLoadIndicator.value)
+    }
+  }
+  finally {
+    isLoadingMoreCollections.value = false
   }
 }
 
@@ -358,7 +424,7 @@ async function persistCollectionCountSnapshot() {
     = storedHistory && typeof storedHistory === 'object' && !Array.isArray(storedHistory)
       ? { ...storedHistory as CollectionCountHistory }
       : {}
-  history[userId] = getCurrentCollectionCountSnapshot()
+  history[userId] = { ...history[userId], ...getCurrentCollectionCountSnapshot() }
 
   await browser.storage.local.set({
     [COLLECTION_COUNT_STORAGE_KEY]: history,
@@ -465,6 +531,13 @@ defineExpose({ initData })
                 {{ formatCollectionCount(item) }}
               </span>
             </button>
+          </li>
+          <li
+            v-if="collectionHasMore" ref="collectionLoadIndicator" w-full h-30px flex
+            items-center justify-center un-text="$bew-text-3" role="status" :aria-label="isLoadingMoreCollections ? '加载中' : '向下滚动加载更多合集'"
+          >
+            <span v-if="isLoadingMoreCollections">…</span>
+            <span v-else i-tabler:chevrons-down inline-block aria-hidden="true" />
           </li>
         </ul>
       </OverlayScrollbarsComponent>

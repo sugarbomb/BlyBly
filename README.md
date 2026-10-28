@@ -12,7 +12,7 @@
 ## 本地安装
 #### 插件适用chrome/Edge等Chromium系浏览器，需要手动加载文件夹
 
-请先下载并解压 [extension.rar](https://github.com/sugarbomb/BlyBly/releases/tag/v0.5.2)
+请先下载并解压 [extension.rar/zip](https://github.com/sugarbomb/BlyBly/releases/latest)
 <div align="center">
   <img src="https://github.com/user-attachments/assets/81bc81ea-86e4-4db4-a91f-e942b00a7715" width="600" height="300">
 </div>
@@ -20,7 +20,6 @@
 ### 安装
 
 1. 打开：`chrome://extensions/`  Edge 打开：`edge://extensions/`
-
 
 2. 开发者模式打开
 

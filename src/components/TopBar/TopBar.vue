@@ -26,7 +26,6 @@ import UserPanelPop from './components/UserPanelPop.vue'
 import WatchLaterPop from './components/WatchLaterPop.vue'
 import { updateInterval } from './notify'
 import type { UnReadDm, UnReadMessage, UserInfo } from './types'
-
 // import { useTopBarStore } from '~/stores/topBarStore'
 
 // const popups = { NotificationsPop, MomentsPop, FavoritesPop, HistoryPop }
@@ -491,6 +490,7 @@ defineExpose({
       :class="{ 'hide': hideTopBar, 'force-white-icon': forceWhiteIcon }"
       :style="{ position: isTopBarFixed ? 'fixed' : 'absolute' }"
     >
+      <!-- <ParallaxBanner class="home-banner" /> -->
       <main
         max-w="$bew-page-max-width"
         flex="~ justify-between items-center gap-4"
@@ -1113,5 +1113,9 @@ defineExpose({
     --uno: "!w-auto !flex items-center bg-$bew-theme-color-10";
     --uno: "rounded-full important:text-$bew-theme-color important:px-4 hover:important-bg-$bew-theme-color hover:important-text-white important:text-base";
   }
+}
+.home-banner {
+  position: absolute;
+  inset: 0;
 }
 </style>

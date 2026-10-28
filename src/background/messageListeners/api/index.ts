@@ -3,6 +3,7 @@ import browser from 'webextension-polyfill'
 import { apiListenerFactory } from '../../utils'
 import API_ANIME from './anime'
 import API_AUTH from './auth'
+import API_BANNER from './banner'
 import API_FAVORITE from './favorite'
 import API_HISTORY from './history'
 import API_LIVE from './live'
@@ -31,6 +32,7 @@ export const API_COLLECTION = {
   WATCHLATER: API_WATCHLATER,
   LIVE: API_LIVE,
   WEEKLY_RANKING: API_WEEKLY_RANKING,
+  BANNER: API_BANNER,
 
   [Symbol.iterator]() {
     return Object.values(this).values()

@@ -607,7 +607,7 @@ dock:
 video_card:
   operation:
     not_interested: 不感兴趣
-    block_user: 屏蔽up主(在此分区)
+    block_user: 屏蔽up主(仅此分区)
     block_user_global: 全局屏蔽up主
     temporarily_block_user: 临时屏蔽此 UP 主 {days} 天
     temporarily_block_video: 临时屏蔽此视频 {days} 天
@@ -629,7 +629,7 @@ video_card:
 home:
   navigation:
     confirm: 确认
-    edit_button_tip: 可在设置 → 首页标签中关闭
+    edit_button_tip: 可在设置-导航与交互-导航标签中关闭
     show_edit_button: 显示导航编辑按钮
     edit: 编辑导航
     done: 完成编辑
